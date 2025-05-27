@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tetris</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f0f0f0;
+      font-family: Arial, sans-serif;
+    }
+    #gameContainer {
+      text-align: center;
+    }
+    canvas {
+      border: 2px solid #333;
+      background-color: #fff;
+    }
+    #score {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="gameContainer">
+    <div id="score">Score: 0</div>
+    <canvas id="tetrisCanvas" width="240" height="400"></canvas>
+  </div>
+  <script>
+    // Constants and State
+    const canvas = document.getElementById('tetrisCanvas');
+    const ctx = canvas.getContext('2d');
+    const gridSize = 20;
+    const boardWidth = 12;
+    const boardHeight = 20;
+    const board = Array(boardHeight).fill().map(() => Array(boardWidth).fill(0));
+    const scoreElement = document.getElementById('score');
+    let score = 0;
+    let currentPiece = null;
+    let gameOver = false;
+    let dropCounter = 0;
+    let dropInterval = 1000; // ms
+    let lastTime = 0;
+
+    const pieces = [
+      [[1, 1, 1, 1]], // I
+      [[1, 1], [1, 1]], // O
+      [[1, 1, 1], [0, 1, 0]], // T
+      [[1, 1, 1], [1, 0, 0]], // L
+      [[1, 1, 1], [0, 0, 1]], // J
+      [[1, 1, 0], [0, 1, 1]], // S
+      [[0, 1, 1], [1, 1, 0]] // Z
+    ];
+    const colors = ['#00f0f0', '#f0f000', '#a000f0', '#f0a000', '#0000f0', '#00f000', '#f00000'];
+
+    // Logic
+    createPiece();
+    gameLoop(0);
+
+    // Functions
+    function createPiece() {
+      const pieceIndex = Math.floor(Math.random() * pieces.length);
+      currentPiece = {
+        shape: pieces[pieceIndex],
+        color: colors[pieceIndex],
+        x: Math.floor(boardWidth / 2) - Math.floor(pieces[pieceIndex][0].length / 2),
+        y: 0
+      };
+    }
+
+    function draw() {
+      // Clear canvas
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw board
+      for (let y = 0; y < boardHeight; y++) {
+        for (let x = 0; x < boardWidth; x++) {
+          if (board[y][x]) {
+            ctx.fillStyle = board[y][x];
+            ctx.fillRect(x * gridSize, y * gridSize, gridSize - 1, gridSize - 1);
+          }
+        }
+      }
+
+      // Draw current piece
+      if (currentPiece) {
+        ctx.fillStyle = currentPiece.color;
+        for (let y = 0; y < currentPiece.shape.length; y++) {
+          for (let x = 0; x < currentPiece.shape[y].length; x++) {
+            if (currentPiece.shape[y][x]) {
+              ctx.fillRect((currentPiece.x + x) * gridSize, (currentPiece.y + y) * gridSize, gridSize - 1, gridSize - 1);
+            }
+          }
+        }
+      }
+    }
+
+    function collide(piece, board, offsetX = 0, offsetY = 0) {
+      for (let y = 0; y < piece.shape.length; y++) {
+        for (let x = 0; x < piece.shape[y].length; x++) {
+          if (piece.shape[y][x]) {
+            const newX = piece.x + x + offsetX;
+            const newY = piece.y + y + offsetY;
+            if (newX < 0 || newX >= boardWidth || newY >= boardHeight || (newY >= 0 && board[newY][newX])) {
+              return true;
+            }
+          }
+        }
+      }
+      return false;
+    }
+
+    function merge() {
+      for (let y = 0; y < currentPiece.shape.length; y++) {
+        for (let x = 0; x < currentPiece.shape[y].length; x++) {
+          if (currentPiece.shape[y][x]) {
+            board[currentPiece.y + y][currentPiece.x + x] = currentPiece.color;
+          }
+        }
+      }
+    }
+
+    function clearLines() {
+      let linesCleared = 0;
+      for (let y = boardHeight - 1; y >= 0; y--) {
+        if (board[y].every(cell => cell !== 0)) {
+          board.splice(y, 1);
+          board.unshift(Array(boardWidth).fill(0));
+          linesCleared++;
+          y++;
+        }
+      }
+      if (linesCleared > 0) {
+        score += linesCleared * 100;
+        scoreElement.textContent = `Score: ${score}`;
+      }
+    }
+
+    function rotatePiece() {
+      const rotated = Array(currentPiece.shape[0].length).fill().map(() => Array(currentPiece.shape.length).fill(0));
+      for (let y = 0; y < currentPiece.shape.length; y++) {
+        for (let x = 0; x < currentPiece.shape[y].length; x++) {
+          rotated[x][currentPiece.shape.length - 1 - y] = currentPiece.shape[y][x];
+        }
+      }
+      const originalShape = currentPiece.shape;
+      currentPiece.shape = rotated;
+      if (collide(currentPiece, board)) {
+        currentPiece.shape = originalShape;
+      }
+    }
+
+    function movePiece(dx, dy) {
+      if (!collide(currentPiece, board, dx, dy)) {
+        currentPiece.x += dx;
+        currentPiece.y += dy;
+        return true;
+      }
+      return false;
+    }
+
+    function drop() {
+      if (!movePiece(0, 1)) {
+        if (currentPiece.y === 0) {
+          gameOver = true;
+          alert('Game Over! Score: ' + score);
+          return;
+        }
+        merge();
+        clearLines();
+        createPiece();
+        if (collide(currentPiece, board)) {
+          gameOver = true;
+          alert('Game Over! Score: ' + score);
+        }
+      }
+    }
+
+    function gameLoop(time) {
+      if (gameOver) return;
+
+      const deltaTime = time - lastTime;
+      dropCounter += deltaTime;
+      if (dropCounter > dropInterval) {
+        drop();
+        dropCounter = 0;
+      }
+      lastTime = time;
+
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Helper Functions
+    document.addEventListener('keydown', (event) => {
+      if (gameOver) return;
+      switch (event.key) {
+        case 'ArrowLeft':
+          movePiece(-1, 0);
+          break;
+        case 'ArrowRight':
+          movePiece(1, 0);
+          break;
+        case 'ArrowDown':
+          drop();
+          break;
+        case 'ArrowUp':
+          rotatePiece();
+          break;
+      }
+    });
+  </script>
+</body>
+</html>
