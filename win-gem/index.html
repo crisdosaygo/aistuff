@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Windows 9x Demo - Enhanced</title>
+    <title>Windows 98&frac12;</title>
+    <link rel=icon href="https://win98icons.alexmeub.com/icons/png/internet_connection_wiz-0.png">
     <style>
         body {
             background-color: #008080; /* Classic Teal */
@@ -146,7 +147,7 @@
             background-color: #000080; /* Dark Blue */
             color: white;
             padding: 10px 5px;
-            writing-mode: vertical-rl; /* Rotate text */
+            writing-mode: vertical-lr; /* Rotate text */
             text-orientation: mixed;
             transform: rotate(180deg); /* Correct orientation after vertical-rl */
             font-weight: bold;
@@ -156,6 +157,10 @@
             justify-content: center;
             border-right: 2px outset #dfdfdf; /* 3D effect */
             min-width: 25px; /* Ensure it has some width */
+        }
+        .start-menu-sidebar .and-half {
+          display: inline-block;
+          transform:rotate(90deg);
         }
         .start-menu-sidebar-text {
             white-space: nowrap; /* Prevent text from wrapping */
@@ -503,14 +508,16 @@
 
         <!-- !!! ADD THIS ICON FOR THE BROWSER !!! -->
         <div class="desktop-icon" data-app-id="internetBrowser">
-            <img src="https://win98icons.alexmeub.com/icons/png/msie2-0.png" alt="Internet Browser">
+            <img 
+              src="https://win98icons.alexmeub.com/icons/png/search_web-0.png" 
+              alt="Internet Browser">
             <span>Internet Browser</span>
         </div>
     </div>
 
     <div class="start-menu" id="startMenu">
         <div class="start-menu-sidebar">
-            <span class="start-menu-sidebar-text">Windows 9x</span>
+            <span class="start-menu-sidebar-text">Windows 98<span class=and-half>&frac12;</span></span>
         </div>
         <div class="start-menu-items-container"> <!-- New container for the actual items -->
             <div class="start-menu-item" data-app-id="notepad">

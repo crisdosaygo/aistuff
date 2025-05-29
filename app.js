@@ -15,7 +15,7 @@
 
                 // URLs for throbber states
                 this.throbberAnimatedSrc = "./netscape.gif"; // Replace with your chosen animated GIF
-                this.throbberStaticSrc = "./netscape-frame.gif"; // Replace with a static version if you have one, or leave empty to just hide
+                this.throbberStaticSrc = ""; // Replace with a static version if you have one, or leave empty to just hide
 
                 this.ui = {
                     navButtons: {
@@ -202,9 +202,6 @@
             }
 
             // --- Navigation ---
-// Inside app.js, within BrowserApp class
-
-            // --- Navigation ---
             navigateToCurrentAddress() {
                 const url = this.ui.addressBar.value.trim();
                 this.navigateTo(url);
@@ -212,149 +209,56 @@
 
             navigateTo(url, tabIdToNavigate) {
                 const tabId = tabIdToNavigate !== undefined ? tabIdToNavigate : this.activeTabId;
-
-                if (tabId === null && this.tabs.length === 0) {
+                if (tabId === null && this.tabs.length === 0) { // No tabs, create one
                     const newTab = this.addTab(url, true);
-                    // navigateTo will be called again inside addTab for the new tab, so we can return here.
+                    // navigateTo will be called again inside addTab for the new tab
                     return;
                 }
-                if (tabId === null) { // Should not happen if addTab handles the empty case correctly
-                    console.warn("navigateTo called with null tabId and existing tabs.");
-                    return;
-                }
+                if (tabId === null) return; // Should not happen if addTab handles empty case
 
                 const tab = this.tabs.find(t => t.id === tabId);
-                if (!tab) {
-                    console.warn(`navigateTo: Tab with id ${tabId} not found.`);
-                    return;
-                }
+                if (!tab) return;
 
                 let fullUrl = url;
-                if (!url.match(/^([a-z]+:)?\/\//i) && !url.startsWith("about:")) {
-                    fullUrl = "http://" + url;
+                if (!url.match(/^([a-z]+:)?\/\//i) && !url.startsWith("about:")) { // Basic check if not a full URL or about:
+                    fullUrl = "http://" + url; // Assume http
                 }
                 
+                // Mocking webview interaction
+                // Conceptually: this.webviewEl.loadURL(fullUrl, tabId);
                 console.log(`[Browser ${this.webviewId}] Tab ${tabId} navigating to: ${fullUrl}`);
                 this.webviewEl.innerHTML = `Loading ${fullUrl}... (Tab ID: ${tabId})`;
-                this.ui.navButtons.stop.disabled = false;
+                this.ui.navButtons.stop.disabled = false; // Enable stop button
 
                 // --- THRobber START ---
-                if (this.ui.throbber) { // Check if throbber element exists
-                    this.ui.throbber.src = this.throbberAnimatedSrc;
-                    this.ui.throbber.style.display = 'block';
-                }
+                this.ui.throbber.src = this.throbberAnimatedSrc;
+                this.ui.throbber.style.display = 'block';
                 // --- THRobber END ---
 
                 // Simulate page load and title update
                 setTimeout(() => {
-                    // Ensure the tab still exists (it might have been closed during the "load")
-                    const currentTabAfterTimeout = this.tabs.find(t => t.id === tabId);
-                    if (!currentTabAfterTimeout) {
-                        // If the tab that was loading is gone, and no other tab is actively loading, stop the throbber.
-                        // This logic assumes only one "active" load at a time for the throbber.
-                        let isLoadingAnotherTab = false;
-                        if (this.activeTabId !== null) {
-                            const activeTabData = this.tabs.find(t => t.id === this.activeTabId);
-                            // A more robust check would be if activeTabData has a 'loading' state.
-                            // For now, if stop button is enabled for active tab, assume it's loading.
-                            if (activeTabData && !this.ui.navButtons.stop.disabled) {
-                                isLoadingAnotherTab = true;
-                            }
-                        }
-                        if (!isLoadingAnotherTab && this.ui.throbber) {
-                            this.ui.throbber.style.display = 'none';
-                            this.ui.throbber.src = ''; // Clear src
-                        }
-                        return;
-                    }
+                    if (!this.tabs.find(t => t.id === tabId)) return; // Tab might have been closed
 
-                    // currentTabAfterTimeout is the same as 'tab' variable if it still exists
                     tab.url = fullUrl;
                     tab.title = this._extractTitleFromUrl(fullUrl);
 
+                    // History management
                     if (tab.historyIndex < tab.history.length - 1) {
-                        tab.history = tab.history.slice(0, tab.historyIndex + 1);
+                        tab.history = tab.history.slice(0, tab.historyIndex + 1); // Clear forward history
                     }
                     tab.history.push(fullUrl);
                     tab.historyIndex = tab.history.length - 1;
 
-                    if (tab.id === this.activeTabId) {
+                    if (tab.id === this.activeTabId) { // Update UI only if it's the active tab
                         this.ui.addressBar.value = fullUrl;
                         this.webviewEl.innerHTML = `(Content for ${tab.title} - ${tab.url})`;
                     }
-                    this._renderTabs();
+                    this._renderTabs(); // Update tab title in the tab bar
                     this._updateNavButtonStates();
-                    this.ui.navButtons.stop.disabled = true;
-
-                    // --- THRobber STOP ---
-                    if (this.ui.throbber) {
-                        if (this.throbberStaticSrc) {
-                            this.ui.throbber.src = this.throbberStaticSrc;
-                            // Keep display: 'block' if using a static image
-                        } else {
-                            this.ui.throbber.style.display = 'none';
-                            this.ui.throbber.src = '';
-                        }
-                    }
-                    // --- THRobber END ---
-
-                }, 500 + Math.random() * 500);
+                    this.ui.navButtons.stop.disabled = true; // Disable stop button after "load"
+                }, 500 + Math.random() * 500); // Simulate network delay
             }
 
-
-            _loadFromHistory(tab, url) {
-                // This is a simplified load for history navigation, doesn't add to history again
-                console.log(`[Browser ${this.webviewId}] Tab ${tab.id} history nav to: ${url}`);
-                this.webviewEl.innerHTML = `Loading ${url} from history...`;
-                this.ui.navButtons.stop.disabled = false;
-
-                // --- THRobber START ---
-                if (this.ui.throbber) {
-                    this.ui.throbber.src = this.throbberAnimatedSrc;
-                    this.ui.throbber.style.display = 'block';
-                }
-                // --- THRobber END ---
-
-                setTimeout(() => {
-                    const currentTabAfterTimeout = this.tabs.find(t => t.id === tab.id); // Re-check tab existence
-                    if (!currentTabAfterTimeout) {
-                        let isLoadingAnotherTab = false;
-                        if (this.activeTabId !== null) {
-                            const activeTabData = this.tabs.find(t => t.id === this.activeTabId);
-                            if (activeTabData && !this.ui.navButtons.stop.disabled) {
-                                isLoadingAnotherTab = true;
-                            }
-                        }
-                        if (!isLoadingAnotherTab && this.ui.throbber) {
-                            this.ui.throbber.style.display = 'none';
-                            this.ui.throbber.src = '';
-                        }
-                        return;
-                    }
-
-                    tab.url = url; // 'tab' is still valid here if currentTabAfterTimeout is found
-                    tab.title = this._extractTitleFromUrl(url);
-
-                    if (tab.id === this.activeTabId) {
-                        this.ui.addressBar.value = url;
-                        this.webviewEl.innerHTML = `(Content for ${tab.title} - ${tab.url})`;
-                    }
-                    this._renderTabs();
-                    this._updateNavButtonStates();
-                    this.ui.navButtons.stop.disabled = true;
-
-                    // --- THRobber STOP ---
-                    if (this.ui.throbber) {
-                        if (this.throbberStaticSrc) {
-                            this.ui.throbber.src = this.throbberStaticSrc;
-                        } else {
-                            this.ui.throbber.style.display = 'none';
-                            this.ui.throbber.src = '';
-                        }
-                    }
-                    // --- THRobber END ---
-                }, 200 + Math.random() * 300);
-            }
             goBack() {
                 const tab = this.tabs.find(t => t.id === this.activeTabId);
                 if (tab && tab.historyIndex > 0) {
@@ -375,6 +279,29 @@
                     this._loadFromHistory(tab, url);
                 }
             }
+
+            _loadFromHistory(tab, url) {
+                // This is a simplified load for history navigation, doesn't add to history again
+                console.log(`[Browser ${this.webviewId}] Tab ${tab.id} history nav to: ${url}`);
+                this.webviewEl.innerHTML = `Loading ${url} from history...`;
+                this.ui.navButtons.stop.disabled = false;
+
+                setTimeout(() => {
+                    if (!this.tabs.find(t => t.id === tab.id)) return;
+
+                    tab.url = url;
+                    tab.title = this._extractTitleFromUrl(url);
+
+                    if (tab.id === this.activeTabId) {
+                        this.ui.addressBar.value = url;
+                        this.webviewEl.innerHTML = `(Content for ${tab.title} - ${tab.url})`;
+                    }
+                    this._renderTabs();
+                    this._updateNavButtonStates();
+                    this.ui.navButtons.stop.disabled = true;
+                }, 200 + Math.random() * 300);
+            }
+
 
             reloadPage() {
                 const tab = this.tabs.find(t => t.id === this.activeTabId);
@@ -512,9 +439,8 @@
             },
             // Add this to your existing APP_DEFINITIONS object
             internetBrowser: {
-                netscape: true,
                 title: "Internet Browser", // Or "Netscape", "Explorer"
-                icon: "./netscape-frame.gif", // Classic IE icon
+                icon: "https://win98icons.alexmeub.com/icons/png/msie2-0.png", // Classic IE icon
                 defaultWidth: 700, // Browser windows are usually larger
                 defaultHeight: 500,
                 // content and init will be handled by the BrowserApp class
@@ -613,7 +539,7 @@
                 // Set window title bar icon and title
                 windowEl.querySelector('.window-titlebar-icon').src = appDef.icon;
                 windowEl.querySelector('.window-titlebar-icon').alt = appDef.title; // Use appDef.title for alt
-                windowEl.querySelector('.window-title').textContent = appDef.netscape ? 'Netscape Navigator' : appDef.title;
+                windowEl.querySelector('.window-title').textContent = appDef.title;
 
                 // --- NEW: Generate webviewId if needed by the app ---
                 let webviewId = null;
