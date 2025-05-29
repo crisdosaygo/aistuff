@@ -13,6 +13,10 @@
                 this.defaultUrl = "about:blank"; // Or your preferred home page
                 this.homeUrl = "https://www.google.com"; // Example home page
 
+                // URLs for throbber states
+                this.throbberAnimatedSrc = "https://www.cs.cmu.edu/~chuck/όπου/netscape-loading.gif"; // Replace with your chosen animated GIF
+                this.throbberStaticSrc = ""; // Replace with a static version if you have one, or leave empty to just hide
+
                 this.ui = {
                     navButtons: {
                         back: this.windowEl.querySelector('[data-action="back"]'),
@@ -25,6 +29,7 @@
                     goButton: this.windowEl.querySelector('[data-action="go"]'),
                     tabBar: this.windowEl.querySelector('.browser-tab-bar'),
                     newTabButton: this.windowEl.querySelector('.browser-new-tab-btn'),
+                    throbber: this.windowEl.querySelector('.browser-throbber'), // <<< ADDED
                 };
 
                 this._setupEventListeners();
@@ -38,11 +43,14 @@
                 return `
                     <div class="browser-container">
                         <div class="browser-toolbar">
+                          <div class="browser-nav-buttons"> <!-- Wrapper for nav buttons -->
                             <button data-action="back" title="Back">◄ Back</button>
                             <button data-action="forward" title="Forward">Forward ►</button>
                             <button data-action="stop" title="Stop">✕ Stop</button>
                             <button data-action="reload" title="Reload">↻ Reload</button>
                             <button data-action="home" title="Home">⌂ Home</button>
+                            <img src="" alt="Loading" class="browser-throbber" style="display: none;"> <!-- THRobber ADDED HERE -->
+                          </div>
                         </div>
                         <div class="browser-address-toolbar">
                             <label for="address-${webviewId}">Address:</label>

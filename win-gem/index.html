@@ -455,7 +455,31 @@
             font-style: italic;
             color: #666;
         }
-        /* ===== END BROWSER UI STYLES ===== */
+
+        /* ===== BROWSER UI STYLES (Additions/Modifications) ===== */
+        .browser-toolbar {
+            padding: 3px;
+            border-bottom: 1px solid #808080;
+            display: flex;
+            align-items: center;
+            justify-content: space-between; /* Key change: space between nav buttons and throbber */
+            flex-shrink: 0;
+        }
+
+        .browser-nav-buttons { /* New wrapper for nav buttons */
+            display: flex;
+            align-items: center;
+        }
+
+        .browser-throbber {
+            width: 28px;  /* Adjust to your GIF's typical size */
+            height: 28px; /* Adjust to your GIF's typical size */
+            margin-left: auto; /* Pushes it to the right if justify-content was not space-between */
+            margin-right: 5px; /* Some spacing */
+            /* border: 1px solid #777; /* Optional: classic Netscape border */
+            /* background-color: #c0c0c0; /* If GIF has transparency */
+        }
+                /* ===== END BROWSER UI STYLES ===== */
     </style>
 </head>
 <body>
