@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Windows 9x Demo</title>
+    <title>Windows 9x Demo - Enhanced</title>
     <style>
         body {
             background-color: #008080; /* Classic Teal */
@@ -45,6 +45,16 @@
             display: block;
             margin: 0 auto 5px auto;
         }
+        .desktop-icon.selected {
+            background-color: rgba(0, 0, 128, 0.7); /* Darker selection */
+            outline: 1px dotted white;
+        }
+        .desktop-icon.selected span {
+            background-color: #000080; /* Opaque background for text */
+            color: white; /* Ensure text is visible */
+            padding: 1px 2px;
+        }
+
 
         .taskbar {
             position: fixed;
@@ -83,7 +93,7 @@
             position: absolute;
             bottom: 30px; /* Above taskbar */
             left: 0;
-            width: 180px;
+            width: 200px; /* Slightly wider for icons */
             background-color: #c0c0c0;
             border: 2px outset #dfdfdf;
             box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
@@ -92,13 +102,21 @@
             z-index: 9999;
         }
         .start-menu-item {
-            padding: 5px 10px 5px 25px; /* Space for potential icon */
+            padding: 5px 10px 5px 5px; /* Adjusted padding */
             cursor: pointer;
             position: relative;
+            display: flex;
+            align-items: center;
         }
         .start-menu-item:hover {
             background-color: #000080; /* Dark Blue */
             color: white;
+        }
+        .start-menu-icon {
+            width: 20px; /* Slightly larger for start menu */
+            height: 20px;
+            margin-right: 8px;
+            vertical-align: middle;
         }
         .start-menu-separator {
             height: 1px;
@@ -125,7 +143,7 @@
         .taskbar-button {
             background-color: #c0c0c0;
             border: 2px outset #dfdfdf;
-            padding: 2px 8px;
+            padding: 1px 5px; /* Adjusted padding */
             margin-right: 3px;
             font-size: 11px;
             white-space: nowrap;
@@ -133,10 +151,24 @@
             text-overflow: ellipsis;
             max-width: 150px;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            height: 22px; /* Consistent height */
+            box-sizing: border-box;
         }
         .taskbar-button.active {
             border-style: inset;
             font-weight: bold;
+        }
+        .taskbar-button img {
+            width: 16px;
+            height: 16px;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+        .taskbar-button.minimized {
+            opacity: 0.9; /* Slightly different look for minimized */
+            /* border-style: outset; /* Keep it looking like a button */
         }
 
 
@@ -147,6 +179,9 @@
             font-size: 11px;
             min-width: 60px;
             text-align: center;
+            height: 20px; /* Consistent height */
+            line-height: 20px;
+            box-sizing: border-box;
         }
 
         /* Window Styling */
@@ -159,6 +194,7 @@
             min-height: 150px;
             display: flex;
             flex-direction: column;
+            overflow: hidden; /* Prevent content from breaking out during resize */
         }
 
         .window-titlebar {
@@ -170,14 +206,23 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            height: 20px; /* Consistent height */
+            box-sizing: border-box;
         }
         .window-titlebar:active {
             cursor: grabbing;
+        }
+        .window-titlebar-icon {
+            margin-right: 5px;
+            vertical-align: middle; /* Or top, adjust as needed */
+            width: 16px;
+            height: 16px;
         }
         .window-title {
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            flex-grow: 1; /* Allow title to take available space */
         }
 
         .window-controls button {
@@ -198,41 +243,204 @@
         }
 
         .window-content {
-            padding: 10px;
+            padding: 0; /* Remove padding, content itself should manage it */
             background-color: #ffffff; /* White content area */
             flex-grow: 1;
             margin: 3px;
             border: 1px inset #808080;
             overflow: auto; /* Add scrollbars if content overflows */
+            display: flex; /* For content that wants to fill height */
+            flex-direction: column; /* For content that wants to fill height */
         }
+
+        .window.maximized .window-titlebar {
+            cursor: default; /* No dragging when maximized */
+        }
+
+        /* For the shutdown dialog buttons */
+        .win95-button {
+            background-color: #c0c0c0;
+            border: 2px outset #dfdfdf;
+            padding: 5px 15px;
+            margin: 0 5px;
+            min-width: 70px;
+            cursor: pointer;
+        }
+        .win95-button:active {
+            border-style: inset;
+        }
+
+        /* ===== BROWSER UI STYLES ===== */
+        .browser-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background-color: #c0c0c0; /* Classic gray */
+        }
+
+        .browser-toolbar, .browser-address-toolbar {
+            padding: 3px;
+            border-bottom: 1px solid #808080;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0; /* Prevent toolbars from shrinking */
+        }
+        .browser-toolbar button, .browser-address-toolbar button {
+            background-color: #c0c0c0;
+            border: 1px outset #dfdfdf;
+            padding: 3px 6px;
+            margin-right: 3px;
+            font-size: 11px; /* Or use icons */
+            min-width: 50px; /* For text buttons */
+        }
+        .browser-toolbar button:active, .browser-address-toolbar button:active {
+            border-style: inset;
+        }
+        .browser-toolbar button:disabled {
+            color: #808080;
+            border-color: #808080;
+            cursor: default;
+        }
+
+        .browser-address-toolbar label {
+            margin-right: 5px;
+            font-weight: bold;
+        }
+        .browser-address-bar {
+            flex-grow: 1;
+            margin-right: 3px;
+            padding: 3px;
+            border: 1px inset #808080;
+            font-size: 12px;
+            height: 20px;
+            box-sizing: border-box;
+        }
+
+        .browser-tab-bar {
+            display: flex;
+            background-color: #c0c0c0;
+            padding: 2px 2px 0 2px; /* Padding for top/sides, none at bottom for tabs to connect */
+            border-bottom: 1px solid #808080;
+            flex-shrink: 0;
+            align-items: flex-end; /* Align tabs to the bottom of the bar */
+        }
+        .browser-tab {
+            background-color: #a0a0a0; /* Slightly darker for inactive tabs */
+            border: 1px outset #dfdfdf;
+            border-bottom: none; /* Connects to content area or next border */
+            padding: 4px 8px;
+            margin-right: -1px; /* Overlap borders */
+            font-size: 11px;
+            cursor: pointer;
+            position: relative;
+            max-width: 150px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border-top-left-radius: 3px;
+            border-top-right-radius: 3px;
+        }
+        .browser-tab.active {
+            background-color: #e0e0e0; /* Lighter for active tab */
+            z-index: 1; /* Bring active tab border to front */
+            padding-bottom: 5px; /* Make it look like it connects to content */
+            margin-bottom: -1px; /* Overlap bottom border of tab bar */
+            font-weight: bold;
+        }
+        .browser-tab .tab-close-btn {
+            margin-left: 8px;
+            font-size: 10px;
+            color: #404040;
+            cursor: pointer;
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+        .browser-tab .tab-close-btn:hover {
+            background-color: #ff6060;
+            color: white;
+        }
+        .browser-new-tab-btn {
+            background-color: #c0c0c0;
+            border: 1px outset #dfdfdf;
+            padding: 2px 6px;
+            margin-left: 3px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            height: 20px; /* Align with tabs */
+            align-self: center; /* Center vertically in tab bar */
+        }
+        .browser-new-tab-btn:active {
+            border-style: inset;
+        }
+
+        /* The actual webview placeholder */
+        browser-webview {
+            flex-grow: 1;
+            background-color: white; /* Default background */
+            border: 1px solid #000; /* Placeholder border */
+            margin: 2px; /* Consistent with window content margin */
+            display: flex; /* To allow centering of placeholder text */
+            align-items: center;
+            justify-content: center;
+            font-style: italic;
+            color: #666;
+        }
+        /* ===== END BROWSER UI STYLES ===== */
     </style>
 </head>
 <body>
-
     <div class="desktop" id="desktop">
-        <!-- Desktop Icons will be added here by JS or statically -->
-        <div class="desktop-icon" data-app-id="myComputer" data-app-title="My Computer">
+        <div class="desktop-icon" data-app-id="myComputer">
             <img src="https://win98icons.alexmeub.com/icons/png/computer_explorer-0.png" alt="My Computer">
             <span>My Computer</span>
         </div>
-        <div class="desktop-icon" data-app-id="notepad" data-app-title="Notepad">
+        <div class="desktop-icon" data-app-id="notepad">
             <img src="https://win98icons.alexmeub.com/icons/png/notepad-0.png" alt="Notepad">
             <span>Notepad</span>
         </div>
-        <div class="desktop-icon" data-app-id="recycleBin" data-app-title="Recycle Bin">
+        <div class="desktop-icon" data-app-id="recycleBin">
             <img src="https://win98icons.alexmeub.com/icons/png/recycle_bin_empty-0.png" alt="Recycle Bin">
             <span>Recycle Bin</span>
+        </div>
+        <div class="desktop-icon" data-app-id="calculator">
+            <img src="https://win98icons.alexmeub.com/icons/png/calculator-0.png" alt="Calculator">
+            <span>Calculator</span>
+        </div>
+
+        <!-- !!! ADD THIS ICON FOR THE BROWSER !!! -->
+        <div class="desktop-icon" data-app-id="internetBrowser">
+            <img src="https://win98icons.alexmeub.com/icons/png/msie2-0.png" alt="Internet Browser">
+            <span>Internet Browser</span>
         </div>
     </div>
 
     <div class="start-menu" id="startMenu">
-        <div class="start-menu-item" data-app-id="notepad" data-app-title="Notepad">📝 Notepad</div>
-        <div class="start-menu-item" data-app-id="myComputer" data-app-title="My Computer">💻 My Computer</div>
+        <div class="start-menu-item" data-app-id="notepad">
+            <img src="https://win98icons.alexmeub.com/icons/png/notepad-0.png" class="start-menu-icon" alt=""> Notepad
+        </div>
+        <div class="start-menu-item" data-app-id="calculator">
+            <img src="https://win98icons.alexmeub.com/icons/png/calculator-0.png" class="start-menu-icon" alt=""> Calculator
+        </div>
+        <div class="start-menu-item" data-app-id="myComputer">
+            <img src="https://win98icons.alexmeub.com/icons/png/computer_explorer-0.png" class="start-menu-icon" alt=""> My Computer
+        </div>
+        <!-- !!! ADD THIS ITEM TO THE START MENU !!! -->
+        <div class="start-menu-item" data-app-id="internetBrowser">
+            <img src="https://win98icons.alexmeub.com/icons/png/msie2-0.png" class="start-menu-icon" alt=""> Internet Browser
+        </div>
+
         <div class="start-menu-separator"></div>
-        <div class="start-menu-item disabled">⚙️ Settings</div>
-        <div class="start-menu-item disabled">❓ Help</div>
+        <div class="start-menu-item disabled">
+            <img src="https://win98icons.alexmeub.com/icons/png/settings_gear-0.png" class="start-menu-icon" alt=""> Settings
+        </div>
+        <div class="start-menu-item disabled">
+            <img src="https://win98icons.alexmeub.com/icons/png/help_book_cool-0.png" class="start-menu-icon" alt=""> Help
+        </div>
         <div class="start-menu-separator"></div>
-        <div class="start-menu-item" id="shutdownButton">🔌 Shut Down...</div>
+        <div class="start-menu-item" id="shutdownButtonTrigger">
+            <img src="https://win98icons.alexmeub.com/icons/png/shut_down_cool-0.png" class="start-menu-icon" alt=""> Shut Down...
+        </div>
     </div>
 
     <div class="taskbar">
@@ -246,224 +454,24 @@
         <div class="clock" id="clock"></div>
     </div>
 
-    <!-- Window Template (hidden) -->
+    <!-- Window Template (MODIFIED) -->
     <template id="windowTemplate">
         <div class="window">
             <div class="window-titlebar">
+                <img class="window-titlebar-icon" src="" alt="" width="16" height="16">
                 <span class="window-title">Window</span>
                 <div class="window-controls">
-                    <button class="window-close-btn" title="Close">r</button> <!-- 'r' in Marlett is close 'x' -->
+                    <button class="window-minimize-btn" title="Minimize">0</button> <!-- Marlett: 0 -->
+                    <button class="window-maximize-btn" title="Maximize">1</button> <!-- Marlett: 1 (maximize), 2 (restore) -->
+                    <button class="window-close-btn" title="Close">r</button>    <!-- Marlett: r -->
                 </div>
             </div>
             <div class="window-content">
-                <p>This is a window.</p>
+                <!-- Content will be injected here -->
             </div>
         </div>
     </template>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const clockElement = document.getElementById('clock');
-            const startButton = document.getElementById('startButton');
-            const startMenu = document.getElementById('startMenu');
-            const desktop = document.getElementById('desktop');
-            const windowTemplate = document.getElementById('windowTemplate');
-            const taskbarWindows = document.getElementById('taskbarWindows');
-
-            let highestZIndex = 100;
-            let openWindows = {}; // To keep track of open windows and their taskbar buttons
-
-            // --- Clock ---
-            function updateClock() {
-                const now = new Date();
-                const hours = now.getHours().toString().padStart(2, '0');
-                const minutes = now.getMinutes().toString().padStart(2, '0');
-                clockElement.textContent = `${hours}:${minutes}`;
-            }
-            setInterval(updateClock, 1000);
-            updateClock();
-
-            // --- Start Menu ---
-            startButton.addEventListener('click', (event) => {
-                event.stopPropagation(); // Prevent click from bubbling to document
-                startMenu.style.display = startMenu.style.display === 'block' ? 'none' : 'block';
-            });
-
-            document.addEventListener('click', (event) => {
-                // Close start menu if clicking outside
-                if (startMenu.style.display === 'block' && !startMenu.contains(event.target) && event.target !== startButton) {
-                    startMenu.style.display = 'none';
-                }
-            });
-
-            // --- Window Management ---
-            let windowIdCounter = 0;
-
-            function createWindow(appId, title, content = `<p>Content for ${title}.</p>`) {
-                startMenu.style.display = 'none'; // Close start menu when opening app
-
-                // Prevent opening multiple instances of the same "app" for this basic demo
-                // Or, focus existing window if already open
-                const existingWindow = document.querySelector(`.window[data-app-id="${appId}"]`);
-                if (existingWindow) {
-                    focusWindow(existingWindow);
-                    return;
-                }
-
-                const windowInstanceId = `window-${appId}-${windowIdCounter++}`;
-                const windowEl = windowTemplate.content.firstElementChild.cloneNode(true);
-                windowEl.dataset.appId = appId;
-                windowEl.dataset.instanceId = windowInstanceId;
-
-                windowEl.querySelector('.window-title').textContent = title;
-                windowEl.querySelector('.window-content').innerHTML = content;
-
-                // Random initial position (simplified)
-                windowEl.style.left = `${Math.random() * (desktop.offsetWidth - 250) + 20}px`;
-                windowEl.style.top = `${Math.random() * (desktop.offsetHeight - 200) + 20}px`;
-                
-                highestZIndex++;
-                windowEl.style.zIndex = highestZIndex;
-
-                desktop.appendChild(windowEl);
-                makeDraggable(windowEl);
-                addWindowToTaskbar(windowEl, title, windowInstanceId);
-                focusWindow(windowEl);
-
-
-                windowEl.querySelector('.window-close-btn').addEventListener('click', () => {
-                    closeWindow(windowEl);
-                });
-
-                windowEl.addEventListener('mousedown', () => {
-                    focusWindow(windowEl);
-                });
-                return windowEl;
-            }
-
-            function focusWindow(windowEl) {
-                highestZIndex++;
-                windowEl.style.zIndex = highestZIndex;
-                // Update taskbar active state
-                document.querySelectorAll('.taskbar-button').forEach(btn => btn.classList.remove('active'));
-                const taskbarBtn = openWindows[windowEl.dataset.instanceId]?.taskbarButton;
-                if (taskbarBtn) {
-                    taskbarBtn.classList.add('active');
-                }
-            }
-
-            function closeWindow(windowEl) {
-                const instanceId = windowEl.dataset.instanceId;
-                if (openWindows[instanceId]) {
-                    openWindows[instanceId].taskbarButton.remove();
-                    delete openWindows[instanceId];
-                }
-                windowEl.remove();
-            }
-
-            function addWindowToTaskbar(windowEl, title, instanceId) {
-                const taskbarButton = document.createElement('button');
-                taskbarButton.className = 'taskbar-button';
-                taskbarButton.textContent = title;
-                taskbarButton.dataset.windowInstanceId = instanceId;
-                
-                taskbarButton.addEventListener('click', () => {
-                    focusWindow(windowEl);
-                });
-
-                taskbarWindows.appendChild(taskbarButton);
-                openWindows[instanceId] = { window: windowEl, taskbarButton: taskbarButton };
-            }
-
-
-            function makeDraggable(element) {
-                const titleBar = element.querySelector('.window-titlebar');
-                let offsetX, offsetY, isDragging = false;
-
-                titleBar.addEventListener('mousedown', (e) => {
-                    // Prevent dragging if clicking on a control button
-                    if (e.target.closest('.window-controls button')) return;
-
-                    isDragging = true;
-                    offsetX = e.clientX - element.getBoundingClientRect().left;
-                    offsetY = e.clientY - element.getBoundingClientRect().top;
-                    element.style.cursor = 'grabbing'; // Should be on titlebar, but this is simpler
-                    titleBar.style.cursor = 'grabbing';
-                    focusWindow(element); // Bring to front when starting drag
-                });
-
-                document.addEventListener('mousemove', (e) => {
-                    if (!isDragging) return;
-                    let newX = e.clientX - offsetX;
-                    let newY = e.clientY - offsetY;
-
-                    // Keep window within desktop bounds (approximate)
-                    const desktopRect = desktop.getBoundingClientRect();
-                    newX = Math.max(0, Math.min(newX, desktopRect.width - element.offsetWidth));
-                    newY = Math.max(0, Math.min(newY, desktopRect.height - element.offsetHeight));
-
-                    element.style.left = `${newX}px`;
-                    element.style.top = `${newY}px`;
-                });
-
-                document.addEventListener('mouseup', () => {
-                    if (isDragging) {
-                        isDragging = false;
-                        element.style.cursor = 'default';
-                        titleBar.style.cursor = 'grab';
-                    }
-                });
-            }
-
-            // --- Icon/Menu Item Click Handlers ---
-            document.querySelectorAll('.desktop-icon, .start-menu-item').forEach(item => {
-                item.addEventListener('click', (e) => {
-                    if (item.classList.contains('disabled')) return;
-
-                    const appId = item.dataset.appId;
-                    const appTitle = item.dataset.appTitle || item.textContent.trim();
-
-                    if (appId === 'shutdownButton' || item.id === 'shutdownButton') {
-                        alert('Shutting down is not implemented in this demo! 😉');
-                        startMenu.style.display = 'none';
-                        return;
-                    }
-                    
-                    if (appId) {
-                        let content = `<p>This is the "${appTitle}" application window.</p>`;
-                        if (appId === "notepad") {
-                            content = `<textarea style="width: 98%; height: 90%; border: 1px solid #777; font-family: 'Courier New', monospace; font-size:12px; resize:none;" placeholder="Type something..."></textarea>`;
-                        } else if (appId === "myComputer") {
-                            content = `
-                                <p>Contents of My Computer:</p>
-                                <ul style="list-style-type:none; padding-left:5px;">
-                                    <li><img src="https://win98icons.alexmeub.com/icons/png/drive_3_5-0.png" style="width:16px; vertical-align:middle;"> (A:) Floppy</li>
-                                    <li><img src="https://win98icons.alexmeub.com/icons/png/drive_cd_rom-1.png" style="width:16px; vertical-align:middle;"> (C:) Local Disk</li>
-                                    <li><img src="https://win98icons.alexmeub.com/icons/png/netdrive_world_2-0.png" style="width:16px; vertical-align:middle;"> Network</li>
-                                </ul>`;
-                        } else if (appId === "recycleBin") {
-                             content = `<p>Recycle Bin is empty.</p><img src="https://win98icons.alexmeub.com/icons/png/recycle_bin_empty_cool-0.png" style="width:64px; display:block; margin:10px auto;">`;
-                        }
-                        createWindow(appId, appTitle, content);
-                    }
-                });
-            });
-
-            // Double click for desktop icons
-            document.querySelectorAll('.desktop-icon').forEach(icon => {
-                icon.addEventListener('dblclick', (e) => {
-                     // The single click handler already handles opening,
-                     // but dblclick is the more "classic" interaction for desktop icons.
-                     // If we wanted dblclick ONLY, we'd need to manage click vs dblclick timers.
-                     // For simplicity, we let the click handler do the work.
-                     // This event listener is mostly for semantic correctness.
-                });
-            });
-
-
-            // Pre-open a window for demo
-            // createWindow("welcome", "Welcome!", "<p>Welcome to the Windows 9x JS Demo!</p><p>Try dragging this window, opening apps from the desktop or Start Menu.</p>");
-        });
-    </script>
+    <script src=win-gem/app.js></script>
 </body>
 </html>
