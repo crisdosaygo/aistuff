@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Windows 95 Demo</title>
+  <style>
+    body {
+      margin: 0;
+      background: teal;
+      font-family: 'MS Sans Serif', Arial, sans-serif;
+      font-size: 12px;
+      overflow: hidden;
+    }
+    .desktop {
+      height: calc(100vh - 30px);
+      position: relative;
+    }
+    .desktop-icon {
+      position: absolute;
+      width: 60px;
+      text-align: center;
+      color: white;
+      text-shadow: 1px 1px 0 #000;
+      cursor: pointer;
+      user-select: none;
+    }
+    .desktop-icon img {
+      width: 32px;
+      height: 32px;
+      display: block;
+      margin: 0 auto;
+    }
+    .desktop-icon span {
+      display: block;
+      margin-top: 5px;
+      font-size: 11px;
+    }
+    .taskbar {
+      height: 30px;
+      background: #c0c0c0;
+      border-top: 2px solid #fff;
+      border-bottom: 2px solid #000;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      padding: 2px;
+      box-sizing: border-box;
+    }
+    .start-button {
+      background: #c0c0c0;
+      border: 2px solid;
+      border-color: #fff #000 #000 #fff;
+      padding: 2px 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+    }
+    .start-button:active {
+      border-color: #000 #fff #fff #000;
+    }
+    .start-button img {
+      width: 16px;
+      height: 16px;
+      margin-right: 5px;
+    }
+    .start-menu {
+      position: absolute;
+      bottom: 34px;
+      left: 2px;
+      background: #c0c0c0;
+      border: 2px solid;
+      border-color: #fff #000 #000 #fff;
+      width: 200px;
+      padding: 5px;
+      display: none;
+    }
+    .start-menu ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .start-menu li {
+      padding: 5px;
+      cursor: pointer;
+    }
+    .start-menu li:hover {
+      background: navy;
+      color: white;
+    }
+    .window {
+      position: absolute;
+      background: #c0c0c0;
+      border: 2px solid;
+      border-color: #fff #000 #000 #fff;
+      width: 400px;
+      height: 300px;
+      box-shadow: 1px 1px 0 #000;
+    }
+    .window-titlebar {
+      background: navy;
+      color: white;
+      padding: 2px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: move;
+    }
+    .window-title {
+      font-weight: bold;
+    }
+    .window-buttons button {
+      width: 16px;
+      height: 16px;
+      margin-left: 2px;
+      border: 1px solid;
+      border-color: #fff #000 #000 #fff;
+      background: #c0c0c0;
+      padding: 0;
+      cursor: pointer;
+    }
+    .window-content {
+      padding: 10px;
+      height: calc(100% - 24px);
+      overflow: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="desktop">
+    <div class="desktop-icon" style="top: 10px; left: 10px;" ondblclick="openWindow('My Computer')">
+      <img src="https://win98icons.alexmeub.com/icons/png/computer_explorer-0.png" alt="My Computer">
+      <span>My Computer</span>
+    </div>
+    <div class="desktop-icon" style="top: 80px; left: 10px;" ondblclick="openWindow('Recycle Bin')">
+      <img src="https://win98icons.alexmeub.com/icons/png/recycle_bin_empty-0.png" alt="Recycle Bin">
+      <span>Recycle Bin</span>
+    </div>
+    <div class="window" id="initialWindow">
+      <div class="window-titlebar" onmousedown="startDragging(event, 'initialWindow')">
+        <span class="window-title">My Window</span>
+        <div class="window-buttons">
+          <button onclick="minimizeWindow('initialWindow')">_</button>
+          <button onclick="maximizeWindow('initialWindow')">□</button>
+          <button onclick="closeWindow('initialWindow')">X</button>
+        </div>
+      </div>
+      <div class="window-content">
+        <p>Welcome to the Windows 95 demo!</p>
+        <p>Double-click desktop icons to open new windows.</p>
+      </div>
+    </div>
+  </div>
+  <div class="taskbar">
+    <div class="start-button" onclick="toggleStartMenu()">
+      <img src="https://win98icons.alexmeub.com/icons/png/windows-0.png" alt="Start"> Start
+    </div>
+    <div class="start-menu" id="startMenu">
+      <ul>
+        <li>Programs</li>
+        <li>Documents</li>
+        <li>Settings</li>
+        <li>Help</li>
+        <li>Shut Down</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // Constants and State
+    const startMenu = document.getElementById('startMenu');
+    const desktop = document.querySelector('.desktop');
+    let isDragging = false;
+    let currentX;
+    let currentY;
+    let initialX;
+    let initialY;
+    let activeWindowId = null;
+    let windowCounter = 0;
+
+    // Logic
+    document.addEventListener('mousemove', dragWindow);
+    document.addEventListener('mouseup', stopDragging);
+    initializeWindowPosition('initialWindow');
+
+    // Functions
+    function toggleStartMenu() {
+      startMenu.style.display = startMenu.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function openWindow(title) {
+      windowCounter++;
+      const windowId = `window-${windowCounter}`;
+      const newWindow = document.createElement('div');
+      newWindow.className = 'window';
+      newWindow.id = windowId;
+      newWindow.style.top = `${50 + windowCounter * 20}px`;
+      newWindow.style.left = `${50 + windowCounter * 20}px`;
+      newWindow.innerHTML = `
+        <div class="window-titlebar" onmousedown="startDragging(event, '${windowId}')">
+          <span class="window-title">${title}</span>
+          <div class="window-buttons">
+            <button onclick="minimizeWindow('${windowId}')">_</button>
+            <button onclick="maximizeWindow('${windowId}')">□</button>
+            <button onclick="closeWindow('${windowId}')">X</button>
+          </div>
+        </div>
+        <div class="window-content">
+          <p>This is ${title}.</p>
+          <p>Drag the title bar to move this window.</p>
+        </div>
+      `;
+      desktop.appendChild(newWindow);
+      initializeWindowPosition(windowId);
+    }
+
+    function startDragging(e, windowId) {
+      const windowElement = document.getElementById(windowId);
+      activeWindowId = windowId;
+      initialX = e.clientX - currentX;
+      initialY = e.clientY - currentY;
+      isDragging = true;
+    }
+
+    function dragWindow(e) {
+      if (isDragging && activeWindowId) {
+        e.preventDefault();
+        const windowElement = document.getElementById(activeWindowId);
+        currentX = e.clientX - initialX;
+        currentY = e.clientY - initialY;
+        windowElement.style.left = currentX + 'px';
+        windowElement.style.top = currentY + 'px';
+      }
+    }
+
+    function stopDragging() {
+      isDragging = false;
+      activeWindowId = null;
+    }
+
+    function minimizeWindow(windowId) {
+      const windowElement = document.getElementById(windowId);
+      windowElement.style.display = 'none';
+    }
+
+    function maximizeWindow(windowId) {
+      const windowElement = document.getElementById(windowId);
+      windowElement.style.width = '90%';
+      windowElement.style.height = '80%';
+      windowElement.style.top = '10px';
+      windowElement.style.left = '10px';
+    }
+
+    function closeWindow(windowId) {
+      const windowElement = document.getElementById(windowId);
+      windowElement.style.display = 'none';
+    }
+
+    // Helper Functions
+    function initializeWindowPosition(windowId) {
+      const windowElement = document.getElementById(windowId);
+      currentX = parseInt(windowElement.style.left) || 50;
+      currentY = parseInt(windowElement.style.top) || 50;
+      windowElement.style.left = currentX + 'px';
+      windowElement.style.top = currentY + 'px';
+    }
+  </script>
+</body>
+</html>
