@@ -542,7 +542,7 @@
             netscapeNavigator: {
                 netscape: true,
                 title: "Netscape Navigator", // Or "Netscape", "Explorer"
-                icon: "./netscape-frame.gif", // Classic IE icon
+                icon: "./n2-2.png", // Classic IE icon
                 defaultWidth: 700, // Browser windows are usually larger
                 defaultHeight: 500,
                 // content and init will be handled by the BrowserApp class
