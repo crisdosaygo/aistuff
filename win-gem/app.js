@@ -466,8 +466,8 @@
             // --- Start Menu ---
             startButton.addEventListener('click', (event) => {
                 event.stopPropagation();
-                startMenu.style.display = startMenu.style.display === 'block' ? 'none' : 'block';
-                if (startMenu.style.display === 'block') {
+                startMenu.style.display = startMenu.style.display === 'flex' ? 'none' : 'flex';
+                if (startMenu.style.display === 'flex') {
                     startButton.style.borderStyle = 'inset';
                 } else {
                     startButton.style.borderStyle = 'outset';
@@ -475,7 +475,7 @@
             });
 
             document.addEventListener('click', (event) => {
-                if (startMenu.style.display === 'block' && !startMenu.contains(event.target) && event.target !== startButton && !startButton.contains(event.target)) {
+                if (startMenu.style.display === 'flex' && !startMenu.contains(event.target) && event.target !== startButton && !startButton.contains(event.target)) {
                     startMenu.style.display = 'none';
                     startButton.style.borderStyle = 'outset';
                 }
@@ -578,6 +578,12 @@
 
                 desktop.appendChild(windowEl); // IMPORTANT: Append to DOM before initializing app logic that might need the element
 
+                Object.values(openWindows).forEach(ow => {
+                    if (ow.element) { // Check if element exists (it might if this is not the first window)
+                        ow.element.classList.add('inactive');
+                    }
+                });
+
                 // --- NEW: Store appInstance in newWindowData ---
                 const newWindowData = {
                     element: windowEl,
@@ -598,6 +604,7 @@
                 // Setup standard window controls
                 if (!appDef.isDialog) {
                     makeDraggable(windowEl);
+                    makeResizable(windowEl);
                     addWindowToTaskbar(windowEl, appDef.title, appDef.icon, windowInstanceId);
                     windowEl.querySelector('.window-minimize-btn').addEventListener('click', () => toggleMinimizeWindow(windowEl));
                     windowEl.querySelector('.window-maximize-btn').addEventListener('click', () => toggleMaximizeWindow(windowEl));
@@ -615,6 +622,121 @@
                 return windowEl;
             }
 
+            // New function: makeResizable
+            function makeResizable(element) {
+                const handles = element.querySelectorAll('.resize-handle');
+                let isResizing = false;
+                let currentHandle = null;
+                let startX, startY, startWidth, startHeight, startLeft, startTop;
+
+                const minWidth = parseInt(window.getComputedStyle(element).minWidth) || 150;
+                const minHeight = parseInt(window.getComputedStyle(element).minHeight) || 100;
+
+                handles.forEach(handle => {
+                    handle.addEventListener('mousedown', (e) => {
+                        const windowData = openWindows[element.dataset.instanceId];
+                        if (windowData && windowData.isMaximized) return; // Don't resize if maximized
+
+                        e.stopPropagation(); // Prevent window drag
+                        isResizing = true;
+                        currentHandle = handle;
+                        startX = e.clientX;
+                        startY = e.clientY;
+                        startWidth = element.offsetWidth;
+                        startHeight = element.offsetHeight;
+                        startLeft = element.offsetLeft;
+                        startTop = element.offsetTop;
+
+                        // Bring to front when starting resize
+                        focusWindow(element);
+                        document.body.style.cursor = window.getComputedStyle(currentHandle).cursor; // Set body cursor
+                    });
+                });
+
+                document.addEventListener('mousemove', (e) => {
+                    if (!isResizing || !currentHandle) return;
+                    e.preventDefault();
+
+                    const dx = e.clientX - startX;
+                    const dy = e.clientY - startY;
+
+                    let newWidth = startWidth;
+                    let newHeight = startHeight;
+                    let newLeft = startLeft;
+                    let newTop = startTop;
+
+                    if (currentHandle.classList.contains('resize-handle-e')) {
+                        newWidth = Math.max(minWidth, startWidth + dx);
+                    } else if (currentHandle.classList.contains('resize-handle-w')) {
+                        newWidth = Math.max(minWidth, startWidth - dx);
+                        newLeft = startLeft + dx;
+                        if (newWidth === minWidth) newLeft = startLeft + (startWidth - minWidth);
+                    }
+
+                    if (currentHandle.classList.contains('resize-handle-s')) {
+                        newHeight = Math.max(minHeight, startHeight + dy);
+                    } else if (currentHandle.classList.contains('resize-handle-n')) {
+                        newHeight = Math.max(minHeight, startHeight - dy);
+                        newTop = startTop + dy;
+                        if (newHeight === minHeight) newTop = startTop + (startHeight - minHeight);
+                    }
+
+                    // Corners
+                    if (currentHandle.classList.contains('resize-handle-se')) {
+                        newWidth = Math.max(minWidth, startWidth + dx);
+                        newHeight = Math.max(minHeight, startHeight + dy);
+                    } else if (currentHandle.classList.contains('resize-handle-sw')) {
+                        newWidth = Math.max(minWidth, startWidth - dx);
+                        newHeight = Math.max(minHeight, startHeight + dy);
+                        newLeft = startLeft + dx;
+                        if (newWidth === minWidth) newLeft = startLeft + (startWidth - minWidth);
+                    } else if (currentHandle.classList.contains('resize-handle-ne')) {
+                        newWidth = Math.max(minWidth, startWidth + dx);
+                        newHeight = Math.max(minHeight, startHeight - dy);
+                        newTop = startTop + dy;
+                        if (newHeight === minHeight) newTop = startTop + (startHeight - minHeight);
+                    } else if (currentHandle.classList.contains('resize-handle-nw')) {
+                        newWidth = Math.max(minWidth, startWidth - dx);
+                        newHeight = Math.max(minHeight, startHeight - dy);
+                        newLeft = startLeft + dx;
+                        newTop = startTop + dy;
+                        if (newWidth === minWidth) newLeft = startLeft + (startWidth - minWidth);
+                        if (newHeight === minHeight) newTop = startTop + (startHeight - minHeight);
+                    }
+
+                    // Boundary checks (simple version, against desktop edges)
+                    const desktopRect = desktop.getBoundingClientRect();
+                    if (newLeft < 0) { newWidth += newLeft; newLeft = 0; }
+                    if (newTop < 0) { newHeight += newTop; newTop = 0; }
+                    if (newLeft + newWidth > desktopRect.width) { newWidth = desktopRect.width - newLeft; }
+                    if (newTop + newHeight > desktopRect.height) { newHeight = desktopRect.height - newTop; }
+
+
+                    element.style.width = `${newWidth}px`;
+                    element.style.height = `${newHeight}px`;
+                    element.style.left = `${newLeft}px`;
+                    element.style.top = `${newTop}px`;
+                });
+
+                document.addEventListener('mouseup', () => {
+                    if (isResizing) {
+                        isResizing = false;
+                        currentHandle = null;
+                        document.body.style.cursor = 'default'; // Reset body cursor
+                        // Update originalRect if window was resized (for maximize/restore)
+                        const windowData = openWindows[element.dataset.instanceId];
+                        if (windowData && !windowData.isMaximized) {
+                            windowData.originalRect = {
+                                left: element.style.left,
+                                top: element.style.top,
+                                width: element.style.width,
+                                height: element.style.height,
+                            };
+                        }
+                    }
+                });
+            }
+
             function focusWindow(windowEl) {
                 if (!windowEl || !document.body.contains(windowEl)) return;
 
@@ -622,13 +744,23 @@
                 const windowData = openWindows[instanceId];
                 if (!windowData) return;
 
-
                 if (windowData.isMinimized) {
-                    // If focusing a minimized window (e.g. from taskbar), unminimize it
-                    // toggleMinimizeWindow will call focusWindow again, so return here to avoid double processing
                     toggleMinimizeWindow(windowEl);
                     return;
                 }
+
+                // --- NEW: Manage inactive class ---
+                // Remove 'inactive' from the currently focused window
+                windowEl.classList.remove('inactive');
+
+                // Add 'inactive' to all OTHER windows
+                Object.values(openWindows).forEach(ow => {
+                    if (ow.element && ow.element !== windowEl) {
+                        ow.element.classList.add('inactive');
+                    }
+                });
+                // --- END NEW ---
+
 
                 highestZIndex++;
                 windowEl.style.zIndex = highestZIndex;
@@ -636,7 +768,7 @@
                 document.querySelectorAll('.taskbar-button').forEach(btn => btn.classList.remove('active'));
                 if (windowData.taskbarButton) {
                     windowData.taskbarButton.classList.add('active');
-                    windowData.taskbarButton.classList.remove('minimized'); // Ensure not styled as minimized
+                    windowData.taskbarButton.classList.remove('minimized');
                 }
                 deselectAllDesktopIcons();
             }
@@ -764,36 +896,69 @@
                 if (!windowData || windowData.isMinimized) return; // Don't maximize if minimized
 
                 const maximizeBtn = windowEl.querySelector('.window-maximize-btn');
+                const titleBar = windowEl.querySelector('.window-titlebar'); // Get titleBar reference
 
-                if (windowData.isMaximized) { // Restore
+                if (windowData.isMaximized) { // ---- RESTORE ----
                     if (windowData.originalRect) {
                         windowEl.style.left = windowData.originalRect.left;
                         windowEl.style.top = windowData.originalRect.top;
                         windowEl.style.width = windowData.originalRect.width;
                         windowEl.style.height = windowData.originalRect.height;
+                    } else {
+                        // Fallback: This should ideally not be hit if originalRect is always set.
+                        // This could happen if a window is created, never moved/resized, and then maximized.
+                        // Let's try to get its initial computed size or a reasonable default.
+                        const initialWidth = windowEl.style.width || `${windowEl.offsetWidth}px`;
+                        const initialHeight = windowEl.style.height || `${windowEl.offsetHeight}px`;
+                        const initialLeft = windowEl.style.left || `${(desktop.clientWidth - parseInt(initialWidth)) / 2}px`;
+                        const initialTop = windowEl.style.top || `${(desktop.clientHeight - parseInt(initialHeight)) / 3}px`;
+
+                        windowEl.style.left = initialLeft;
+                        windowEl.style.top = initialTop;
+                        windowEl.style.width = initialWidth;
+                        windowEl.style.height = initialHeight;
+                        console.warn("Restoring window without originalRect, using current/default dimensions.", windowEl);
                     }
+
                     windowData.isMaximized = false;
                     windowEl.classList.remove('maximized');
-                    maximizeBtn.textContent = '1'; // Maximize symbol
+                    maximizeBtn.textContent = '1'; // Maximize symbol (Marlett)
                     maximizeBtn.title = 'Maximize';
-                    titleBar.style.cursor = 'grab';
-                } else { // Maximize
-                    windowData.originalRect = {
-                        left: windowEl.style.left,
-                        top: windowEl.style.top,
-                        width: windowEl.style.width || `${windowEl.offsetWidth}px`,
-                        height: windowEl.style.height || `${windowEl.offsetHeight}px`
-                    };
+                    titleBar.style.cursor = 'grab'; // Restore draggable cursor
+
+                } else { // ---- MAXIMIZE ----
+                    // Store current dimensions in originalRect IF NOT ALREADY SET by drag/resize.
+                    // If originalRect exists, it means the user has already positioned/sized it,
+                    // so we want to preserve that specific state for the next restore.
+                    // If it doesn't exist, or if the window hasn't been manually changed from its initial spawn state,
+                    // then capture the current state.
+                    if (!windowData.originalRect ||
+                        (windowData.originalRect.left === windowEl.style.left &&
+                         windowData.originalRect.top === windowEl.style.top &&
+                         windowData.originalRect.width === (windowEl.style.width || `${windowEl.offsetWidth}px`) &&
+                         windowData.originalRect.height === (windowEl.style.height || `${windowEl.offsetHeight}px`))) {
+                        // If originalRect is not set, or if it matches the current state (meaning no drag/resize happened since last originalRect set)
+                        // then update originalRect to the current state before maximizing.
+                        windowData.originalRect = {
+                            left: windowEl.style.left,
+                            top: windowEl.style.top,
+                            width: windowEl.style.width || `${windowEl.offsetWidth}px`, // Use current style or offsetWidth
+                            height: windowEl.style.height || `${windowEl.offsetHeight}px` // Use current style or offsetHeight
+                        };
+                    }
+                    // If windowData.originalRect was already set by a previous drag/resize, we *don't* overwrite it here.
+                    // We want to restore to *that specific user-defined size/position*.
+
                     windowEl.style.left = '0px';
                     windowEl.style.top = '0px';
                     windowEl.style.width = `${desktop.clientWidth}px`;
                     windowEl.style.height = `${desktop.clientHeight}px`;
+
                     windowData.isMaximized = true;
                     windowEl.classList.add('maximized');
-                    maximizeBtn.textContent = '2'; // Restore symbol
+                    maximizeBtn.textContent = '2'; // Restore symbol (Marlett)
                     maximizeBtn.title = 'Restore';
-                    const titleBar = windowEl.querySelector('.window-titlebar');
-                    titleBar.style.cursor = 'default';
+                    titleBar.style.cursor = 'default'; // Non-draggable cursor when maximized
                 }
                 focusWindow(windowEl);
             }

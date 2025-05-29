@@ -133,6 +133,41 @@
             color: #808080;
         }
 
+        /* Modify existing .start-menu and add new styles */
+        .start-menu {
+            /* ... existing styles ... */
+            display: none; /* Keep this */
+            flex-direction: row; /* Changed for sidebar layout */
+            width: auto; /* Let content determine width initially, or set a new combined width */
+            /* padding: 0; /* Remove padding if sidebar handles it */
+        }
+
+        .start-menu-sidebar {
+            background-color: #000080; /* Dark Blue */
+            color: white;
+            padding: 10px 5px;
+            writing-mode: vertical-rl; /* Rotate text */
+            text-orientation: mixed;
+            transform: rotate(180deg); /* Correct orientation after vertical-rl */
+            font-weight: bold;
+            font-size: 16px; /* Adjust as needed */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-right: 2px outset #dfdfdf; /* 3D effect */
+            min-width: 25px; /* Ensure it has some width */
+        }
+        .start-menu-sidebar-text {
+            white-space: nowrap; /* Prevent text from wrapping */
+        }
+
+        .start-menu-items-container {
+            background-color: #c0c0c0; /* Original start menu background */
+            padding: 2px; /* Original start menu padding */
+            width: 180px; /* Original width of items area, adjust if needed */
+            display: flex;
+            flex-direction: column;
+        }
 
         .taskbar-windows {
             display: flex;
@@ -224,6 +259,21 @@
             text-overflow: ellipsis;
             flex-grow: 1; /* Allow title to take available space */
         }
+        .window.inactive .window-titlebar {
+            background-color: #808080; /* Gray for inactive title bar */
+            /* Or a lighter blue: background-color: #A0C5E5; */
+        }
+        .window.inactive .window-titlebar-icon {
+            opacity: 0.7; /* Slightly fade icon */
+        }
+        .window.inactive .window-title {
+            color: #D3D3D3; /* Lighter text color if desired */
+        }
+
+        /* Ensure the default .window-titlebar is the active color */
+        .window-titlebar {
+            background-color: #000080; /* Dark Blue - Active state */
+        }
 
         .window-controls button {
             background-color: #c0c0c0;
@@ -268,6 +318,25 @@
         }
         .win95-button:active {
             border-style: inset;
+        }
+
+        /* Add these styles for resize handles */
+        .resize-handle {
+            position: absolute;
+            /* For debugging, make them visible: background: rgba(255,0,0,0.2); */
+        }
+        .resize-handle-n { top: -3px; left: 5px; right: 5px; height: 6px; cursor: n-resize; }
+        .resize-handle-ne { top: -3px; right: -3px; width: 6px; height: 6px; cursor: ne-resize; }
+        .resize-handle-e { top: 5px; bottom: 5px; right: -3px; width: 6px; cursor: e-resize; }
+        .resize-handle-se { bottom: -3px; right: -3px; width: 6px; height: 6px; cursor: se-resize; }
+        .resize-handle-s { bottom: -3px; left: 5px; right: 5px; height: 6px; cursor: s-resize; }
+        .resize-handle-sw { bottom: -3px; left: -3px; width: 6px; height: 6px; cursor: sw-resize; }
+        .resize-handle-w { top: 5px; bottom: 5px; left: -3px; width: 6px; cursor: w-resize; }
+        .resize-handle-nw { top: -3px; left: -3px; width: 6px; height: 6px; cursor: nw-resize; }
+
+        /* Hide resize handles when window is maximized */
+        .window.maximized .resize-handle {
+            display: none;
         }
 
         /* ===== BROWSER UI STYLES ===== */
@@ -416,33 +485,35 @@
     </div>
 
     <div class="start-menu" id="startMenu">
-        <div class="start-menu-item" data-app-id="notepad">
-            <img src="https://win98icons.alexmeub.com/icons/png/notepad-0.png" class="start-menu-icon" alt=""> Notepad
+        <div class="start-menu-sidebar">
+            <span class="start-menu-sidebar-text">Windows 9x</span>
         </div>
-        <div class="start-menu-item" data-app-id="calculator">
-            <img src="https://win98icons.alexmeub.com/icons/png/calculator-0.png" class="start-menu-icon" alt=""> Calculator
-        </div>
-        <div class="start-menu-item" data-app-id="myComputer">
-            <img src="https://win98icons.alexmeub.com/icons/png/computer_explorer-0.png" class="start-menu-icon" alt=""> My Computer
-        </div>
-        <!-- !!! ADD THIS ITEM TO THE START MENU !!! -->
-        <div class="start-menu-item" data-app-id="internetBrowser">
-            <img src="https://win98icons.alexmeub.com/icons/png/msie2-0.png" class="start-menu-icon" alt=""> Internet Browser
-        </div>
-
-        <div class="start-menu-separator"></div>
-        <div class="start-menu-item disabled">
-            <img src="https://win98icons.alexmeub.com/icons/png/settings_gear-0.png" class="start-menu-icon" alt=""> Settings
-        </div>
-        <div class="start-menu-item disabled">
-            <img src="https://win98icons.alexmeub.com/icons/png/help_book_cool-0.png" class="start-menu-icon" alt=""> Help
-        </div>
-        <div class="start-menu-separator"></div>
-        <div class="start-menu-item" id="shutdownButtonTrigger">
-            <img src="https://win98icons.alexmeub.com/icons/png/shut_down_cool-0.png" class="start-menu-icon" alt=""> Shut Down...
+        <div class="start-menu-items-container"> <!-- New container for the actual items -->
+            <div class="start-menu-item" data-app-id="notepad">
+                <img src="https://win98icons.alexmeub.com/icons/png/notepad-0.png" class="start-menu-icon" alt=""> Notepad
+            </div>
+            <div class="start-menu-item" data-app-id="calculator">
+                <img src="https://win98icons.alexmeub.com/icons/png/calculator-0.png" class="start-menu-icon" alt=""> Calculator
+            </div>
+            <div class="start-menu-item" data-app-id="myComputer">
+                <img src="https://win98icons.alexmeub.com/icons/png/computer_explorer-0.png" class="start-menu-icon" alt=""> My Computer
+            </div>
+            <div class="start-menu-item" data-app-id="internetBrowser">
+                <img src="https://win98icons.alexmeub.com/icons/png/msie2-0.png" class="start-menu-icon" alt=""> Internet Browser
+            </div>
+            <div class="start-menu-separator"></div>
+            <div class="start-menu-item disabled">
+                <img src="https://win98icons.alexmeub.com/icons/png/settings_gear-0.png" class="start-menu-icon" alt=""> Settings
+            </div>
+            <div class="start-menu-item disabled">
+                <img src="https://win98icons.alexmeub.com/icons/png/help_book_cool-0.png" class="start-menu-icon" alt=""> Help
+            </div>
+            <div class="start-menu-separator"></div>
+            <div class="start-menu-item" id="shutdownButtonTrigger">
+                <img src="https://win98icons.alexmeub.com/icons/png/shut_down_cool-0.png" class="start-menu-icon" alt=""> Shut Down...
+            </div>
         </div>
     </div>
-
     <div class="taskbar">
         <button class="start-button" id="startButton">
             <img src="https://win98icons.alexmeub.com/icons/png/windows-0.png" alt="Start">
@@ -454,24 +525,31 @@
         <div class="clock" id="clock"></div>
     </div>
 
-    <!-- Window Template (MODIFIED) -->
     <template id="windowTemplate">
         <div class="window">
             <div class="window-titlebar">
                 <img class="window-titlebar-icon" src="" alt="" width="16" height="16">
                 <span class="window-title">Window</span>
                 <div class="window-controls">
-                    <button class="window-minimize-btn" title="Minimize">0</button> <!-- Marlett: 0 -->
-                    <button class="window-maximize-btn" title="Maximize">1</button> <!-- Marlett: 1 (maximize), 2 (restore) -->
-                    <button class="window-close-btn" title="Close">r</button>    <!-- Marlett: r -->
+                    <button class="window-minimize-btn" title="Minimize">0</button>
+                    <button class="window-maximize-btn" title="Maximize">1</button>
+                    <button class="window-close-btn" title="Close">r</button>
                 </div>
             </div>
             <div class="window-content">
                 <!-- Content will be injected here -->
             </div>
+            <!-- !!! RESIZE HANDLES !!! -->
+            <div class="resize-handle resize-handle-n"></div>
+            <div class="resize-handle resize-handle-ne"></div>
+            <div class="resize-handle resize-handle-e"></div>
+            <div class="resize-handle resize-handle-se"></div>
+            <div class="resize-handle resize-handle-s"></div>
+            <div class="resize-handle resize-handle-sw"></div>
+            <div class="resize-handle resize-handle-w"></div>
+            <div class="resize-handle resize-handle-nw"></div>
         </div>
     </template>
-
     <script src=win-gem/app.js></script>
 </body>
 </html>
