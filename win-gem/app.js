@@ -584,15 +584,19 @@
                     }
                 });
 
-                // --- NEW: Store appInstance in newWindowData ---
                 const newWindowData = {
                     element: windowEl,
                     taskbarButton: null,
                     appId: appId,
-                    originalRect: null,
+                    originalRect: { // <<<< SET INITIAL originalRect HERE
+                        left: windowEl.style.left,
+                        top: windowEl.style.top,
+                        width: windowEl.style.width,
+                        height: windowEl.style.height
+                    },
                     isMinimized: false,
                     isMaximized: false,
-                    appInstance: null // To store the app's class instance (e.g., BrowserApp)
+                    appInstance: null
                 };
                 openWindows[windowInstanceId] = newWindowData;
 
