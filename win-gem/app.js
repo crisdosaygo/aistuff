@@ -1,7 +1,8 @@
 // windows awesome
       // ===== BROWSER_APP.JS (or inline section) =====
         class BrowserApp {
-            constructor(windowEl, windowInstanceId, webviewId) {
+            constructor(windowEl, windowInstanceId, webviewId, netscape) {
+                this.netscape = netscape;
                 this.windowEl = windowEl;
                 this.windowInstanceId = windowInstanceId;
                 this.webviewId = webviewId; // The ID for the <browser-webview> element
@@ -14,8 +15,8 @@
                 this.homeUrl = "https://www.google.com"; // Example home page
 
                 // URLs for throbber states
-                this.throbberAnimatedSrc = "./netscape.gif"; // Replace with your chosen animated GIF
-                this.throbberStaticSrc = "./netscape-frame.gif"; // Replace with a static version if you have one, or leave empty to just hide
+                this.throbberAnimatedSrc = !netscape ? "" : "./netscape.gif"; // Replace with your chosen animated GIF
+                this.throbberStaticSrc = !netscape ? "" : "./netscape-frame.gif"; // Replace with a static version if you have one, or leave empty to just hide
 
                 this.ui = {
                     navButtons: {
@@ -49,7 +50,7 @@
                             <button data-action="stop" title="Stop">✕ Stop</button>
                             <button data-action="reload" title="Reload">↻ Reload</button>
                             <button data-action="home" title="Home">⌂ Home</button>
-                            <img src="" alt="Loading" class="browser-throbber" style="display: none;"> <!-- THRobber ADDED HERE -->
+                            <img src="" alt="${this.netscape ? 'Loading' : ''}" class="browser-throbber" style="display: none;"> <!-- THRobber ADDED HERE -->
                           </div>
                         </div>
                         <div class="browser-address-toolbar">
@@ -239,7 +240,7 @@
                 this.ui.navButtons.stop.disabled = false;
 
                 // --- THRobber START ---
-                if (this.ui.throbber) { // Check if throbber element exists
+                if (this.ui.throbber && this.netscape) { // Check if throbber element exists
                     this.ui.throbber.src = this.throbberAnimatedSrc;
                     this.ui.throbber.style.display = 'block';
                 }
@@ -288,7 +289,7 @@
 
                     // --- THRobber STOP ---
                     if (this.ui.throbber) {
-                        if (this.throbberStaticSrc) {
+                        if (this.throbberStaticSrc && this.netscape) {
                             this.ui.throbber.src = this.throbberStaticSrc;
                             // Keep display: 'block' if using a static image
                         } else {
@@ -309,7 +310,7 @@
                 this.ui.navButtons.stop.disabled = false;
 
                 // --- THRobber START ---
-                if (this.ui.throbber) {
+                if (this.ui.throbber && this.netscape) {
                     this.ui.throbber.src = this.throbberAnimatedSrc;
                     this.ui.throbber.style.display = 'block';
                 }
@@ -345,7 +346,7 @@
 
                     // --- THRobber STOP ---
                     if (this.ui.throbber) {
-                        if (this.throbberStaticSrc) {
+                        if (this.throbberStaticSrc && this.netscape) {
                             this.ui.throbber.src = this.throbberStaticSrc;
                         } else {
                             this.ui.throbber.style.display = 'none';
@@ -521,7 +522,34 @@
                 // We'll call a static method to get HTML and then an init method
                 generateContent: (windowInstanceId, webviewId) => BrowserApp.generateInitialHTML(webviewId),
                 initApp: (windowEl, windowInstanceId, webviewId) => {
+                    return new BrowserApp(windowEl, windowInstanceId, webviewId, true);
+                }
+            },
+
+            internetExplorer: {
+                title: "Internet Explorer", // Or "Netscape", "Explorer"
+                icon: "https://win98icons.alexmeub.com/icons/png/msie2-0.png", // Classic IE icon
+                defaultWidth: 700, // Browser windows are usually larger
+                defaultHeight: 500,
+                // content and init will be handled by the BrowserApp class
+                // We'll call a static method to get HTML and then an init method
+                generateContent: (windowInstanceId, webviewId) => BrowserApp.generateInitialHTML(webviewId),
+                initApp: (windowEl, windowInstanceId, webviewId) => {
                     return new BrowserApp(windowEl, windowInstanceId, webviewId);
+                }
+            },
+
+            netscapeNavigator: {
+                netscape: true,
+                title: "Netscape Navigator", // Or "Netscape", "Explorer"
+                icon: "./netscape-frame.gif", // Classic IE icon
+                defaultWidth: 700, // Browser windows are usually larger
+                defaultHeight: 500,
+                // content and init will be handled by the BrowserApp class
+                // We'll call a static method to get HTML and then an init method
+                generateContent: (windowInstanceId, webviewId) => BrowserApp.generateInitialHTML(webviewId),
+                initApp: (windowEl, windowInstanceId, webviewId) => {
+                    return new BrowserApp(windowEl, windowInstanceId, webviewId, true);
                 }
             },
         };
