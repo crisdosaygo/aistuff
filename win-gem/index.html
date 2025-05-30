@@ -16,32 +16,16 @@
         }
 
         .desktop {
-            /* REMOVE these flex properties:
-            display: flex;
-            flex-direction: column;
-            flex-wrap: wrap;
-            align-content: flex-start;
-            */
-            position: relative; /* ADD THIS: For absolute positioning of icons */
-            /* Keep other .desktop styles: */
-            /* position: absolute; /* This was already there for desktop itself */
+            position: absolute;
             top: 0;
             left: 0;
             right: 0;
             bottom: 30px; /* Space for taskbar */
             padding: 10px;
-        }
-
-        .desktop-icon {
-            position: absolute; /* ADD THIS: CRITICAL for dragging */
-            width: 75px;
-            /* margin: 10px; /* You might remove or adjust margin if using absolute left/top */
-            text-align: center;
-            color: white;
-            cursor: pointer;
-            padding: 5px;
-            user-select: none; /* Good for draggable items */
-            z-index: 1; /* Default z-index */
+            display: flex;
+            flex-direction: column;
+            flex-wrap: wrap;
+            align-content: flex-start; /* Align icons to the left */
         }
         /* Add :focus style for desktop for visual feedback when it has keyboard focus */
         .desktop:focus {
@@ -51,6 +35,16 @@
             /* Script handles .keyboard-focused on items, this is for the container itself */
         }
 
+
+        .desktop-icon {
+            width: 75px;
+            margin: 10px;
+            text-align: center;
+            color: white;
+            cursor: pointer;
+            padding: 5px;
+            /* Ensure icons don't get a default browser outline if script handles focus */
+        }
         .desktop-icon:focus { 
             outline: none;
         }
