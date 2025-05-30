@@ -9,7 +9,7 @@
                 this.webviewEl = this.windowEl.querySelector(`#${this.webviewId}`); // This is <browser-webview>
 
                 this.defaultUrl = "about:blank";
-                this.homeUrl = netscape ? "https://live.oldinternettoday.com/ घे हान जख्म ह्या सुखाचा/" : "https://www.google.com";
+                this.homeUrl = netscape ? "" : "https://www.google.com";
 
                 this.throbberAnimatedSrc = !netscape ? "" : "./netscape.gif";
                 this.throbberStaticSrc = !netscape ? "" : "./netscape-frame.gif";
@@ -58,9 +58,6 @@
                         <div class="browser-tab-bar">
                             <button class="browser-new-tab-btn" title="New Tab">+</button>
                         </div>
-                        <browser-webview id="${webviewId}" style="flex-grow: 1; background: #fff; border: 1px solid grey; min-height: 100px;">
-                            <!-- Content will be managed by BrowserWebview component -->
-                        </browser-webview>
                     </div>
                 `;
             }

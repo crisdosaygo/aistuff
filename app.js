@@ -1,3 +1,5 @@
+import {BrowserWebview} from './webview.js';
+
 // windows awesome
       // ===== BROWSER_APP.JS (or inline section) =====
         class BrowserApp {

@@ -93,7 +93,7 @@ class Communication {
     }
 }
 
-class BrowserWebview extends HTMLElement {
+export class BrowserWebview extends HTMLElement {
     #tabs = new Map(); // Map<tabId, { url, title, history, historyIndex, loading, iframe (shared) }>
     #activeTabId = null;
     #iframeOrigin = '*'; // Set to specific origin in production
