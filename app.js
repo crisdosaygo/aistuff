@@ -86,9 +86,9 @@ import {BrowserApp} from './browser.js';
       // Add this to your existing APP_DEFINITIONS object
 
       internetBrowser: { // This one is generic, let's ensure it can be IE-like
-          netscape: false, // Default to IE like
+          netscape: true, // Default to IE like
           title: "Internet Browser",
-          icon: "https://win98icons.alexmeub.com/icons/png/msie2-0.png",
+          icon: "https://win98icons.alexmeub.com/icons/png/search_web-0.png",
           defaultWidth: 700,
           defaultHeight: 500,
           generateContent: (windowInstanceId, webviewId) => BrowserApp.generateInitialHTML(webviewId),
