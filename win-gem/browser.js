@@ -2,21 +2,10 @@
 
 import { BrowserWebview } from './webview.js';
 
-// Assuming APP_DEFINITIONS is globally available from your main app.js
-// If not, you'd need to pass necessary configuration (like default titles)
-// into the BrowserApp constructor.
-// Example:
-// if (typeof APP_DEFINITIONS === 'undefined') {
-//     globalThis.APP_DEFINITIONS = { // Minimal fallback
-//         internetExplorer: { title: "Internet Explorer" },
-//         netscapeNavigator: { title: "Netscape Navigator" } // or just use hardcoded strings
-//     };
-// }
-
-
 export class BrowserApp {
-    constructor(windowEl, windowInstanceId, webviewId, netscape) {
+    constructor(windowEl, windowInstanceId, webviewId, netscape, appDef) {
         this.netscape = netscape;
+        this.appDef = appDef;
         this.windowEl = windowEl;
         this.windowInstanceId = windowInstanceId;
         this.webviewId = webviewId;
@@ -24,7 +13,7 @@ export class BrowserApp {
 
         this.defaultUrl = "about:blank";
         // Restored Netscape home URL and standard Google for IE-like
-        this.homeUrl = netscape ? "https://live.oldinternettoday.com/ घे हान जख्म ह्या सुखाचा/" : "https://www.google.com";
+        this.homeUrl = netscape ? "" : "https://www.google.com";
 
 
         this.throbberAnimatedSrc = !netscape ? "" : "./netscape.gif"; // Ensure this path is correct
@@ -132,8 +121,8 @@ export class BrowserApp {
         if (activeTab) {
             this.ui.addressBar.value = activeTab.url;
             const windowTitleBar = this.windowEl.querySelector('.window-title');
-            const baseTitle = this.netscape ? (APP_DEFINITIONS?.netscapeNavigator?.title || 'Netscape Navigator') 
-                                           : (APP_DEFINITIONS?.internetExplorer?.title || 'Internet Explorer');
+            const baseTitle = this.netscape ? (this.appDef.title || 'Netscape Navigator') 
+                                           : (this.appDef.title || 'Internet Explorer');
             if(windowTitleBar) windowTitleBar.textContent = `${activeTab.title} - ${baseTitle}`;
 
             if (activeTab.url === 'about:blank' || activeTab.url === '' || activeTab.url === 'about:error') {
@@ -170,8 +159,8 @@ export class BrowserApp {
         
         const windowTitleBar = this.windowEl.querySelector('.window-title');
         if(windowTitleBar) {
-            const baseTitle = this.netscape ? (APP_DEFINITIONS?.netscapeNavigator?.title || 'Netscape Navigator') 
-                                           : (APP_DEFINITIONS?.internetExplorer?.title || 'Internet Explorer');
+            const baseTitle = this.netscape ? (this.appDef.title || 'Netscape Navigator') 
+                                           : (this.appDef.title || 'Internet Explorer');
             if (detail.title) {
                 windowTitleBar.textContent = `${detail.title} - ${baseTitle}`;
             } else {
@@ -229,8 +218,8 @@ export class BrowserApp {
             this._updateNavButtonStates();
             const windowTitleBar = this.windowEl.querySelector('.window-title');
             if(windowTitleBar) {
-                const baseTitle = this.netscape ? (APP_DEFINITIONS?.netscapeNavigator?.title || 'Netscape Navigator') 
-                                               : (APP_DEFINITIONS?.internetExplorer?.title || 'Internet Explorer');
+              const baseTitle = this.netscape ? (this.appDef.title || 'Netscape Navigator') 
+                                             : (this.appDef.title || 'Internet Explorer');
                 windowTitleBar.textContent = `${detail.title} - ${baseTitle}`;
             }
         }

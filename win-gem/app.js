@@ -93,7 +93,7 @@ import {BrowserApp} from './browser.js';
           defaultHeight: 500,
           generateContent: (windowInstanceId, webviewId) => BrowserApp.generateInitialHTML(webviewId),
           initApp: (windowEl, windowInstanceId, webviewId, appDefinition) => { // Pass appDefinition
-              return new BrowserApp(windowEl, windowInstanceId, webviewId, appDefinition.netscape);
+              return new BrowserApp(windowEl, windowInstanceId, webviewId, appDefinition.netscape, appDefinition);
           }
       },
       internetExplorer: {
@@ -104,7 +104,7 @@ import {BrowserApp} from './browser.js';
           defaultHeight: 500,
           generateContent: (windowInstanceId, webviewId) => BrowserApp.generateInitialHTML(webviewId),
           initApp: (windowEl, windowInstanceId, webviewId, appDefinition) => {
-              return new BrowserApp(windowEl, windowInstanceId, webviewId, appDefinition.netscape);
+              return new BrowserApp(windowEl, windowInstanceId, webviewId, appDefinition.netscape, appDefinition);
           }
       },
       netscapeNavigator: {
@@ -115,7 +115,7 @@ import {BrowserApp} from './browser.js';
           defaultHeight: 500,
           generateContent: (windowInstanceId, webviewId) => BrowserApp.generateInitialHTML(webviewId),
           initApp: (windowEl, windowInstanceId, webviewId, appDefinition) => {
-              return new BrowserApp(windowEl, windowInstanceId, webviewId, appDefinition.netscape);
+              return new BrowserApp(windowEl, windowInstanceId, webviewId, appDefinition.netscape, appDefinition);
           }
       },
   };
