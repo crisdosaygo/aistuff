@@ -1,7 +1,606 @@
-<ul>
-  <li><a href=edges>Edges</a>
-  <li><a href=tetris>Tetris</a>
-  <li><a href=win-gem>Win (Gemini 2.5 Pro)</a>
-  <li><a href=win-grok>Win (Grok)</a>
-  <li><a href=win-chatgpt>Win (ChatGPT)</a>
-</ul>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windows 98&frac12;</title>
+    <link rel=icon href="https://win98icons.alexmeub.com/icons/png/internet_connection_wiz-0.png">
+    <style>
+        body {
+            background-color: #008080; /* Classic Teal */
+            font-family: "MS Sans Serif", "Tahoma", Arial, sans-serif;
+            font-size: 12px;
+            margin: 0;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .desktop {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 30px; /* Space for taskbar */
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            flex-wrap: wrap;
+            align-content: flex-start; /* Align icons to the left */
+        }
+
+        .desktop-icon {
+            width: 75px;
+            margin: 10px;
+            text-align: center;
+            color: white;
+            cursor: pointer;
+            padding: 5px;
+        }
+        .desktop-icon:hover {
+            background-color: rgba(0, 0, 128, 0.5); /* Dark blue transparent */
+            outline: 1px dotted white;
+        }
+        .desktop-icon img {
+            width: 32px;
+            height: 32px;
+            display: block;
+            margin: 0 auto 5px auto;
+        }
+        .desktop-icon.selected {
+            background-color: rgba(0, 0, 128, 0.7); /* Darker selection */
+            outline: 1px dotted white;
+        }
+        .desktop-icon.selected span {
+            background-color: #000080; /* Opaque background for text */
+            color: white; /* Ensure text is visible */
+            padding: 1px 2px;
+        }
+
+
+        .taskbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            background-color: #c0c0c0; /* Classic Gray */
+            border-top: 2px solid #ffffff;
+            display: flex;
+            align-items: center;
+            padding: 0 5px;
+            z-index: 10000; /* Always on top */
+        }
+
+        .start-button {
+            background-color: #c0c0c0;
+            border: 2px outset #dfdfdf;
+            padding: 2px 10px;
+            margin-right: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+        .start-button:active {
+            border-style: inset;
+        }
+        .start-button img {
+            width: 16px;
+            height: 16px;
+            margin-right: 5px;
+        }
+
+        .start-menu {
+            position: absolute;
+            bottom: 30px; /* Above taskbar */
+            left: 0;
+            width: 200px; /* Slightly wider for icons */
+            background-color: #c0c0c0;
+            border: 2px outset #dfdfdf;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+            padding: 2px;
+            display: none; /* Hidden by default */
+            z-index: 9999;
+        }
+        .start-menu-item {
+            padding: 5px 10px 5px 5px; /* Adjusted padding */
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .start-menu-item:hover {
+            background-color: #000080; /* Dark Blue */
+            color: white;
+        }
+        .start-menu-icon {
+            width: 20px; /* Slightly larger for start menu */
+            height: 20px;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        .start-menu-separator {
+            height: 1px;
+            background-color: #808080;
+            margin: 2px 0;
+            border-bottom: 1px solid #ffffff;
+        }
+        .start-menu-item.disabled {
+            color: #808080;
+            cursor: default;
+        }
+        .start-menu-item.disabled:hover {
+            background-color: #c0c0c0;
+            color: #808080;
+        }
+
+        /* Modify existing .start-menu and add new styles */
+        .start-menu {
+            /* ... existing styles ... */
+            display: none; /* Keep this */
+            flex-direction: row; /* Changed for sidebar layout */
+            width: auto; /* Let content determine width initially, or set a new combined width */
+            /* padding: 0; /* Remove padding if sidebar handles it */
+        }
+
+        .start-menu-sidebar {
+            background-color: #000080; /* Dark Blue */
+            color: white;
+            padding: 10px 5px;
+            writing-mode: vertical-lr; /* Rotate text */
+            text-orientation: mixed;
+            transform: rotate(180deg); /* Correct orientation after vertical-rl */
+            font-weight: bold;
+            font-size: 16px; /* Adjust as needed */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-right: 2px outset #dfdfdf; /* 3D effect */
+            min-width: 25px; /* Ensure it has some width */
+        }
+        .start-menu-sidebar .and-half {
+          display: inline-block;
+          transform:rotate(90deg);
+        }
+        .start-menu-sidebar-text {
+            white-space: nowrap; /* Prevent text from wrapping */
+        }
+
+        .start-menu-items-container {
+            background-color: #c0c0c0; /* Original start menu background */
+            padding: 2px; /* Original start menu padding */
+            width: 180px; /* Original width of items area, adjust if needed */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .taskbar-windows {
+            display: flex;
+            flex-grow: 1;
+            margin: 0 5px;
+            overflow: hidden;
+        }
+        .taskbar-button {
+            background-color: #c0c0c0;
+            border: 2px outset #dfdfdf;
+            padding: 1px 5px; /* Adjusted padding */
+            margin-right: 3px;
+            font-size: 11px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 150px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            height: 22px; /* Consistent height */
+            box-sizing: border-box;
+        }
+        .taskbar-button.active {
+            border-style: inset;
+            font-weight: bold;
+        }
+        .taskbar-button img {
+            width: 16px;
+            height: 16px;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+        .taskbar-button.minimized {
+            opacity: 0.9; /* Slightly different look for minimized */
+            /* border-style: outset; /* Keep it looking like a button */
+        }
+
+
+        .clock {
+            border: 1px inset #808080;
+            padding: 3px 8px;
+            margin-left: auto; /* Pushes to the right */
+            font-size: 11px;
+            min-width: 60px;
+            text-align: center;
+            height: 20px; /* Consistent height */
+            line-height: 12px; /* box height - 2 * border - 2 * padding (top/bottom) = 20 - 2 - 6 */
+            box-sizing: border-box;
+        }
+
+        /* Window Styling */
+        .window {
+            position: absolute;
+            background-color: #c0c0c0;
+            border: 2px outset #dfdfdf;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            min-width: 200px;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Prevent content from breaking out during resize */
+        }
+
+        .window-titlebar {
+            background-color: #000080; /* Dark Blue */
+            color: white;
+            padding: 3px 5px;
+            font-weight: bold;
+            cursor: grab;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 20px; /* Consistent height */
+            box-sizing: border-box;
+        }
+        .window-titlebar:active {
+            cursor: grabbing;
+        }
+        .window-titlebar-icon {
+            margin-right: 5px;
+            vertical-align: middle; /* Or top, adjust as needed */
+            width: 16px;
+            height: 16px;
+        }
+        .window-title {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-grow: 1; /* Allow title to take available space */
+        }
+        .window.inactive .window-titlebar {
+            background-color: #808080; /* Gray for inactive title bar */
+            /* Or a lighter blue: background-color: #A0C5E5; */
+        }
+        .window.inactive .window-titlebar-icon {
+            opacity: 0.7; /* Slightly fade icon */
+        }
+        .window.inactive .window-title {
+            color: #D3D3D3; /* Lighter text color if desired */
+        }
+
+        /* Ensure the default .window-titlebar is the active color */
+        .window-titlebar {
+            background-color: #000080; /* Dark Blue - Active state */
+        }
+
+        .window-controls button {
+            background-color: #c0c0c0;
+            border: 1px outset #dfdfdf;
+            color: black;
+            font-family: "Marlett", "Webdings"; /* For symbols, Marlett is classic */
+            font-size: 10px; /* Adjust if symbols are too big/small */
+            width: 16px;
+            height: 14px;
+            line-height: 10px; /* Center symbol */
+            padding: 0;
+            margin-left: 2px;
+            cursor: pointer;
+        }
+        .window-controls button:active {
+            border-style: inset;
+        }
+
+        .window-content {
+            padding: 0; /* Remove padding, content itself should manage it */
+            background-color: #ffffff; /* White content area */
+            flex-grow: 1;
+            margin: 3px;
+            border: 1px inset #808080;
+            overflow: auto; /* Add scrollbars if content overflows */
+            display: flex; /* For content that wants to fill height */
+            flex-direction: column; /* For content that wants to fill height */
+        }
+
+        .window.maximized .window-titlebar {
+            cursor: default; /* No dragging when maximized */
+        }
+
+        /* For the shutdown dialog buttons */
+        .win95-button {
+            background-color: #c0c0c0;
+            border: 2px outset #dfdfdf;
+            padding: 5px 15px;
+            margin: 0 5px;
+            min-width: 70px;
+            cursor: pointer;
+        }
+        .win95-button:active {
+            border-style: inset;
+        }
+
+        /* Add these styles for resize handles */
+        .resize-handle {
+            position: absolute;
+            /* For debugging, make them visible: background: rgba(255,0,0,0.2); */
+        }
+        .resize-handle-n { top: -3px; left: 5px; right: 5px; height: 6px; cursor: n-resize; }
+        .resize-handle-ne { top: -3px; right: -3px; width: 6px; height: 6px; cursor: ne-resize; }
+        .resize-handle-e { top: 5px; bottom: 5px; right: -3px; width: 6px; cursor: e-resize; }
+        .resize-handle-se { bottom: -3px; right: -3px; width: 6px; height: 6px; cursor: se-resize; }
+        .resize-handle-s { bottom: -3px; left: 5px; right: 5px; height: 6px; cursor: s-resize; }
+        .resize-handle-sw { bottom: -3px; left: -3px; width: 6px; height: 6px; cursor: sw-resize; }
+        .resize-handle-w { top: 5px; bottom: 5px; left: -3px; width: 6px; cursor: w-resize; }
+        .resize-handle-nw { top: -3px; left: -3px; width: 6px; height: 6px; cursor: nw-resize; }
+
+        /* Hide resize handles when window is maximized */
+        .window.maximized .resize-handle {
+            display: none;
+        }
+
+        /* ===== BROWSER UI STYLES ===== */
+        .browser-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background-color: #c0c0c0; /* Classic gray */
+        }
+
+        .browser-toolbar, .browser-address-toolbar {
+            padding: 3px;
+            border-bottom: 1px solid #808080;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0; /* Prevent toolbars from shrinking */
+        }
+        .browser-toolbar button, .browser-address-toolbar button {
+            background-color: #c0c0c0;
+            border: 1px outset #dfdfdf;
+            padding: 3px 6px;
+            margin-right: 3px;
+            font-size: 11px; /* Or use icons */
+            min-width: 50px; /* For text buttons */
+        }
+        .browser-toolbar button:active, .browser-address-toolbar button:active {
+            border-style: inset;
+        }
+        .browser-toolbar button:disabled {
+            color: #808080;
+            border-color: #808080;
+            cursor: default;
+        }
+
+        .browser-address-toolbar label {
+            margin-right: 5px;
+            font-weight: bold;
+        }
+        .browser-address-bar {
+            flex-grow: 1;
+            margin-right: 3px;
+            padding: 3px;
+            border: 1px inset #808080;
+            font-size: 12px;
+            height: 20px;
+            box-sizing: border-box;
+        }
+
+        .browser-tab-bar {
+            display: flex;
+            background-color: #c0c0c0;
+            padding: 2px 2px 0 2px; /* Padding for top/sides, none at bottom for tabs to connect */
+            border-bottom: 1px solid #808080;
+            flex-shrink: 0;
+            align-items: flex-end; /* Align tabs to the bottom of the bar */
+        }
+        .browser-tab {
+            background-color: #a0a0a0; /* Slightly darker for inactive tabs */
+            border: 1px outset #dfdfdf;
+            border-bottom: none; /* Connects to content area or next border */
+            padding: 4px 8px;
+            margin-right: -1px; /* Overlap borders */
+            font-size: 11px;
+            cursor: pointer;
+            position: relative;
+            max-width: 150px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border-top-left-radius: 3px;
+            border-top-right-radius: 3px;
+        }
+        .browser-tab.active {
+            background-color: #e0e0e0; /* Lighter for active tab */
+            z-index: 1; /* Bring active tab border to front */
+            padding-bottom: 5px; /* Make it look like it connects to content */
+            margin-bottom: -1px; /* Overlap bottom border of tab bar */
+            font-weight: bold;
+        }
+        .browser-tab .tab-close-btn {
+            margin-left: 8px;
+            font-size: 10px;
+            color: #404040;
+            cursor: pointer;
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+        .browser-tab .tab-close-btn:hover {
+            background-color: #ff6060;
+            color: white;
+        }
+        .browser-new-tab-btn {
+            background-color: #c0c0c0;
+            border: 1px outset #dfdfdf;
+            padding: 2px 6px;
+            margin-left: 3px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            height: 20px; /* Align with tabs */
+            align-self: center; /* Center vertically in tab bar */
+        }
+        .browser-new-tab-btn:active {
+            border-style: inset;
+        }
+
+        /* The actual webview placeholder */
+        browser-webview {
+            flex-grow: 1;
+            background-color: white; /* Default background */
+            border: 1px solid #000; /* Placeholder border */
+            margin: 2px; /* Consistent with window content margin */
+            display: flex; /* To allow centering of placeholder text */
+            align-items: center;
+            justify-content: center;
+            font-style: italic;
+            color: #666;
+        }
+
+        /* ===== BROWSER UI STYLES (Additions/Modifications) ===== */
+        .browser-toolbar {
+            padding: 3px;
+            border-bottom: 1px solid #808080;
+            display: flex;
+            align-items: center;
+            justify-content: space-between; /* Key change: space between nav buttons and throbber */
+            flex-shrink: 0;
+        }
+
+        .browser-nav-buttons { /* New wrapper for nav buttons */
+            display: flex;
+            align-items: center;
+        }
+
+        .browser-throbber {
+            width: 28px;  /* Adjust to your GIF's typical size */
+            height: 28px; /* Adjust to your GIF's typical size */
+            margin-left: auto; /* Pushes it to the right if justify-content was not space-between */
+            margin-right: 5px; /* Some spacing */
+            /* border: 1px solid #777; /* Optional: classic Netscape border */
+            /* background-color: #c0c0c0; /* If GIF has transparency */
+        }
+                /* ===== END BROWSER UI STYLES ===== */
+    </style>
+</head>
+<body>
+    <div class="desktop" id="desktop">
+        <div class="desktop-icon" data-app-id="myComputer">
+            <img src="https://win98icons.alexmeub.com/icons/png/computer_explorer-0.png" alt="My Computer">
+            <span>My Computer</span>
+        </div>
+        <div class="desktop-icon" data-app-id="notepad">
+            <img src="https://win98icons.alexmeub.com/icons/png/notepad-0.png" alt="Notepad">
+            <span>Notepad</span>
+        </div>
+        <div class="desktop-icon" data-app-id="recycleBin">
+            <img src="https://win98icons.alexmeub.com/icons/png/recycle_bin_empty-0.png" alt="Recycle Bin">
+            <span>Recycle Bin</span>
+        </div>
+        <div class="desktop-icon" data-app-id="calculator">
+            <img src="https://win98icons.alexmeub.com/icons/png/calculator-0.png" alt="Calculator">
+            <span>Calculator</span>
+        </div>
+
+        <!-- !!! ADD THIS ICON FOR THE BROWSER !!! -->
+        <div class="desktop-icon" data-app-id="internetBrowser">
+            <img 
+              src="https://win98icons.alexmeub.com/icons/png/search_web-0.png" 
+              alt="Internet Browser">
+            <span>Internet Browser</span>
+        </div>
+
+        <div class="desktop-icon" data-app-id="internetExplorer">
+            <img 
+              src="https://win98icons.alexmeub.com/icons/png/msie2-0.png" 
+              alt="Internet Explorer">
+            <span>Internet Explorer</span>
+        </div>
+
+        <div class="desktop-icon" data-app-id="netscapeNavigator">
+            <img 
+              src="./n2-2.png" 
+              alt="Netscape Navigator">
+            <span>Netscape Navigator</span>
+        </div>
+    </div>
+
+    <div class="start-menu" id="startMenu">
+        <div class="start-menu-sidebar">
+            <span class="start-menu-sidebar-text">Windows 98<span class=and-half>&frac12;</span></span>
+        </div>
+        <div class="start-menu-items-container"> <!-- New container for the actual items -->
+            <div class="start-menu-item" data-app-id="notepad">
+                <img src="https://win98icons.alexmeub.com/icons/png/notepad-0.png" class="start-menu-icon" alt=""> Notepad
+            </div>
+            <div class="start-menu-item" data-app-id="calculator">
+                <img src="https://win98icons.alexmeub.com/icons/png/calculator-0.png" class="start-menu-icon" alt=""> Calculator
+            </div>
+            <div class="start-menu-item" data-app-id="myComputer">
+                <img src="https://win98icons.alexmeub.com/icons/png/computer_explorer-0.png" class="start-menu-icon" alt=""> My Computer
+            </div>
+            <div class="start-menu-item" data-app-id="internetBrowser">
+                <img src="https://win98icons.alexmeub.com/icons/png/search_web-0.png" class="start-menu-icon" alt=""> Internet Browser
+            </div>
+            <div class="start-menu-item" data-app-id="internetExplorer">
+                <img src="https://win98icons.alexmeub.com/icons/png/msie2-0.png" class="start-menu-icon" alt=""> Internet Browser
+            </div>
+            <div class="start-menu-item" data-app-id="netscapeNavigator">
+                <img src="./n2-2.png" class="start-menu-icon" alt=""> Internet Browser
+            </div>
+            <div class="start-menu-separator"></div>
+            <div class="start-menu-item disabled">
+                <img src="https://win98icons.alexmeub.com/icons/png/settings_gear-0.png" class="start-menu-icon" alt=""> Settings
+            </div>
+            <div class="start-menu-item disabled">
+                <img src="https://win98icons.alexmeub.com/icons/png/help_book_cool-0.png" class="start-menu-icon" alt=""> Help
+            </div>
+            <div class="start-menu-separator"></div>
+            <div class="start-menu-item" id="shutdownButtonTrigger">
+                <img src="https://win98icons.alexmeub.com/icons/png/shut_down_cool-0.png" class="start-menu-icon" alt=""> Shut Down...
+            </div>
+        </div>
+    </div>
+    <div class="taskbar">
+        <button class="start-button" id="startButton">
+            <img src="https://win98icons.alexmeub.com/icons/png/windows-0.png" alt="Start">
+            Start
+        </button>
+        <div class="taskbar-windows" id="taskbarWindows">
+            <!-- Taskbar buttons for open windows go here -->
+        </div>
+        <div class="clock" id="clock"></div>
+    </div>
+
+    <template id="windowTemplate">
+        <div class="window">
+            <div class="window-titlebar">
+                <img class="window-titlebar-icon" src="" alt="" width="16" height="16">
+                <span class="window-title">Window</span>
+                <div class="window-controls">
+                    <button class="window-minimize-btn" title="Minimize">0</button>
+                    <button class="window-maximize-btn" title="Maximize">1</button>
+                    <button class="window-close-btn" title="Close">r</button>
+                </div>
+            </div>
+            <div class="window-content">
+                <!-- Content will be injected here -->
+            </div>
+            <!-- !!! RESIZE HANDLES !!! -->
+            <div class="resize-handle resize-handle-n"></div>
+            <div class="resize-handle resize-handle-ne"></div>
+            <div class="resize-handle resize-handle-e"></div>
+            <div class="resize-handle resize-handle-se"></div>
+            <div class="resize-handle resize-handle-s"></div>
+            <div class="resize-handle resize-handle-sw"></div>
+            <div class="resize-handle resize-handle-w"></div>
+            <div class="resize-handle resize-handle-nw"></div>
+        </div>
+    </template>
+    <script src=./app.js></script>
+</body>
+</html>
