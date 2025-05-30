@@ -108,7 +108,7 @@ export class BrowserWebview extends HTMLElement {
 
     constructor(browserConnection) {
         super();
-        this.#browserConnection = browserConnection || '/browser-ui.html'; // This path would be to a dummy html for the iframe
+        this.#browserConnection = browserConnection || '/'; // This path would be to a dummy html for the iframe
     }
 
     connectedCallback() {
@@ -356,7 +356,7 @@ export class BrowserWebview extends HTMLElement {
         this.#iframe.style.display = 'none'; // Initially hidden until a tab is active
         this.#iframe.sandbox = [
             'allow-scripts', 'allow-same-origin', 'allow-popups', 'allow-forms',
-            'allow-downloads', 'allow-modals', 'allow-orientation-lock',
+            'allow-downloads', 'allow-modals',
             'allow-pointer-lock', 'allow-popups-to-escape-sandbox'
         ].join(' ');
         this.#iframe.allow = [
