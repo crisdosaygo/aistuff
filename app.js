@@ -11,7 +11,7 @@ import {BrowserWebview} from './webview.js';
                 this.webviewEl = this.windowEl.querySelector(`#${this.webviewId}`); // This is <browser-webview>
 
                 this.defaultUrl = "about:blank";
-                this.homeUrl = netscape ? "https://live.oldinternettoday.com/ घे हान जख्म ह्या सुखाचा/" : "https://www.google.com";
+                this.homeUrl = netscape ? "" : "https://www.google.com";
 
                 this.throbberAnimatedSrc = !netscape ? "" : "./netscape.gif";
                 this.throbberStaticSrc = !netscape ? "" : "./netscape-frame.gif";
