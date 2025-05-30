@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Windows 98&frac12;</title>
+    <title>Windows 98½</title>
     <link rel=icon href="https://win98icons.alexmeub.com/icons/png/internet_connection_wiz-0.png">
     <style>
         body {
@@ -27,6 +27,14 @@
             flex-wrap: wrap;
             align-content: flex-start; /* Align icons to the left */
         }
+        /* Add :focus style for desktop for visual feedback when it has keyboard focus */
+        .desktop:focus {
+            /* Example: subtle border to show it's the active container */
+            /* outline: 1px dashed rgba(255, 255, 255, 0.3); */
+            /* outline-offset: -1px; */
+            /* Script handles .keyboard-focused on items, this is for the container itself */
+        }
+
 
         .desktop-icon {
             width: 75px;
@@ -35,7 +43,12 @@
             color: white;
             cursor: pointer;
             padding: 5px;
+            /* Ensure icons don't get a default browser outline if script handles focus */
         }
+        .desktop-icon:focus { 
+            outline: none;
+        }
+
         .desktop-icon:hover {
             background-color: rgba(0, 0, 128, 0.5); /* Dark blue transparent */
             outline: 1px dotted white;
@@ -89,19 +102,31 @@
             height: 16px;
             margin-right: 5px;
         }
+        .start-button:focus { /* Style for when start button itself has focus */
+            outline: 1px dotted black;
+            outline-offset: -2px;
+        }
+
 
         .start-menu {
             position: absolute;
             bottom: 30px; /* Above taskbar */
             left: 0;
-            width: 200px; /* Slightly wider for icons */
+            /* width: 200px; /* Slightly wider for icons (now auto) */
             background-color: #c0c0c0;
             border: 2px outset #dfdfdf;
             box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
-            padding: 2px;
+            /* padding: 2px; (now handled by items-container) */
             display: none; /* Hidden by default */
             z-index: 9999;
+            flex-direction: row; /* Changed for sidebar layout */
+            width: auto; 
         }
+        .start-menu:focus { /* Style for when start menu container has focus */
+            /* outline: 1px dotted blue; */ /* Example */
+            outline: none; /* Script manages item focus visuals */
+        }
+
         .start-menu-item {
             padding: 5px 10px 5px 5px; /* Adjusted padding */
             cursor: pointer;
@@ -112,6 +137,9 @@
         .start-menu-item:hover {
             background-color: #000080; /* Dark Blue */
             color: white;
+        }
+        .start-menu-item:focus { /* Remove default outline if script handles visual focus */
+            outline: none;
         }
         .start-menu-icon {
             width: 20px; /* Slightly larger for start menu */
@@ -134,14 +162,6 @@
             color: #808080;
         }
 
-        /* Modify existing .start-menu and add new styles */
-        .start-menu {
-            /* ... existing styles ... */
-            display: none; /* Keep this */
-            flex-direction: row; /* Changed for sidebar layout */
-            width: auto; /* Let content determine width initially, or set a new combined width */
-            /* padding: 0; /* Remove padding if sidebar handles it */
-        }
 
         .start-menu-sidebar {
             background-color: #000080; /* Dark Blue */
@@ -196,6 +216,10 @@
             height: 22px; /* Consistent height */
             box-sizing: border-box;
         }
+        .taskbar-button:focus { /* Style for focused taskbar buttons */
+            outline: 1px dotted black;
+            outline-offset: -2px;
+        }
         .taskbar-button.active {
             border-style: inset;
             font-weight: bold;
@@ -208,7 +232,6 @@
         }
         .taskbar-button.minimized {
             opacity: 0.9; /* Slightly different look for minimized */
-            /* border-style: outset; /* Keep it looking like a button */
         }
 
 
@@ -220,7 +243,7 @@
             min-width: 60px;
             text-align: center;
             height: 20px; /* Consistent height */
-            line-height: 12px; /* box height - 2 * border - 2 * padding (top/bottom) = 20 - 2 - 6 */
+            line-height: 12px; 
             box-sizing: border-box;
         }
 
@@ -234,8 +257,13 @@
             min-height: 150px;
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* Prevent content from breaking out during resize */
+            overflow: hidden; 
         }
+        .window:focus, .window:focus-within { /* Indicate active window subtly */
+             /* border-color: #666; */ /* Example: darker border for focused window */
+             /* The .inactive class handles visual distinction well, so direct focus style might be redundant */
+        }
+
 
         .window-titlebar {
             background-color: #000080; /* Dark Blue */
@@ -246,7 +274,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            height: 20px; /* Consistent height */
+            height: 20px; 
             box-sizing: border-box;
         }
         .window-titlebar:active {
@@ -254,7 +282,7 @@
         }
         .window-titlebar-icon {
             margin-right: 5px;
-            vertical-align: middle; /* Or top, adjust as needed */
+            vertical-align: middle; 
             width: 16px;
             height: 16px;
         }
@@ -262,33 +290,28 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            flex-grow: 1; /* Allow title to take available space */
+            flex-grow: 1; 
         }
         .window.inactive .window-titlebar {
-            background-color: #808080; /* Gray for inactive title bar */
-            /* Or a lighter blue: background-color: #A0C5E5; */
+            background-color: #808080; 
         }
         .window.inactive .window-titlebar-icon {
-            opacity: 0.7; /* Slightly fade icon */
+            opacity: 0.7; 
         }
         .window.inactive .window-title {
-            color: #D3D3D3; /* Lighter text color if desired */
+            color: #D3D3D3; 
         }
 
-        /* Ensure the default .window-titlebar is the active color */
-        .window-titlebar {
-            background-color: #000080; /* Dark Blue - Active state */
-        }
 
         .window-controls button {
             background-color: #c0c0c0;
             border: 1px outset #dfdfdf;
             color: black;
-            font-family: "Marlett", "Webdings"; /* For symbols, Marlett is classic */
-            font-size: 10px; /* Adjust if symbols are too big/small */
+            font-family: "Marlett", "Webdings"; 
+            font-size: 10px; 
             width: 16px;
             height: 14px;
-            line-height: 10px; /* Center symbol */
+            line-height: 10px; 
             padding: 0;
             margin-left: 2px;
             cursor: pointer;
@@ -296,23 +319,31 @@
         .window-controls button:active {
             border-style: inset;
         }
+        .window-controls button:focus { /* Style for focused window control buttons */
+            outline: 1px dotted black;
+            outline-offset: -1px;
+        }
+
 
         .window-content {
-            padding: 0; /* Remove padding, content itself should manage it */
-            background-color: #ffffff; /* White content area */
+            padding: 0; 
+            background-color: #ffffff; 
             flex-grow: 1;
             margin: 3px;
             border: 1px inset #808080;
-            overflow: auto; /* Add scrollbars if content overflows */
-            display: flex; /* For content that wants to fill height */
-            flex-direction: column; /* For content that wants to fill height */
+            overflow: auto; 
+            display: flex; 
+            flex-direction: column; 
         }
+        .window-content:focus { /* Style for when content area itself gets focus */
+             /* outline: 1px solid blue; */ /* Example, if needed */
+        }
+
 
         .window.maximized .window-titlebar {
-            cursor: default; /* No dragging when maximized */
+            cursor: default; 
         }
 
-        /* For the shutdown dialog buttons */
         .win95-button {
             background-color: #c0c0c0;
             border: 2px outset #dfdfdf;
@@ -324,11 +355,14 @@
         .win95-button:active {
             border-style: inset;
         }
+        .win95-button:focus { /* Style for focused dialog buttons */
+            outline: 1px dotted black;
+            outline-offset: -2px;
+        }
 
-        /* Add these styles for resize handles */
+
         .resize-handle {
             position: absolute;
-            /* For debugging, make them visible: background: rgba(255,0,0,0.2); */
         }
         .resize-handle-n { top: -3px; left: 5px; right: 5px; height: 6px; cursor: n-resize; }
         .resize-handle-ne { top: -3px; right: -3px; width: 6px; height: 6px; cursor: ne-resize; }
@@ -339,7 +373,6 @@
         .resize-handle-w { top: 5px; bottom: 5px; left: -3px; width: 6px; cursor: w-resize; }
         .resize-handle-nw { top: -3px; left: -3px; width: 6px; height: 6px; cursor: nw-resize; }
 
-        /* Hide resize handles when window is maximized */
         .window.maximized .resize-handle {
             display: none;
         }
@@ -349,7 +382,7 @@
             display: flex;
             flex-direction: column;
             height: 100%;
-            background-color: #c0c0c0; /* Classic gray */
+            background-color: #c0c0c0; 
         }
 
         .browser-toolbar, .browser-address-toolbar {
@@ -357,15 +390,15 @@
             border-bottom: 1px solid #808080;
             display: flex;
             align-items: center;
-            flex-shrink: 0; /* Prevent toolbars from shrinking */
+            flex-shrink: 0; 
         }
         .browser-toolbar button, .browser-address-toolbar button {
             background-color: #c0c0c0;
             border: 1px outset #dfdfdf;
             padding: 3px 6px;
             margin-right: 3px;
-            font-size: 11px; /* Or use icons */
-            min-width: 50px; /* For text buttons */
+            font-size: 11px; 
+            min-width: 50px; 
         }
         .browser-toolbar button:active, .browser-address-toolbar button:active {
             border-style: inset;
@@ -375,6 +408,11 @@
             border-color: #808080;
             cursor: default;
         }
+        .browser-toolbar button:focus, .browser-address-toolbar button:focus { /* Focus style for browser buttons */
+            outline: 1px dotted black;
+            outline-offset: -2px;
+        }
+
 
         .browser-address-toolbar label {
             margin-right: 5px;
@@ -389,21 +427,26 @@
             height: 20px;
             box-sizing: border-box;
         }
+        .browser-address-bar:focus { /* Focus style for address bar */
+            outline: 1px dotted blue; 
+            outline-offset: -1px;
+        }
+
 
         .browser-tab-bar {
             display: flex;
             background-color: #c0c0c0;
-            padding: 2px 2px 0 2px; /* Padding for top/sides, none at bottom for tabs to connect */
+            padding: 2px 2px 0 2px; 
             border-bottom: 1px solid #808080;
             flex-shrink: 0;
-            align-items: flex-end; /* Align tabs to the bottom of the bar */
+            align-items: flex-end; 
         }
         .browser-tab {
-            background-color: #a0a0a0; /* Slightly darker for inactive tabs */
+            background-color: #a0a0a0; 
             border: 1px outset #dfdfdf;
-            border-bottom: none; /* Connects to content area or next border */
+            border-bottom: none; 
             padding: 4px 8px;
-            margin-right: -1px; /* Overlap borders */
+            margin-right: -1px; 
             font-size: 11px;
             cursor: pointer;
             position: relative;
@@ -414,11 +457,15 @@
             border-top-left-radius: 3px;
             border-top-right-radius: 3px;
         }
+        .browser-tab:focus { /* Remove default outline if script handles visual focus */
+            outline: none;
+        }
+
         .browser-tab.active {
-            background-color: #e0e0e0; /* Lighter for active tab */
-            z-index: 1; /* Bring active tab border to front */
-            padding-bottom: 5px; /* Make it look like it connects to content */
-            margin-bottom: -1px; /* Overlap bottom border of tab bar */
+            background-color: #e0e0e0; 
+            z-index: 1; 
+            padding-bottom: 5px; 
+            margin-bottom: -1px; 
             font-weight: bold;
         }
         .browser-tab .tab-close-btn {
@@ -441,54 +488,55 @@
             font-size: 12px;
             font-weight: bold;
             cursor: pointer;
-            height: 20px; /* Align with tabs */
-            align-self: center; /* Center vertically in tab bar */
+            height: 20px; 
+            align-self: center; 
         }
         .browser-new-tab-btn:active {
             border-style: inset;
         }
+        .browser-new-tab-btn:focus { /* Focus style for new tab button */
+            outline: 1px dotted black;
+            outline-offset: -2px;
+        }
 
-        /* The actual webview placeholder */
+
         browser-webview {
             flex-grow: 1;
-            background-color: white; /* Default background */
-            border: 1px solid #000; /* Placeholder border */
-            margin: 2px; /* Consistent with window content margin */
-            display: flex; /* To allow centering of placeholder text */
+            background-color: white; 
+            border: 1px solid #000; 
+            margin: 2px; 
+            display: flex; 
             align-items: center;
             justify-content: center;
             font-style: italic;
             color: #666;
         }
 
-        /* ===== BROWSER UI STYLES (Additions/Modifications) ===== */
+
         .browser-toolbar {
             padding: 3px;
             border-bottom: 1px solid #808080;
             display: flex;
             align-items: center;
-            justify-content: space-between; /* Key change: space between nav buttons and throbber */
+            justify-content: space-between; 
             flex-shrink: 0;
         }
 
-        .browser-nav-buttons { /* New wrapper for nav buttons */
+        .browser-nav-buttons { 
             display: flex;
             align-items: center;
         }
 
         .browser-throbber {
-            width: 28px;  /* Adjust to your GIF's typical size */
-            height: 28px; /* Adjust to your GIF's typical size */
-            margin-left: auto; /* Pushes it to the right if justify-content was not space-between */
-            margin-right: 5px; /* Some spacing */
-            /* border: 1px solid #777; /* Optional: classic Netscape border */
-            /* background-color: #c0c0c0; /* If GIF has transparency */
+            width: 28px;  
+            height: 28px; 
+            margin-left: auto; 
+            margin-right: 5px; 
         }
-                /* ===== END BROWSER UI STYLES ===== */
     </style>
 </head>
 <body>
-    <div class="desktop" id="desktop">
+    <div class="desktop" id="desktop" tabindex="0"> <!-- MODIFIED -->
         <div class="desktop-icon" data-app-id="myComputer">
             <img src="https://win98icons.alexmeub.com/icons/png/computer_explorer-0.png" alt="My Computer">
             <span>My Computer</span>
@@ -506,7 +554,6 @@
             <span>Calculator</span>
         </div>
 
-        <!-- !!! ADD THIS ICON FOR THE BROWSER !!! -->
         <div class="desktop-icon" data-app-id="internetBrowser">
             <img 
               src="https://win98icons.alexmeub.com/icons/png/search_web-0.png" 
@@ -529,11 +576,11 @@
         </div>
     </div>
 
-    <div class="start-menu" id="startMenu">
+    <div class="start-menu" id="startMenu" tabindex="-1"> <!-- MODIFIED -->
         <div class="start-menu-sidebar">
-            <span class="start-menu-sidebar-text">Windows 98<span class=and-half>&frac12;</span></span>
+            <span class="start-menu-sidebar-text">Windows 98<span class="and-half">½</span></span> <!-- Used   for non-breaking space -->
         </div>
-        <div class="start-menu-items-container"> <!-- New container for the actual items -->
+        <div class="start-menu-items-container"> 
             <div class="start-menu-item" data-app-id="notepad">
                 <img src="https://win98icons.alexmeub.com/icons/png/notepad-0.png" class="start-menu-icon" alt=""> Notepad
             </div>
@@ -547,10 +594,10 @@
                 <img src="https://win98icons.alexmeub.com/icons/png/search_web-0.png" class="start-menu-icon" alt=""> Internet Browser
             </div>
             <div class="start-menu-item" data-app-id="internetExplorer">
-                <img src="https://win98icons.alexmeub.com/icons/png/msie2-0.png" class="start-menu-icon" alt=""> Internet Browser
+                <img src="https://win98icons.alexmeub.com/icons/png/msie2-0.png" class="start-menu-icon" alt=""> Internet Explorer <!-- Corrected text -->
             </div>
             <div class="start-menu-item" data-app-id="netscapeNavigator">
-                <img src="./n2-2.png" class="start-menu-icon" alt=""> Internet Browser
+                <img src="./n2-2.png" class="start-menu-icon" alt=""> Netscape Navigator <!-- Corrected text -->
             </div>
             <div class="start-menu-separator"></div>
             <div class="start-menu-item disabled">
@@ -566,7 +613,7 @@
         </div>
     </div>
     <div class="taskbar">
-        <button class="start-button" id="startButton">
+        <button class="start-button" id="startButton" tabindex="0"> <!-- MODIFIED -->
             <img src="https://win98icons.alexmeub.com/icons/png/windows-0.png" alt="Start">
             Start
         </button>
@@ -577,14 +624,14 @@
     </div>
 
     <template id="windowTemplate">
-        <div class="window">
+        <div class="window" tabindex="-1"> <!-- MODIFIED -->
             <div class="window-titlebar">
                 <img class="window-titlebar-icon" src="" alt="" width="16" height="16">
                 <span class="window-title">Window</span>
                 <div class="window-controls">
-                    <button class="window-minimize-btn" title="Minimize">0</button>
-                    <button class="window-maximize-btn" title="Maximize">1</button>
-                    <button class="window-close-btn" title="Close">r</button>
+                    <button class="window-minimize-btn" title="Minimize" tabindex="-1">0</button> <!-- Make controls not directly tabbable -->
+                    <button class="window-maximize-btn" title="Maximize" tabindex="-1">1</button>
+                    <button class="window-close-btn" title="Close" tabindex="-1">r</button>
                 </div>
             </div>
             <div class="window-content">
