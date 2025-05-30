@@ -1,3 +1,5 @@
+import {BrowserWebview} from './webview.js';
+
 // windows awesome
       // ===== BROWSER_APP.JS (or inline section) =====
         class BrowserApp {
@@ -58,6 +60,9 @@
                         <div class="browser-tab-bar">
                             <button class="browser-new-tab-btn" title="New Tab">+</button>
                         </div>
+                        <browser-webview id="${webviewId}" style="flex-grow: 1; background: #fff; border: 1px solid grey; min-height: 100px;">
+                            <!-- Content will be managed by BrowserWebview component -->
+                        </browser-webview>
                     </div>
                 `;
             }
