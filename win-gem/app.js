@@ -11,7 +11,7 @@ import {BrowserApp} from './browser.js';
                   <div style="padding: 2px 5px; border-bottom: 1px solid #808080; background: #c0c0c0;"><u>F</u>ile <u>E</u>dit <u>V</u>iew <u>H</u>elp</div>
                   <div style="padding:10px; flex-grow:1; background: white;">
                       <ul style="list-style-type:none; padding-left:5px; margin-top:0;">
-                          <li style="margin-bottom:5px;"><img src="https://win98icons.alexmeub.com/icons/png/drive_3_5-0.png" style="width:20px; height:20px; vertical-align:middle; margin-right:5px;"> 3½ Floppy (A:)</li>
+                          <li style="margin-bottom:5px;"><img src="https://win98icons.alexmeub.com/icons/png/drive_3_5-0.png" style="width:20px; height:20px; vertical-align:middle; margin-right:5px;"> 3¬Ω Floppy (A:)</li>
                           <li style="margin-bottom:5px;"><img src="https://win98icons.alexmeub.com/icons/png/drive_cd_rom-1.png" style="width:20px; height:20px; vertical-align:middle; margin-right:5px;"> (C:) Local Disk</li>
                           <li style="margin-bottom:5px;"><img src="https://win98icons.alexmeub.com/icons/png/folder_network_cool-0.png" style="width:20px; height:20px; vertical-align:middle; margin-right:5px;"> Network Neighborhood</li>
                           <li style="margin-bottom:5px;"><img src="https://win98icons.alexmeub.com/icons/png/settings_gear_cool-0.png" style="width:20px; height:20px; vertical-align:middle; margin-right:5px;"> Control Panel</li>
@@ -92,7 +92,7 @@ import {BrowserApp} from './browser.js';
           defaultHeight: 500,
           generateContent: (windowInstanceId, webviewId) => BrowserApp.generateInitialHTML(webviewId),
           initApp: (windowEl, windowInstanceId, webviewId, appDefinition) => {
-              return new BrowserApp(windowEl, windowInstanceId, webviewId, appDefinition.netscape);
+              return new BrowserApp(windowEl, windowInstanceId, webviewId, appDefinition.netscape, appDefinition); // Corrected: Removed last appDefinition
           }
       },
       internetExplorer: {
@@ -103,7 +103,7 @@ import {BrowserApp} from './browser.js';
           defaultHeight: 500,
           generateContent: (windowInstanceId, webviewId) => BrowserApp.generateInitialHTML(webviewId),
           initApp: (windowEl, windowInstanceId, webviewId, appDefinition) => {
-              return new BrowserApp(windowEl, windowInstanceId, webviewId, appDefinition.netscape);
+              return new BrowserApp(windowEl, windowInstanceId, webviewId, appDefinition.netscape, appDefinition); // Corrected
           }
       },
       netscapeNavigator: {
@@ -114,10 +114,11 @@ import {BrowserApp} from './browser.js';
           defaultHeight: 500,
           generateContent: (windowInstanceId, webviewId) => BrowserApp.generateInitialHTML(webviewId),
           initApp: (windowEl, windowInstanceId, webviewId, appDefinition) => {
-              return new BrowserApp(windowEl, windowInstanceId, webviewId, appDefinition.netscape);
+              return new BrowserApp(windowEl, windowInstanceId, webviewId, appDefinition.netscape, appDefinition); // Corrected
           }
       },
   };
+
 
   document.addEventListener('DOMContentLoaded', () => {
       const clockElement = document.getElementById('clock');
@@ -135,33 +136,28 @@ import {BrowserApp} from './browser.js';
       const activeFocusContainers = []; // Stack-like, last element is current active container
 
       function setFocusToContainer(containerElement) {
-          // Remove .keyboard-focused from previously focused container's items
           const oldContainer = activeFocusContainers.length > 0 ? activeFocusContainers[activeFocusContainers.length - 1] : null;
           if (oldContainer && oldContainer !== containerElement) {
               oldContainer.querySelectorAll('.keyboard-focused').forEach(el => el.classList.remove('keyboard-focused'));
           }
-          
-          // Update stack
+
           if (activeFocusContainers.length > 0 && activeFocusContainers[activeFocusContainers.length - 1] === containerElement) {
-              // Already the active container, do nothing to stack
+              // Already the active container
           } else {
-              // Remove if exists elsewhere, then push
               const existingIndex = activeFocusContainers.indexOf(containerElement);
               if (existingIndex > -1) activeFocusContainers.splice(existingIndex, 1);
               activeFocusContainers.push(containerElement);
           }
       }
 
-
       function manageFocusableCollection(container, itemSelector, is2D = false, activateWithSpace = true) {
           if (!container) {
             console.warn("manageFocusableCollection: Container not found for selector:", itemSelector);
             return;
           }
-          // Get items dynamically within event handlers to account for changes in visibility/DOM
           const getItems = () => Array.from(container.querySelectorAll(itemSelector));
-          
-          let currentFocusedIndex = -1; // Index relative to `getVisibleItems()`
+
+          let currentFocusedIndex = -1;
 
           const getVisibleItems = () => getItems().filter(item => item.offsetParent !== null && !item.classList.contains('disabled'));
 
@@ -172,7 +168,6 @@ import {BrowserApp} from './browser.js';
                 return;
               }
 
-              // Remove focus from previously focused item in this container
               const previouslyFocusedItem = visibleItems[currentFocusedIndex];
               if (previouslyFocusedItem) {
                   previouslyFocusedItem.classList.remove('keyboard-focused');
@@ -183,67 +178,61 @@ import {BrowserApp} from './browser.js';
               const newItemToFocus = visibleItems[currentFocusedIndex];
               if (newItemToFocus) {
                   newItemToFocus.classList.add('keyboard-focused');
-                  newItemToFocus.focus(focusOptions); // Set actual DOM focus
-                  setFocusToContainer(container); 
+                  newItemToFocus.focus(focusOptions);
+                  setFocusToContainer(container);
               }
           }
-          
-          container.addEventListener('focus', () => { // When the container itself gets focus
+
+          container.addEventListener('focus', () => {
               const visibleItems = getVisibleItems();
-              // If no item within this container is already marked as keyboard-focused, focus the first one.
               if (visibleItems.length > 0 && !visibleItems.some(item => item.classList.contains('keyboard-focused'))) {
                   setFocusOnItem(0, { preventScroll: true });
               }
-          }, true); // Capture phase can be useful here
+          }, true);
 
 
           container.addEventListener('keydown', (e) => {
-              // If an active window (not this container, unless this container IS a window) has focus, let it handle.
-              // This check is primarily for #desktop and #startMenu containers.
               if (container === desktop || container === startMenu) {
                   const activeWindow = Object.values(openWindows).find(ow => !ow.isMinimized && (ow.element === document.activeElement || ow.element.contains(document.activeElement)));
                   if (activeWindow && activeWindow.element !== container) {
-                      return; // Active window should handle its own keys
+                      return;
                   }
                   if (container === desktop && startMenu.style.display === 'flex' && (startMenu === document.activeElement || startMenu.contains(document.activeElement))) {
-                      return; // Start menu is active, let it handle
+                      return;
                   }
               }
-              
+
               const visibleItems = getVisibleItems();
               if (!visibleItems.length) return;
 
-              // Ensure currentFocusedIndex is correct if focus moved by mouse/other means
               const currentDOMFocusedItem = document.activeElement;
               const domFocusIndex = visibleItems.indexOf(currentDOMFocusedItem);
 
               if (domFocusIndex !== -1 && domFocusIndex !== currentFocusedIndex) {
-                  // DOM focus is on one of our items, but not the one we thought. Sync.
                   if(visibleItems[currentFocusedIndex]) visibleItems[currentFocusedIndex].classList.remove('keyboard-focused');
                   currentFocusedIndex = domFocusIndex;
-                  visibleItems[currentFocusedIndex].classList.add('keyboard-focused'); // Ensure it has the class
+                  if(visibleItems[currentFocusedIndex]) visibleItems[currentFocusedIndex].classList.add('keyboard-focused');
               } else if (domFocusIndex === -1 && currentFocusedIndex === -1 && visibleItems.length > 0) {
-                  // No item focused, default to first
                   setFocusOnItem(0);
-                  if (!visibleItems[0]) return; // Guard
-              } else if (currentFocusedIndex === -1 && visibleItems.length > 0) {
-                  // currentFocusedIndex is stale, but DOM focus might be on container or outside. Reset to first.
-                  setFocusOnItem(0);
-                  if (!visibleItems[0]) return; // Guard
-              } else if (currentFocusedIndex >= visibleItems.length) { // Index out of bounds
-                  setFocusOnItem(0); // Reset to first
                   if (!visibleItems[0]) return;
+              } else if (currentFocusedIndex === -1 && visibleItems.length > 0) {
+                  setFocusOnItem(0);
+                  if (!visibleItems[0]) return;
+              } else if (currentFocusedIndex >= visibleItems.length && visibleItems.length > 0) {
+                  setFocusOnItem(0);
+                  if (!visibleItems[0]) return;
+              } else if (currentFocusedIndex === -1 && visibleItems.length === 0) {
+                  return; // No items, nothing to do
               }
 
 
-              // If focus is inside an input/textarea within this managed collection (less common for desktop/startmenu)
               const activeEl = document.activeElement;
               if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') && container.contains(activeEl)) {
                   if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Tab', 'Escape', ' '].includes(e.key)) {
-                      return; // Let input handle typing
+                      return;
                   }
               }
-              
+
               let newIndex = currentFocusedIndex;
               let handled = false;
 
@@ -258,18 +247,16 @@ import {BrowserApp} from './browser.js';
                       break;
                   case 'ArrowRight':
                       if (is2D) newIndex = findNextIcon(visibleItems, currentFocusedIndex, 'right');
-                      // else if (!is2D) newIndex = currentFocusedIndex + 1; // For 1D, right can be same as down
-                      else newIndex = currentFocusedIndex; // Noop for 1D right
+                      else newIndex = currentFocusedIndex;
                       if (is2D) handled = true;
                       break;
                   case 'ArrowLeft':
                       if (is2D) newIndex = findNextIcon(visibleItems, currentFocusedIndex, 'left');
-                      // else if (!is2D) newIndex = currentFocusedIndex - 1; // For 1D, left can be same as up
-                      else newIndex = currentFocusedIndex; // Noop for 1D left
+                      else newIndex = currentFocusedIndex;
                       if (is2D) handled = true;
                       break;
                   case 'Enter':
-                      if (visibleItems[currentFocusedIndex]) {
+                      if (currentFocusedIndex >=0 && visibleItems[currentFocusedIndex]) {
                           if (visibleItems[currentFocusedIndex].classList.contains('desktop-icon')) {
                               const dblClickEvent = new MouseEvent('dblclick', { bubbles: true, cancelable: true, view: window });
                               visibleItems[currentFocusedIndex].dispatchEvent(dblClickEvent);
@@ -280,32 +267,28 @@ import {BrowserApp} from './browser.js';
                       }
                       break;
                   case ' ':
-                      if (activateWithSpace && visibleItems[currentFocusedIndex]) {
+                      if (activateWithSpace && currentFocusedIndex >=0 && visibleItems[currentFocusedIndex]) {
                           visibleItems[currentFocusedIndex].click();
                           handled = true;
                       }
                       break;
                   case 'Tab':
-                      if (visibleItems[currentFocusedIndex]) {
+                      if (currentFocusedIndex >=0 && visibleItems[currentFocusedIndex]) {
                           visibleItems[currentFocusedIndex].classList.remove('keyboard-focused');
                       }
                       currentFocusedIndex = -1;
-                      // Allow default Tab behavior to move focus out of the container
-                      return; 
+                      return;
               }
 
               if (handled) {
                   e.preventDefault();
-                  // For desktop/start menu, stopPropagation is generally fine as they are top-level UI.
-                  // If this was used INSIDE a window with text inputs, stopPropagation would be an issue.
                   if (container === desktop || container === startMenu) {
                     e.stopPropagation();
                   }
-                  
-                  // Ensure newIndex is valid before calling setFocusOnItem
+
                   const numVisible = visibleItems.length;
                   if (numVisible > 0) {
-                      newIndex = (newIndex + numVisible) % numVisible; // Wrap around
+                      newIndex = (newIndex + numVisible) % numVisible;
                       if (newIndex !== currentFocusedIndex || !visibleItems[currentFocusedIndex]?.classList.contains('keyboard-focused')) {
                           setFocusOnItem(newIndex);
                       }
@@ -313,12 +296,11 @@ import {BrowserApp} from './browser.js';
               }
           });
 
-          // Make container itself focusable if it wasn't already and has items
           if (getItems().length > 0 && !container.hasAttribute('tabindex')) {
               container.setAttribute('tabindex', '0');
           }
       }
-      
+
       function findNextIcon(icons, currentIndex, direction) {
           if (icons.length <= 1) return currentIndex;
           let newIndex = currentIndex;
@@ -327,8 +309,7 @@ import {BrowserApp} from './browser.js';
           } else if (direction === 'up' || direction === 'left') {
               newIndex = (currentIndex - 1);
           }
-          // relies on setFocusOnItem to wrap index
-          return newIndex;
+          return newIndex; // setFocusOnItem will handle wrapping
       }
 
       const focusStyles = `
@@ -343,7 +324,6 @@ import {BrowserApp} from './browser.js';
               background-color: #000080 !important;
               color: white !important;
           }
-          /* Remove default browser focus outline if using custom */
           .desktop-icon:focus, .start-menu-item:focus, #desktop:focus, #startMenu:focus, .window:focus {
               outline: none;
           }
@@ -362,7 +342,7 @@ import {BrowserApp} from './browser.js';
       // Icon Dragging variables (still assuming flex layout, so actual drag is disabled)
       // let isDraggingIcons = false; // Uncomment if enabling drag with absolute positioning
 
-      function updateIconSelectionFromMarquee() { /* ... (same as before) ... */
+      function updateIconSelectionFromMarquee() {
           if (!marqueeRectEl) return;
           const marqueeBox = marqueeRectEl.getBoundingClientRect();
           document.querySelectorAll('.desktop-icon').forEach(icon => {
@@ -375,69 +355,65 @@ import {BrowserApp} from './browser.js';
               );
               if (intersects) {
                   icon.classList.add('selected');
-              } else if (!event.ctrlKey) { 
+              } else if (!event.ctrlKey) {
                   icon.classList.remove('selected');
               }
           });
       }
 
-      desktop.addEventListener('mousedown', (e) => { /* ... (same as before, drag logic still commented) ... */
+      desktop.addEventListener('mousedown', (e) => {
           const clickedOnIcon = e.target.closest('.desktop-icon');
           const clickedOnWindow = e.target.closest('.window');
 
-          if (clickedOnWindow) return; // Let window mousedown handler take over
+          if (clickedOnWindow) return;
 
-          if (e.button === 0) { // Left mouse button
-              marqueeStartX = e.clientX; 
+          if (e.button === 0) {
+              marqueeStartX = e.clientX;
               marqueeStartY = e.clientY;
               marqueeStartScrollX = desktop.scrollLeft;
               marqueeStartScrollY = desktop.scrollTop;
 
               if (clickedOnIcon) {
-                  e.stopPropagation(); // Prevent desktop mousedown from creating marquee immediately
-                  
+                  e.stopPropagation();
+
                   if (!e.ctrlKey && !e.shiftKey && !clickedOnIcon.classList.contains('selected')) {
-                      deselectAllDesktopIcons(clickedOnIcon); 
+                      deselectAllDesktopIcons(clickedOnIcon);
                       clickedOnIcon.classList.add('selected');
                   } else if (e.ctrlKey) {
                       clickedOnIcon.classList.toggle('selected');
                   } else if (e.shiftKey) {
-                      // Shift-click range selection (basic: select from last selected/focused to this one)
-                      // This is a simplified version. A robust one needs to track the "anchor" of selection.
                       const visibleIcons = Array.from(desktop.querySelectorAll('.desktop-icon:not(.disabled)'));
                       const currentKBFocused = visibleIcons.find(icon => icon.classList.contains('keyboard-focused'));
-                      const anchorIcon = currentKBFocused || visibleIcons.find(icon => icon.classList.contains('selected')); // Fallback to any selected
-                      
+                      const anchorIcon = currentKBFocused || visibleIcons.find(icon => icon.classList.contains('selected'));
+
                       if (anchorIcon) {
                           const anchorIndex = visibleIcons.indexOf(anchorIcon);
                           const clickIndex = visibleIcons.indexOf(clickedOnIcon);
                           if (anchorIndex !== -1 && clickIndex !== -1) {
-                              if (!e.ctrlKey) deselectAllDesktopIcons(); // Clear previous unless Ctrl is also held
+                              if (!e.ctrlKey) deselectAllDesktopIcons();
                               const start = Math.min(anchorIndex, clickIndex);
                               const end = Math.max(anchorIndex, clickIndex);
                               for (let i = start; i <= end; i++) {
-                                  visibleIcons[i].classList.add('selected');
+                                  if(visibleIcons[i]) visibleIcons[i].classList.add('selected');
                               }
                           }
-                      } else { // No anchor, just select this one
+                      } else {
                           if (!e.ctrlKey) deselectAllDesktopIcons(clickedOnIcon);
                           clickedOnIcon.classList.add('selected');
                       }
-                  } else if (!clickedOnIcon.classList.contains('selected')) { 
+                  } else if (!clickedOnIcon.classList.contains('selected')) {
                        deselectAllDesktopIcons(clickedOnIcon);
                        clickedOnIcon.classList.add('selected');
                   }
-                  
+
                   // ICON DRAGGING CODE IS STILL COMMENTED HERE
-                  // To enable, change icon CSS to position:absolute and uncomment the block.
-                  
-                  // Update keyboard focus to the clicked icon
+
                   document.querySelectorAll('.desktop-icon.keyboard-focused').forEach(kf => kf.classList.remove('keyboard-focused'));
                   clickedOnIcon.classList.add('keyboard-focused');
                   clickedOnIcon.focus({ preventScroll: true });
 
-              } else { // Clicked on empty desktop
-                  if (!e.ctrlKey) deselectAllDesktopIcons(); // Deselect if not holding Ctrl
+              } else {
+                  if (!e.ctrlKey) deselectAllDesktopIcons();
                   isMarqueeSelecting = true;
                   marqueeRectEl = document.createElement('div');
                   marqueeRectEl.className = 'marquee-rect';
@@ -452,18 +428,17 @@ import {BrowserApp} from './browser.js';
           }
       });
 
-      document.addEventListener('mousemove', (e) => { /* ... (same as before, drag logic still commented) ... */
+      document.addEventListener('mousemove', (e) => {
           if (isMarqueeSelecting && marqueeRectEl) {
               const currentX = e.clientX;
               const currentY = e.clientY;
               const desktopRect = desktop.getBoundingClientRect();
-              
+
               let rLeft = Math.min(marqueeStartX, currentX);
               let rTop = Math.min(marqueeStartY, currentY);
               const rWidth = Math.abs(currentX - marqueeStartX);
               const rHeight = Math.abs(currentY - marqueeStartY);
 
-              // Position marquee relative to desktop's viewport scrolled position
               marqueeRectEl.style.left = `${rLeft - desktopRect.left + desktop.scrollLeft}px`;
               marqueeRectEl.style.top = `${rTop - desktopRect.top + desktop.scrollTop}px`;
               marqueeRectEl.style.width = `${rWidth}px`;
@@ -473,7 +448,7 @@ import {BrowserApp} from './browser.js';
           // ICON DRAGGING MOUSEMOVE LOGIC IS STILL COMMENTED HERE
       });
 
-      document.addEventListener('mouseup', (e) => { /* ... (same as before, drag logic still commented) ... */
+      document.addEventListener('mouseup', (e) => {
           if (isMarqueeSelecting) {
               isMarqueeSelecting = false;
               if (marqueeRectEl) {
@@ -485,7 +460,7 @@ import {BrowserApp} from './browser.js';
           // ICON DRAGGING MOUSEUP LOGIC IS STILL COMMENTED HERE
       });
 
-      function deselectAllDesktopIcons(exceptionIcon = null) { /* ... (same as before) ... */
+      function deselectAllDesktopIcons(exceptionIcon = null) {
           document.querySelectorAll('.desktop-icon.selected').forEach(icon => {
               if (icon !== exceptionIcon) icon.classList.remove('selected');
           });
@@ -494,58 +469,76 @@ import {BrowserApp} from './browser.js';
           });
       }
 
-      const marqueeStyle = ` /* ... (same as before) ... */ `;
+      const marqueeStyle = `
+          .marquee-rect {
+              position: absolute;
+              border: 1px dotted #000;
+              background-color: rgba(0, 0, 0, 0.1);
+              pointer-events: none;
+              z-index: ${highestZIndex + 10};
+          }
+          .desktop-icon {
+              user-select: none;
+          }
+      `;
       const marqueeStyleSheet = document.createElement("style");
       marqueeStyleSheet.type = "text/css";
       marqueeStyleSheet.innerText = marqueeStyle;
       document.head.appendChild(marqueeStyleSheet);
 
-      function updateClock() { /* ... (same as before) ... */ }
+      function updateClock() {
+          const now = new Date();
+          const hours = now.getHours();
+          const minutes = now.getMinutes().toString().padStart(2, '0');
+          const ampm = hours >= 12 ? 'PM' : 'AM';
+          const displayHours = (hours % 12) || 12;
+          clockElement.textContent = `${displayHours}:${minutes} ${ampm}`;
+      }
       setInterval(updateClock, 1000); updateClock();
 
-      startButton.addEventListener('click', (event) => { /* ... (same as before) ... */
+      startButton.addEventListener('click', (event) => {
           event.stopPropagation();
           const isOpening = startMenu.style.display !== 'flex';
           startMenu.style.display = isOpening ? 'flex' : 'none';
           startButton.style.borderStyle = isOpening ? 'inset' : 'outset';
           if (isOpening) {
-              startMenu.focus(); 
+              startMenu.focus();
           } else {
               startButton.focus();
           }
       });
 
-      document.addEventListener('click', (event) => { /* ... (same as before) ... */
+      document.addEventListener('click', (event) => {
           if (startMenu.style.display === 'flex' && !startMenu.contains(event.target) && event.target !== startButton && !startButton.contains(event.target)) {
               startMenu.style.display = 'none';
               startButton.style.borderStyle = 'outset';
-              startButton.focus(); 
+              startButton.focus();
           }
           if (event.target === desktop || event.target.closest('.taskbar')) {
-              if (!event.target.closest('.desktop-icon') && !event.target.closest('.window')) { // Also check not clicking window
+              if (!event.target.closest('.desktop-icon') && !event.target.closest('.window')) {
                    deselectAllDesktopIcons();
               }
           }
       });
-      
-      desktop.addEventListener('click', (e) => { /* ... (same as before) ... */
+
+      desktop.addEventListener('click', (e) => {
           if (e.target === desktop) {
               if(!e.ctrlKey) deselectAllDesktopIcons();
               desktop.focus();
           }
       });
 
-      function createWindow(appId) { /* ... (same as before, but calls modified focusWindow) ... */
+      function createWindow(appId) {
           startMenu.style.display = 'none';
           startButton.style.borderStyle = 'outset';
           const appDef = APP_DEFINITIONS[appId];
           if (!appDef) { console.error("App definition not found for:", appId); return; }
 
-          if (!appDef.isDialog) { /* ... existing instance check ... */
+          if (!appDef.isDialog) {
               const existingInstance = Object.values(openWindows).find(ow => ow.appId === appId && ow.element && document.body.contains(ow.element));
               if (existingInstance) {
                   if (existingInstance.isMinimized) toggleMinimizeWindow(existingInstance.element);
-                  else focusWindow(existingInstance.element); // Pass only windowEl
+                  else focusWindow(existingInstance.element);
                   return;
               }
           }
@@ -567,8 +560,7 @@ import {BrowserApp} from './browser.js';
           } else {
               windowEl.querySelector('.window-content').innerHTML = typeof appDef.content === 'function' ? appDef.content() : appDef.content;
           }
-          
-          // ... (sizing and positioning logic same as before) ...
+
           let defaultWidth = appDef.defaultWidth || 450;
           let defaultHeight = appDef.defaultHeight || 300;
           if (appDef.isDialog) {
@@ -586,8 +578,8 @@ import {BrowserApp} from './browser.js';
           windowEl.style.zIndex = highestZIndex;
           desktop.appendChild(windowEl);
           Object.values(openWindows).forEach(ow => { if (ow.element) ow.element.classList.add('inactive'); });
-          
-          const newWindowData = { /* ... (same as before) ... */
+
+          const newWindowData = {
               element: windowEl, taskbarButton: null, appId: appId,
               originalRect: { left: windowEl.style.left, top: windowEl.style.top, width: windowEl.style.width, height: windowEl.style.height },
               isMinimized: false, isMaximized: false, appInstance: null
@@ -598,31 +590,83 @@ import {BrowserApp} from './browser.js';
               newWindowData.appInstance = appDef.initApp(windowEl, windowInstanceId, webviewId, appDef);
           }
 
-          if (!appDef.isDialog) { /* ... (same as before) ... */
+          if (!appDef.isDialog) {
               makeDraggable(windowEl); makeResizable(windowEl);
               addWindowToTaskbar(windowEl, appDef.title, appDef.icon, windowInstanceId);
               windowEl.querySelector('.window-minimize-btn').addEventListener('click', () => toggleMinimizeWindow(windowEl));
               windowEl.querySelector('.window-maximize-btn').addEventListener('click', () => toggleMaximizeWindow(windowEl));
-          } else { /* ... (same as before) ... */
+          } else {
               windowEl.querySelector('.window-minimize-btn').style.display = 'none';
               windowEl.querySelector('.window-maximize-btn').style.display = 'none';
               makeDraggable(windowEl);
           }
           windowEl.querySelector('.window-close-btn').addEventListener('click', () => closeWindow(windowEl));
-          
-          // MODIFIED mousedown listener for windowEl
+
           windowEl.addEventListener('mousedown', (e) => {
-              focusWindow(windowEl, e.target); // Pass the event target
-          }, true); // Keep capture phase
-          
-          windowEl.setAttribute('tabindex', '-1'); 
-          focusWindow(windowEl); // Initial focus, e.target will be null
+              focusWindow(windowEl, e.target);
+          }, true);
+
+          windowEl.setAttribute('tabindex', '-1');
+          focusWindow(windowEl);
           return windowEl;
       }
 
-      function makeResizable(element) { /* ... (same as before) ... */ }
+      function makeResizable(element) {
+          const handles = element.querySelectorAll('.resize-handle');
+          let isResizing = false;
+          let currentHandle = null;
+          let startX, startY, startWidth, startHeight, startLeft, startTop;
+          const minWidth = parseInt(window.getComputedStyle(element).minWidth) || 150;
+          const minHeight = parseInt(window.getComputedStyle(element).minHeight) || 100;
+          handles.forEach(handle => {
+              handle.addEventListener('mousedown', (e) => {
+                  const windowData = openWindows[element.dataset.instanceId];
+                  if (windowData && windowData.isMaximized) return;
+                  e.stopPropagation();
+                  isResizing = true;
+                  currentHandle = handle;
+                  startX = e.clientX;
+                  startY = e.clientY;
+                  startWidth = element.offsetWidth;
+                  startHeight = element.offsetHeight;
+                  startLeft = element.offsetLeft;
+                  startTop = element.offsetTop;
+                  focusWindow(element); // Pass only element
+                  document.body.style.cursor = window.getComputedStyle(currentHandle).cursor;
+              });
+          });
+          document.addEventListener('mousemove', (e) => {
+              if (!isResizing || !currentHandle) return;
+              e.preventDefault();
+              const dx = e.clientX - startX;
+              const dy = e.clientY - startY;
+              let newWidth = startWidth, newHeight = startHeight, newLeft = startLeft, newTop = startTop;
+              if (currentHandle.classList.contains('resize-handle-e')) newWidth = Math.max(minWidth, startWidth + dx);
+              else if (currentHandle.classList.contains('resize-handle-w')) { newWidth = Math.max(minWidth, startWidth - dx); newLeft = startLeft + dx; if (newWidth === minWidth) newLeft = startLeft + (startWidth - minWidth); }
+              if (currentHandle.classList.contains('resize-handle-s')) newHeight = Math.max(minHeight, startHeight + dy);
+              else if (currentHandle.classList.contains('resize-handle-n')) { newHeight = Math.max(minHeight, startHeight - dy); newTop = startTop + dy; if (newHeight === minHeight) newTop = startTop + (startHeight - minHeight); }
+              if (currentHandle.classList.contains('resize-handle-se')) { newWidth = Math.max(minWidth, startWidth + dx); newHeight = Math.max(minHeight, startHeight + dy); }
+              else if (currentHandle.classList.contains('resize-handle-sw')) { newWidth = Math.max(minWidth, startWidth - dx); newHeight = Math.max(minHeight, startHeight + dy); newLeft = startLeft + dx; if (newWidth === minWidth) newLeft = startLeft + (startWidth - minWidth); }
+              else if (currentHandle.classList.contains('resize-handle-ne')) { newWidth = Math.max(minWidth, startWidth + dx); newHeight = Math.max(minHeight, startHeight - dy); newTop = startTop + dy; if (newHeight === minHeight) newTop = startTop + (startHeight - minHeight); }
+              else if (currentHandle.classList.contains('resize-handle-nw')) { newWidth = Math.max(minWidth, startWidth - dx); newHeight = Math.max(minHeight, startHeight - dy); newLeft = startLeft + dx; newTop = startTop + dy; if (newWidth === minWidth) newLeft = startLeft + (startWidth - minWidth); if (newHeight === minHeight) newTop = startTop + (startHeight - minHeight); }
+              const desktopRect = desktop.getBoundingClientRect();
+              if (newLeft < 0) { newWidth += newLeft; newLeft = 0; } if (newTop < 0) { newHeight += newTop; newTop = 0; }
+              if (newLeft + newWidth > desktopRect.width) newWidth = desktopRect.width - newLeft;
+              if (newTop + newHeight > desktopRect.height) newHeight = desktopRect.height - newTop;
+              element.style.width = `${newWidth}px`; element.style.height = `${newHeight}px`;
+              element.style.left = `${newLeft}px`; element.style.top = `${newTop}px`;
+          });
+          document.addEventListener('mouseup', () => {
+              if (isResizing) {
+                  isResizing = false; currentHandle = null; document.body.style.cursor = 'default';
+                  const windowData = openWindows[element.dataset.instanceId];
+                  if (windowData && !windowData.isMaximized) {
+                      windowData.originalRect = { left: element.style.left, top: element.style.top, width: element.style.width, height: element.style.height };
+                  }
+              }
+          });
+      }
 
-      // MODIFIED focusWindow function
       function focusWindow(windowEl, eventTarget = null) {
           if (!windowEl || !document.body.contains(windowEl)) return;
           const instanceId = windowEl.dataset.instanceId;
@@ -647,7 +691,7 @@ import {BrowserApp} from './browser.js';
               windowData.taskbarButton.classList.add('active');
               windowData.taskbarButton.classList.remove('minimized');
           }
-          
+
           deselectAllDesktopIcons();
           startMenu.querySelectorAll('.keyboard-focused').forEach(el => el.classList.remove('keyboard-focused'));
           if (startMenu.style.display === 'flex') {
@@ -661,27 +705,64 @@ import {BrowserApp} from './browser.js';
           if (eventTarget && windowEl.contains(eventTarget) && eventTarget.matches(focusableSelector)) {
               elementToActuallyFocus = eventTarget;
           } else {
-              elementToActuallyFocus = windowEl.querySelector(focusableSelector) || 
-                                     windowEl.querySelector('.window-content') || 
-                                     windowEl; 
+              elementToActuallyFocus = windowEl.querySelector(focusableSelector) ||
+                                     windowEl.querySelector('.window-content') ||
+                                     windowEl;
           }
-          
-          // Only change focus if it's not already on the target or within a child of the target (e.g. text selection)
+
           if (elementToActuallyFocus && document.activeElement !== elementToActuallyFocus && !elementToActuallyFocus.contains(document.activeElement)) {
-              // console.log("Focusing in window:", elementToActuallyFocus);
               elementToActuallyFocus.focus({ preventScroll: true });
           } else if (!document.activeElement || !windowEl.contains(document.activeElement)) {
-              // If focus is completely outside, or nothing specific was found, focus the window element itself
-              // console.log("Fallback focusing window element:", windowEl);
               windowEl.focus({ preventScroll: true });
           }
           setFocusToContainer(windowEl);
       }
 
-
-      function closeWindow(windowEl) { /* ... (same as before) ... */ }
-      function addWindowToTaskbar(windowEl, title, iconSrc, instanceId) { /* ... (same as before) ... */ }
-      function makeDraggable(element) { /* ... (same as before, ensure focusWindow(element) is called without e.target) ... */
+      function closeWindow(windowEl) {
+          const instanceId = windowEl.dataset.instanceId;
+          if (openWindows[instanceId]) {
+              if (openWindows[instanceId].taskbarButton) {
+                  openWindows[instanceId].taskbarButton.remove();
+              }
+              delete openWindows[instanceId];
+          }
+          windowEl.remove();
+          const windowKeys = Object.keys(openWindows);
+          if (windowKeys.length > 0) {
+              const lastWindowKey = windowKeys[windowKeys.length - 1];
+              if(openWindows[lastWindowKey] && openWindows[lastWindowKey].element){
+                   focusWindow(openWindows[lastWindowKey].element);
+              } else {
+                  desktop.focus();
+              }
+          } else {
+              desktop.focus();
+          }
+      }
+      function addWindowToTaskbar(windowEl, title, iconSrc, instanceId) {
+          const taskbarButton = document.createElement('button');
+          taskbarButton.className = 'taskbar-button';
+          taskbarButton.dataset.windowInstanceId = instanceId;
+          const img = document.createElement('img');
+          img.src = iconSrc;
+          img.alt = "";
+          taskbarButton.appendChild(img);
+          const titleText = document.createTextNode(title.length > 18 ? title.substring(0,15) + '...' : title);
+          taskbarButton.appendChild(titleText);
+          taskbarButton.addEventListener('click', () => {
+              const winData = openWindows[instanceId];
+              if (winData) {
+                  if (winData.taskbarButton.classList.contains('active') && !winData.isMinimized) {
+                      toggleMinimizeWindow(winData.element);
+                  } else {
+                     focusWindow(winData.element);
+                  }
+              }
+          });
+          taskbarWindows.appendChild(taskbarButton);
+          openWindows[instanceId].taskbarButton = taskbarButton;
+      }
+      function makeDraggable(element) {
           const titleBar = element.querySelector('.window-titlebar');
           let offsetX, offsetY, isDragging = false;
           titleBar.addEventListener('mousedown', (e) => {
@@ -692,9 +773,8 @@ import {BrowserApp} from './browser.js';
               offsetX = e.clientX - element.getBoundingClientRect().left;
               offsetY = e.clientY - element.getBoundingClientRect().top;
               titleBar.style.cursor = 'grabbing';
-              focusWindow(element); // Call without e.target, so it focuses first focusable
+              focusWindow(element); // Pass only element, not e.target
           });
-          // ... rest of makeDraggable
           document.addEventListener('mousemove', (e) => {
               if (!isDragging) return;
               e.preventDefault();
@@ -719,14 +799,96 @@ import {BrowserApp} from './browser.js';
               }
           });
       }
-      function toggleMinimizeWindow(windowEl) { /* ... (same as before) ... */ }
-      function toggleMaximizeWindow(windowEl) { /* ... (same as before) ... */ }
+      function toggleMinimizeWindow(windowEl) {
+          const instanceId = windowEl.dataset.instanceId;
+          const windowData = openWindows[instanceId];
+          if (!windowData) return;
+          windowData.isMinimized = !windowData.isMinimized;
+          if (windowData.isMinimized) {
+              if (!windowData.isMaximized) {
+                   windowData.originalRectBeforeMinimize = { left: windowEl.style.left, top: windowEl.style.top, width: windowEl.style.width, height: windowEl.style.height };
+              }
+              windowEl.style.display = 'none';
+              if (windowData.taskbarButton) {
+                  windowData.taskbarButton.classList.add('minimized');
+                  windowData.taskbarButton.classList.remove('active');
+              }
+              const windowKeys = Object.keys(openWindows).filter(id => openWindows[id].element && document.body.contains(openWindows[id].element) && !openWindows[id].isMinimized);
+              if (windowKeys.length > 0) {
+                  focusWindow(openWindows[windowKeys[windowKeys.length -1]].element);
+              } else {
+                  desktop.focus();
+              }
+          } else {
+              windowEl.style.display = 'flex';
+              if (windowData.originalRectBeforeMinimize && !windowData.isMaximized) {
+                  windowEl.style.left = windowData.originalRectBeforeMinimize.left;
+                  windowEl.style.top = windowData.originalRectBeforeMinimize.top;
+                  windowEl.style.width = windowData.originalRectBeforeMinimize.width;
+                  windowEl.style.height = windowData.originalRectBeforeMinimize.height;
+              }
+              focusWindow(windowEl);
+          }
+      }
+      function toggleMaximizeWindow(windowEl) {
+          const instanceId = windowEl.dataset.instanceId;
+          const windowData = openWindows[instanceId];
+          if (!windowData || windowData.isMinimized) return;
+          const maximizeBtn = windowEl.querySelector('.window-maximize-btn');
+          const titleBar = windowEl.querySelector('.window-titlebar');
+          if (windowData.isMaximized) {
+              if (windowData.originalRect) {
+                  windowEl.style.left = windowData.originalRect.left;
+                  windowEl.style.top = windowData.originalRect.top;
+                  windowEl.style.width = windowData.originalRect.width;
+                  windowEl.style.height = windowData.originalRect.height;
+              } else { /* fallback sizing */ }
+              windowData.isMaximized = false;
+              windowEl.classList.remove('maximized');
+              maximizeBtn.textContent = '1'; maximizeBtn.title = 'Maximize';
+              titleBar.style.cursor = 'grab';
+          } else {
+              if (!windowData.originalRect || (windowData.originalRect.left === windowEl.style.left && /* ... condition ... */ true)) {
+                  windowData.originalRect = { left: windowEl.style.left, top: windowEl.style.top, width: windowEl.style.width || `${windowEl.offsetWidth}px`, height: windowEl.style.height || `${windowEl.offsetHeight}px` };
+              }
+              windowEl.style.left = '0px'; windowEl.style.top = '0px';
+              windowEl.style.width = `${desktop.clientWidth}px`; windowEl.style.height = `${desktop.clientHeight}px`;
+              windowData.isMaximized = true;
+              windowEl.classList.add('maximized');
+              maximizeBtn.textContent = '2'; maximizeBtn.title = 'Restore';
+              titleBar.style.cursor = 'default';
+          }
+          focusWindow(windowEl);
+      }
 
-      document.querySelectorAll('.desktop-icon').forEach(item => { /* ... (same as before) ... */ });
-      document.querySelectorAll('.start-menu-item').forEach(item => { /* ... (same as before) ... */ });
+      document.querySelectorAll('.desktop-icon').forEach(item => {
+          item.addEventListener('dblclick', (e) => {
+              const appId = item.dataset.appId;
+              if (appId) {
+                  item.classList.remove('selected');
+                  item.classList.remove('keyboard-focused');
+                  createWindow(appId);
+              }
+          });
+      });
+
+      document.querySelectorAll('.start-menu-item').forEach(item => {
+           item.addEventListener('click', (e) => {
+              if (item.classList.contains('disabled')) return;
+              const appId = item.dataset.appId;
+              if (item.id === 'shutdownButtonTrigger') {
+                  createWindow("shutdownDialog");
+              } else if (appId) {
+                  createWindow(appId);
+              }
+              startMenu.style.display = 'none';
+              startButton.style.borderStyle = 'outset';
+              startButton.focus();
+          });
+      });
 
       manageFocusableCollection(desktop, '.desktop-icon', true, false);
       manageFocusableCollection(startMenu, '.start-menu-items-container .start-menu-item', false, true);
-      
+
       desktop.focus();
   });
