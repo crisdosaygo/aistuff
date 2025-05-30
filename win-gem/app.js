@@ -5,18 +5,14 @@
                 this.netscape = netscape;
                 this.windowEl = windowEl;
                 this.windowInstanceId = windowInstanceId;
-                this.webviewId = webviewId; // The ID for the <browser-webview> element
-                this.webviewEl = this.windowEl.querySelector(`#${this.webviewId}`);
+                this.webviewId = webviewId;
+                this.webviewEl = this.windowEl.querySelector(`#${this.webviewId}`); // This is <browser-webview>
 
-                this.tabs = []; // { id, title, url, history: [], historyIndex, domElement }
-                this.activeTabId = null;
-                this.tabIdCounter = 0;
-                this.defaultUrl = "about:blank"; // Or your preferred home page
-                this.homeUrl = "https://www.google.com"; // Example home page
+                this.defaultUrl = "about:blank";
+                this.homeUrl = netscape ? "https://live.oldinternettoday.com/ घे हान जख्म ह्या सुखाचा/" : "https://www.google.com";
 
-                // URLs for throbber states
-                this.throbberAnimatedSrc = !netscape ? "" : "./netscape.gif"; // Replace with your chosen animated GIF
-                this.throbberStaticSrc = !netscape ? "" : "./netscape-frame.gif"; // Replace with a static version if you have one, or leave empty to just hide
+                this.throbberAnimatedSrc = !netscape ? "" : "./netscape.gif";
+                this.throbberStaticSrc = !netscape ? "" : "./netscape-frame.gif";
 
                 this.ui = {
                     navButtons: {
@@ -30,27 +26,28 @@
                     goButton: this.windowEl.querySelector('[data-action="go"]'),
                     tabBar: this.windowEl.querySelector('.browser-tab-bar'),
                     newTabButton: this.windowEl.querySelector('.browser-new-tab-btn'),
-                    throbber: this.windowEl.querySelector('.browser-throbber'), // <<< ADDED
+                    throbber: this.windowEl.querySelector('.browser-throbber'),
                 };
 
+                this._currentAppActiveTabId = null; // Local cache of webview's active tab ID
+
                 this._setupEventListeners();
-                this.addTab(this.defaultUrl, true); // Open with a default tab
-                this._updateNavButtonStates(); // Initial state
+                // Initial tab and navigation will be handled by 'webview-ready' event
+                this.ui.navButtons.stop.disabled = true; // Stop initially disabled
             }
 
             static generateInitialHTML(webviewId) {
-                // Note: Using text for nav buttons for simplicity. Could use Marlett/Webdings or icons.
-                // ◄ ► ✕ ↻ ⌂
+                // ... (HTML remains mostly the same, ensure throbber is there)
                 return `
                     <div class="browser-container">
                         <div class="browser-toolbar">
-                          <div class="browser-nav-buttons"> <!-- Wrapper for nav buttons -->
-                            <button data-action="back" title="Back">◄ Back</button>
-                            <button data-action="forward" title="Forward">Forward ►</button>
-                            <button data-action="stop" title="Stop">✕ Stop</button>
-                            <button data-action="reload" title="Reload">↻ Reload</button>
-                            <button data-action="home" title="Home">⌂ Home</button>
-                            <img src="" alt="${this.netscape ? 'Loading' : ''}" class="browser-throbber" style="display: none;"> <!-- THRobber ADDED HERE -->
+                          <div class="browser-nav-buttons">
+                            <button data-action="back" title="Back">‚óÑ Back</button>
+                            <button data-action="forward" title="Forward">Forward ‚ñ∫</button>
+                            <button data-action="stop" title="Stop">‚úï Stop</button>
+                            <button data-action="reload" title="Reload">‚Üª Reload</button>
+                            <button data-action="home" title="Home">‚åÇ Home</button>
+                            <img src="" alt="${this.netscape ? 'Loading' : ''}" class="browser-throbber" style="display: none;">
                           </div>
                         </div>
                         <div class="browser-address-toolbar">
@@ -59,41 +56,32 @@
                             <button data-action="go">Go</button>
                         </div>
                         <div class="browser-tab-bar">
-                            <!-- Tabs will be added here by JS -->
                             <button class="browser-new-tab-btn" title="New Tab">+</button>
                         </div>
-                        <browser-webview id="${webviewId}">
-                            (Content for ${webviewId} will appear here)
+                        <browser-webview id="${webviewId}" style="flex-grow: 1; background: #fff; border: 1px solid grey; min-height: 100px;">
+                            <!-- Content will be managed by BrowserWebview component -->
                         </browser-webview>
                     </div>
                 `;
             }
 
             _setupEventListeners() {
-                // Navigation buttons
                 this.ui.navButtons.back.addEventListener('click', () => this.goBack());
                 this.ui.navButtons.forward.addEventListener('click', () => this.goForward());
                 this.ui.navButtons.stop.addEventListener('click', () => this.stopLoading());
                 this.ui.navButtons.reload.addEventListener('click', () => this.reloadPage());
                 this.ui.navButtons.home.addEventListener('click', () => this.navigateTo(this.homeUrl));
 
-                // Address bar and Go button
                 this.ui.addressBar.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        this.navigateToCurrentAddress();
-                    }
+                    if (e.key === 'Enter') this.navigateToCurrentAddress();
                 });
                 this.ui.goButton.addEventListener('click', () => this.navigateToCurrentAddress());
-
-                // New tab button
                 this.ui.newTabButton.addEventListener('click', () => this.addTab(this.defaultUrl, true));
 
-                // Tab bar (for clicks on tabs or close buttons - event delegation)
                 this.ui.tabBar.addEventListener('click', (e) => {
                     const tabElement = e.target.closest('.browser-tab');
                     if (!tabElement) return;
-
-                    const tabId = parseInt(tabElement.dataset.tabId);
+                    const tabId = tabElement.dataset.tabId; // Tab IDs are strings from webview
                     if (e.target.classList.contains('tab-close-btn')) {
                         this.closeTab(tabId);
                     } else {
@@ -101,334 +89,266 @@
                     }
                 });
 
-                // Mock webview events (replace with actual webview events later)
-                // this.webviewEl.addEventListener('did-start-loading', (e) => this._handleWebViewEvent(e));
-                // this.webviewEl.addEventListener('did-stop-loading', (e) => this._handleWebViewEvent(e));
-                // this.webviewEl.addEventListener('did-navigate', (e) => this._handleWebViewEvent(e));
+                // Listen to events from <browser-webview>
+                this.webviewEl.addEventListener('webview-ready', (e) => this._handleWebviewReady(e.detail));
+                this.webviewEl.addEventListener('tab-created', (e) => this._handleTabCreated(e.detail));
+                this.webviewEl.addEventListener('tab-closed', (e) => this._handleTabClosed(e.detail));
+                this.webviewEl.addEventListener('active-tab-changed', (e) => this._handleActiveTabChanged(e.detail));
+                this.webviewEl.addEventListener('did-start-loading', (e) => this._handleDidStartLoading(e.detail));
+                this.webviewEl.addEventListener('did-stop-loading', (e) => this._handleDidStopLoading(e.detail));
+                this.webviewEl.addEventListener('did-navigate', (e) => this._handleDidNavigate(e.detail));
             }
 
-            // --- Tab Management ---
-            addTab(url = this.defaultUrl, makeActive = true) {
-                const tabId = this.tabIdCounter++;
-                const newTab = {
-                    id: tabId,
-                    title: "New Tab",
-                    url: "", // Will be set by first navigation
-                    history: [],
-                    historyIndex: -1,
-                    domElement: null // Will be created by _renderTabs
-                };
-                this.tabs.push(newTab);
-                this._renderTabs(); // Re-render all tabs
-
-                if (makeActive) {
-                    this.switchTab(tabId); // This will also trigger navigation
-                }
-                this.navigateTo(url, tabId); // Navigate the new tab
-                return newTab;
-            }
-
-            closeTab(tabId) {
-                const tabIndex = this.tabs.findIndex(t => t.id === tabId);
-                if (tabIndex === -1) return;
-
-                this.tabs.splice(tabIndex, 1);
-                // Conceptually: this.webviewEl.closeTab(tabId); // Inform the webview
-
-                if (this.activeTabId === tabId) {
-                    this.activeTabId = null; // Clear active tab
-                    if (this.tabs.length > 0) {
-                        // Switch to the previous tab, or the first one if no previous
-                        const newActiveIndex = Math.max(0, tabIndex - 1);
-                        this.switchTab(this.tabs[newActiveIndex].id);
-                    } else {
-                        // No tabs left, maybe close browser window or show a "no tabs" state
-                        // For now, just clear UI
-                        this.ui.addressBar.value = "";
-                        this._updateNavButtonStates();
+            // --- Event Handlers for BrowserWebview Events ---
+            _handleWebviewReady(detail) { // detail: { tabs, activeTabId }
+                console.log(`[BrowserApp ${this.webviewId}] Webview ready:`, detail);
+                this._currentAppActiveTabId = detail.activeTabId;
+                this._renderTabs(); // Render based on webview's initial state
+                
+                const activeTab = this.webviewEl.tabs.find(t => t.id === this._currentAppActiveTabId);
+                if (activeTab) {
+                    this.ui.addressBar.value = activeTab.url;
+                    if (activeTab.url === 'about:blank' || activeTab.url === '' || activeTab.url === 'about:error') {
+                        // If initial tab is blank or an error placeholder, navigate to default/home.
+                        // Check if it's an error specific to mock init to avoid loop
+                        if (activeTab.url !== this.defaultUrl && activeTab.url !== this.homeUrl) {
+                             this.navigateTo(this.defaultUrl, this._currentAppActiveTabId);
+                        }
                     }
-                }
-                this._renderTabs();
-                if (this.tabs.length === 0) {
-                     // If no tabs left, create a new default one
+                } else if (this.webviewEl.tabs.length === 0) { // No tabs at all
                     this.addTab(this.defaultUrl, true);
                 }
-            }
-
-            switchTab(tabId) {
-                if (this.activeTabId === tabId && this.tabs.find(t => t.id === tabId)) return; // Already active or tab doesn't exist
-
-                this.activeTabId = tabId;
-                const activeTabData = this.tabs.find(t => t.id === tabId);
-
-                if (activeTabData) {
-                    this.ui.addressBar.value = activeTabData.url;
-                    // Conceptually: this.webviewEl.setActiveTab(tabId);
-                    this.webviewEl.innerHTML = `(Content for ${activeTabData.url} - Tab ID: ${tabId})`; // Mock
-                } else {
-                    // This case should ideally not happen if closeTab logic is correct
-                    this.ui.addressBar.value = "";
-                    this.webviewEl.innerHTML = `(No active tab selected)`;
-                }
-
-                this._renderTabs(); // To update active class
                 this._updateNavButtonStates();
             }
 
-            _renderTabs() {
-                // Clear existing tab elements except the new tab button
-                this.ui.tabBar.querySelectorAll('.browser-tab').forEach(el => el.remove());
+            _handleTabCreated(detail) { // detail: { tabId, data: {url, title} }
+                console.log(`[BrowserApp ${this.webviewId}] Tab created in webview:`, detail);
+                this._renderTabs(); // Re-render to show the new tab
+                // If it became active, _handleActiveTabChanged will also fire.
+            }
 
-                this.tabs.forEach(tabData => {
+            _handleTabClosed(detail) { // detail: { tabId }
+                console.log(`[BrowserApp ${this.webviewId}] Tab closed in webview:`, detail.tabId);
+                // active-tab-changed event from webviewEl will handle active tab logic if it changed
+                this._renderTabs(); 
+                if (this.webviewEl.tabs.length === 0) {
+                    this.addTab(this.defaultUrl, true); // Ensure at least one tab
+                }
+                 this._updateNavButtonStates(); // Update immediately after render
+            }
+
+            _handleActiveTabChanged(detail) { // detail: { tabId, url, title }
+                 console.log(`[BrowserApp ${this.webviewId}] Active tab changed in webview:`, detail);
+                this._currentAppActiveTabId = detail.tabId;
+                this.ui.addressBar.value = detail.url || "";
+                this._renderTabs(); // To update .active class on tab
+                this._updateNavButtonStates();
+                 const windowTitleBar = this.windowEl.querySelector('.window-title');
+                 if(windowTitleBar && detail.title) {
+                    const baseTitle = this.netscape ? 'Netscape Navigator' : APP_DEFINITIONS.internetExplorer.title;
+                    windowTitleBar.textContent = `${detail.title} - ${baseTitle}`;
+                 } else if (windowTitleBar) {
+                    windowTitleBar.textContent = this.netscape ? 'Netscape Navigator' : APP_DEFINITIONS.internetExplorer.title;
+                 }
+
+            }
+
+            _handleDidStartLoading(detail) { // detail: { tabId, url }
+                if (detail.tabId === this._currentAppActiveTabId) {
+                    console.log(`[BrowserApp ${this.webviewId}] Active tab started loading:`, detail.url);
+                    this.ui.navButtons.stop.disabled = false;
+                    if (this.ui.throbber && this.netscape) {
+                        this.ui.throbber.src = this.throbberAnimatedSrc;
+                        this.ui.throbber.style.display = 'inline';
+                    }
+                    // Optionally update address bar if URL changed due to redirect before navigation
+                    // this.ui.addressBar.value = detail.url;
+                }
+                this._renderTabs(); // Update loading indicator on tab
+            }
+
+            _handleDidStopLoading(detail) { // detail: { tabId, url }
+                if (detail.tabId === this._currentAppActiveTabId) {
+                    console.log(`[BrowserApp ${this.webviewId}] Active tab stopped loading:`, detail.url);
+                    this.ui.navButtons.stop.disabled = true;
+                    if (this.ui.throbber) {
+                         if (this.throbberStaticSrc && this.netscape) {
+                            this.ui.throbber.src = this.throbberStaticSrc;
+                        } else {
+                            this.ui.throbber.style.display = 'none';
+                            this.ui.throbber.src = '';
+                        }
+                    }
+                }
+                this._renderTabs(); // Update loading indicator on tab
+            }
+
+            _handleDidNavigate(detail) { // detail: { tabId, url, title, canGoBack, canGoForward }
+                 console.log(`[BrowserApp ${this.webviewId}] Navigation completed in webview:`, detail);
+                if (detail.tabId === this._currentAppActiveTabId) {
+                    this.ui.addressBar.value = detail.url;
+                    this._updateNavButtonStates(); // Nav states depend on canGoBack/Forward
+                     const windowTitleBar = this.windowEl.querySelector('.window-title');
+                     if(windowTitleBar) {
+                        const baseTitle = this.netscape ? 'Netscape Navigator' : APP_DEFINITIONS.internetExplorer.title;
+                        windowTitleBar.textContent = `${detail.title} - ${baseTitle}`;
+                     }
+                }
+                this._renderTabs(); // Update tab title
+            }
+
+            // --- Tab Management API ---
+            async addTab(url = this.defaultUrl, makeActive = true) {
+                console.log(`[BrowserApp ${this.webviewId}] Requesting new tab for URL: ${url}`);
+                const newTabId = await this.webviewEl.createTab(url); // webviewEl handles events
+                if (makeActive && newTabId) {
+                    await this.webviewEl.setActiveTab(newTabId);
+                }
+                // UI updates will be driven by events from webviewEl
+            }
+
+            async closeTab(tabId) {
+                console.log(`[BrowserApp ${this.webviewId}] Requesting close tab: ${tabId}`);
+                await this.webviewEl.closeTab(tabId);
+                // UI updates (removing tab, switching active) driven by events
+            }
+
+            async switchTab(tabId) {
+                if (this._currentAppActiveTabId === tabId) return;
+                console.log(`[BrowserApp ${this.webviewId}] Requesting switch to tab: ${tabId}`);
+                await this.webviewEl.setActiveTab(tabId);
+                // UI updates driven by 'active-tab-changed' event
+            }
+
+            _renderTabs() {
+                this.ui.tabBar.querySelectorAll('.browser-tab').forEach(el => el.remove());
+                const tabsFromWebview = this.webviewEl.tabs; // Use getter
+                const currentActiveIdInWebview = this.webviewEl.activeTabId;
+
+                tabsFromWebview.forEach(tabData => {
                     const tabEl = document.createElement('div');
                     tabEl.className = 'browser-tab';
                     tabEl.dataset.tabId = tabData.id;
-                    if (tabData.id === this.activeTabId) {
+                    if (tabData.id === currentActiveIdInWebview) {
                         tabEl.classList.add('active');
                     }
 
+                    const titleText = tabData.title || 'Loading...';
                     const titleSpan = document.createElement('span');
-                    titleSpan.textContent = tabData.title.substring(0, 20) + (tabData.title.length > 20 ? '…' : ''); // Truncate title
+                    titleSpan.textContent = titleText.substring(0, 20) + (titleText.length > 20 ? '‚Ä¶' : '');
+                    if (tabData.loading) { // Show loading indicator on tab
+                        titleSpan.textContent = "Loading... " + titleSpan.textContent;
+                        titleSpan.style.fontStyle = "italic";
+                    }
                     tabEl.appendChild(titleSpan);
 
                     const closeBtn = document.createElement('span');
                     closeBtn.className = 'tab-close-btn';
-                    closeBtn.innerHTML = '✕'; // Simple 'x'
+                    closeBtn.innerHTML = '‚úï';
                     closeBtn.title = 'Close Tab';
                     tabEl.appendChild(closeBtn);
 
-                    tabData.domElement = tabEl;
-                    this.ui.tabBar.insertBefore(tabEl, this.ui.newTabButton); // Insert before the '+' button
+                    this.ui.tabBar.insertBefore(tabEl, this.ui.newTabButton);
                 });
             }
 
-            // --- Navigation ---
-// Inside app.js, within BrowserApp class
-
-            // --- Navigation ---
+            // --- Navigation API ---
             navigateToCurrentAddress() {
                 const url = this.ui.addressBar.value.trim();
                 this.navigateTo(url);
             }
 
-            navigateTo(url, tabIdToNavigate) {
-                const tabId = tabIdToNavigate !== undefined ? tabIdToNavigate : this.activeTabId;
+            async navigateTo(url, tabIdToNavigate) {
+                const tabId = tabIdToNavigate !== undefined ? tabIdToNavigate : this._currentAppActiveTabId;
 
-                if (tabId === null && this.tabs.length === 0) {
-                    const newTab = this.addTab(url, true);
-                    // navigateTo will be called again inside addTab for the new tab, so we can return here.
+                if (tabId === null && this.webviewEl.tabs.length === 0) {
+                    console.log(`[BrowserApp ${this.webviewId}] No active tab, creating new one for navigation to ${url}`);
+                    await this.addTab(url, true); // addTab will create and make active, webview will load
                     return;
                 }
-                if (tabId === null) { // Should not happen if addTab handles the empty case correctly
-                    console.warn("navigateTo called with null tabId and existing tabs.");
-                    return;
+                if (tabId === null) {
+                     console.warn(`[BrowserApp ${this.webviewId}] navigateTo called with null tabId, but tabs exist. Using first tab.`);
+                     // This case implies _currentAppActiveTabId is out of sync or no tab is active.
+                     // Try to use the webview's actual activeTabId or first tab.
+                     const fallbackTabId = this.webviewEl.activeTabId || (this.webviewEl.tabs.length > 0 ? this.webviewEl.tabs[0].id : null);
+                     if (!fallbackTabId) {
+                         await this.addTab(url, true); return; // still no tab, create one
+                     }
+                     // await this.webviewEl.setActiveTab(fallbackTabId); // ensure it's active
+                     // this._currentAppActiveTabId = fallbackTabId; // update local cache
+                     // await this.webviewEl.loadURL(this._prepareUrl(url), fallbackTabId);
+                     // Simpler: just use the first tab available or create if none.
+                     // The `tabId === null && this.webviewEl.tabs.length === 0` case above should handle it.
+                     // If we reach here, it means there are tabs, but `_currentAppActiveTabId` is null.
+                     // Let's try to make the first tab active and navigate it.
+                     const firstTab = this.webviewEl.tabs[0];
+                     if (firstTab) {
+                        await this.webviewEl.setActiveTab(firstTab.id);
+                        // active-tab-changed will set _currentAppActiveTabId, then we can call loadURL
+                        // To avoid complexity, just pass the ID directly
+                        await this.webviewEl.loadURL(this._prepareUrl(url), firstTab.id);
+                     } else {
+                         await this.addTab(url, true); // Failsafe
+                     }
+                     return;
                 }
 
-                const tab = this.tabs.find(t => t.id === tabId);
-                if (!tab) {
-                    console.warn(`navigateTo: Tab with id ${tabId} not found.`);
-                    return;
-                }
-
-                let fullUrl = url;
-                if (!url.match(/^([a-z]+:)?\/\//i) && !url.startsWith("about:")) {
-                    fullUrl = "http://" + url;
-                }
-                
-                console.log(`[Browser ${this.webviewId}] Tab ${tabId} navigating to: ${fullUrl}`);
-                this.webviewEl.innerHTML = `Loading ${fullUrl}... (Tab ID: ${tabId})`;
-                this.ui.navButtons.stop.disabled = false;
-
-                // --- THRobber START ---
-                if (this.ui.throbber && this.netscape) { // Check if throbber element exists
-                    this.ui.throbber.src = this.throbberAnimatedSrc;
-                    this.ui.throbber.style.display = 'block';
-                }
-                // --- THRobber END ---
-
-                // Simulate page load and title update
-                setTimeout(() => {
-                    // Ensure the tab still exists (it might have been closed during the "load")
-                    const currentTabAfterTimeout = this.tabs.find(t => t.id === tabId);
-                    if (!currentTabAfterTimeout) {
-                        // If the tab that was loading is gone, and no other tab is actively loading, stop the throbber.
-                        // This logic assumes only one "active" load at a time for the throbber.
-                        let isLoadingAnotherTab = false;
-                        if (this.activeTabId !== null) {
-                            const activeTabData = this.tabs.find(t => t.id === this.activeTabId);
-                            // A more robust check would be if activeTabData has a 'loading' state.
-                            // For now, if stop button is enabled for active tab, assume it's loading.
-                            if (activeTabData && !this.ui.navButtons.stop.disabled) {
-                                isLoadingAnotherTab = true;
-                            }
-                        }
-                        if (!isLoadingAnotherTab && this.ui.throbber) {
-                            this.ui.throbber.style.display = 'none';
-                            this.ui.throbber.src = ''; // Clear src
-                        }
-                        return;
-                    }
-
-                    // currentTabAfterTimeout is the same as 'tab' variable if it still exists
-                    tab.url = fullUrl;
-                    tab.title = this._extractTitleFromUrl(fullUrl);
-
-                    if (tab.historyIndex < tab.history.length - 1) {
-                        tab.history = tab.history.slice(0, tab.historyIndex + 1);
-                    }
-                    tab.history.push(fullUrl);
-                    tab.historyIndex = tab.history.length - 1;
-
-                    if (tab.id === this.activeTabId) {
-                        this.ui.addressBar.value = fullUrl;
-                        this.webviewEl.innerHTML = `(Content for ${tab.title} - ${tab.url})`;
-                    }
-                    this._renderTabs();
-                    this._updateNavButtonStates();
-                    this.ui.navButtons.stop.disabled = true;
-
-                    // --- THRobber STOP ---
-                    if (this.ui.throbber) {
-                        if (this.throbberStaticSrc && this.netscape) {
-                            this.ui.throbber.src = this.throbberStaticSrc;
-                            // Keep display: 'block' if using a static image
-                        } else {
-                            this.ui.throbber.style.display = 'none';
-                            this.ui.throbber.src = '';
-                        }
-                    }
-                    // --- THRobber END ---
-
-                }, 500 + Math.random() * 500);
+                const fullUrl = this._prepareUrl(url);
+                console.log(`[BrowserApp ${this.webviewId}] Requesting navigation for tab ${tabId} to: ${fullUrl}`);
+                await this.webviewEl.loadURL(fullUrl, tabId);
+                // UI updates (loading indicators, address bar, title) driven by events
             }
 
-
-            _loadFromHistory(tab, url) {
-                // This is a simplified load for history navigation, doesn't add to history again
-                console.log(`[Browser ${this.webviewId}] Tab ${tab.id} history nav to: ${url}`);
-                this.webviewEl.innerHTML = `Loading ${url} from history...`;
-                this.ui.navButtons.stop.disabled = false;
-
-                // --- THRobber START ---
-                if (this.ui.throbber && this.netscape) {
-                    this.ui.throbber.src = this.throbberAnimatedSrc;
-                    this.ui.throbber.style.display = 'block';
+            _prepareUrl(url) {
+                let fullUrl = url.trim();
+                if (!fullUrl) fullUrl = this.defaultUrl;
+                if (!fullUrl.match(/^([a-z]+:)?\/\//i) && !fullUrl.startsWith("about:")) {
+                    fullUrl = "http://" + fullUrl;
                 }
-                // --- THRobber END ---
-
-                setTimeout(() => {
-                    const currentTabAfterTimeout = this.tabs.find(t => t.id === tab.id); // Re-check tab existence
-                    if (!currentTabAfterTimeout) {
-                        let isLoadingAnotherTab = false;
-                        if (this.activeTabId !== null) {
-                            const activeTabData = this.tabs.find(t => t.id === this.activeTabId);
-                            if (activeTabData && !this.ui.navButtons.stop.disabled) {
-                                isLoadingAnotherTab = true;
-                            }
-                        }
-                        if (!isLoadingAnotherTab && this.ui.throbber) {
-                            this.ui.throbber.style.display = 'none';
-                            this.ui.throbber.src = '';
-                        }
-                        return;
-                    }
-
-                    tab.url = url; // 'tab' is still valid here if currentTabAfterTimeout is found
-                    tab.title = this._extractTitleFromUrl(url);
-
-                    if (tab.id === this.activeTabId) {
-                        this.ui.addressBar.value = url;
-                        this.webviewEl.innerHTML = `(Content for ${tab.title} - ${tab.url})`;
-                    }
-                    this._renderTabs();
-                    this._updateNavButtonStates();
-                    this.ui.navButtons.stop.disabled = true;
-
-                    // --- THRobber STOP ---
-                    if (this.ui.throbber) {
-                        if (this.throbberStaticSrc && this.netscape) {
-                            this.ui.throbber.src = this.throbberStaticSrc;
-                        } else {
-                            this.ui.throbber.style.display = 'none';
-                            this.ui.throbber.src = '';
-                        }
-                    }
-                    // --- THRobber END ---
-                }, 200 + Math.random() * 300);
+                return fullUrl;
             }
-            goBack() {
-                const tab = this.tabs.find(t => t.id === this.activeTabId);
-                if (tab && tab.historyIndex > 0) {
-                    tab.historyIndex--;
-                    const url = tab.history[tab.historyIndex];
-                    // Conceptually: this.webviewEl.goBack(tab.id);
-                    // For mock, we directly "load" from history
-                    this._loadFromHistory(tab, url);
+
+            async goBack() {
+                if (this._currentAppActiveTabId) {
+                    await this.webviewEl.goBack(this._currentAppActiveTabId);
                 }
             }
 
-            goForward() {
-                const tab = this.tabs.find(t => t.id === this.activeTabId);
-                if (tab && tab.historyIndex < tab.history.length - 1) {
-                    tab.historyIndex++;
-                    const url = tab.history[tab.historyIndex];
-                    // Conceptually: this.webviewEl.goForward(tab.id);
-                    this._loadFromHistory(tab, url);
+            async goForward() {
+                if (this._currentAppActiveTabId) {
+                    await this.webviewEl.goForward(this._currentAppActiveTabId);
                 }
             }
 
-            reloadPage() {
-                const tab = this.tabs.find(t => t.id === this.activeTabId);
-                if (tab && tab.url) {
-                    // Conceptually: this.webviewEl.reload(tab.id);
-                    // For mock, just call navigateTo with current URL (will re-add to history, which is fine for simple reload)
-                    this.navigateTo(tab.url, tab.id);
+            async reloadPage() {
+                if (this._currentAppActiveTabId) {
+                    await this.webviewEl.reload(this._currentAppActiveTabId);
                 }
             }
 
-            stopLoading() {
-                // Conceptually: this.webviewEl.stopLoading(this.activeTabId);
-                console.log(`[Browser ${this.webviewId}] Stop loading for tab ${this.activeTabId}`);
-                this.ui.navButtons.stop.disabled = true;
-                const tab = this.tabs.find(t => t.id === this.activeTabId);
-                if (tab) {
-                     this.webviewEl.innerHTML = `(Loading stopped for ${tab.url})`;
+            async stopLoading() {
+                if (this._currentAppActiveTabId) {
+                    await this.webviewEl.stop(this._currentAppActiveTabId);
                 }
             }
 
             _updateNavButtonStates() {
-                const tab = this.tabs.find(t => t.id === this.activeTabId);
-                if (tab) {
-                    this.ui.navButtons.back.disabled = tab.historyIndex <= 0;
-                    this.ui.navButtons.forward.disabled = tab.historyIndex >= tab.history.length - 1;
-                    this.ui.navButtons.reload.disabled = !tab.url;
+                const activeTab = this.webviewEl.tabs.find(t => t.id === this._currentAppActiveTabId);
+                if (activeTab) {
+                    this.ui.navButtons.back.disabled = !activeTab.canGoBack;
+                    this.ui.navButtons.forward.disabled = !activeTab.canGoForward;
+                    this.ui.navButtons.reload.disabled = !activeTab.url || activeTab.url === 'about:blank';
+                    // Stop button state is handled by did-start/stop-loading events
                 } else { // No active tab
                     this.ui.navButtons.back.disabled = true;
                     this.ui.navButtons.forward.disabled = true;
                     this.ui.navButtons.reload.disabled = true;
-                }
-                // Stop button is managed during load simulation
-                // Home button is always enabled
-            }
-
-            _extractTitleFromUrl(url) {
-                if (!url) return "Untitled";
-                if (url === "about:blank") return "Blank Page";
-                try {
-                    const parsedUrl = new URL(url);
-                    let title = parsedUrl.hostname.replace(/^www\./, '');
-                    if (parsedUrl.pathname !== '/' && parsedUrl.pathname.length > 1) {
-                        const pathPart = parsedUrl.pathname.split('/').pop(); // Get last part of path
-                        if (pathPart) title = pathPart + " - " + title;
-                    }
-                    return title || "Untitled";
-                } catch (e) {
-                    // If not a valid URL, use the string itself, truncated
-                    return url.length > 30 ? url.substring(0, 27) + "..." : url;
+                    this.ui.navButtons.stop.disabled = true;
                 }
             }
         }
       // ===== END BROWSER_APP.JS =====
+      
         const APP_DEFINITIONS = {
             myComputer: {
                 title: "My Computer",
@@ -512,48 +432,41 @@
                 `
             },
             // Add this to your existing APP_DEFINITIONS object
-            internetBrowser: {
-                netscape: true,
-                title: "Internet Browser", // Or "Netscape", "Explorer"
-                icon: "./netscape-frame.gif", // Classic IE icon
-                defaultWidth: 700, // Browser windows are usually larger
+
+            internetBrowser: { // This one is generic, let's ensure it can be IE-like
+                netscape: false, // Default to IE like
+                title: "Internet Browser",
+                icon: "https://win98icons.alexmeub.com/icons/png/msie2-0.png",
+                defaultWidth: 700,
                 defaultHeight: 500,
-                // content and init will be handled by the BrowserApp class
-                // We'll call a static method to get HTML and then an init method
                 generateContent: (windowInstanceId, webviewId) => BrowserApp.generateInitialHTML(webviewId),
-                initApp: (windowEl, windowInstanceId, webviewId) => {
-                    return new BrowserApp(windowEl, windowInstanceId, webviewId, true);
+                initApp: (windowEl, windowInstanceId, webviewId, appDefinition) => { // Pass appDefinition
+                    return new BrowserApp(windowEl, windowInstanceId, webviewId, appDefinition.netscape);
                 }
             },
-
             internetExplorer: {
-                title: "Internet Explorer", // Or "Netscape", "Explorer"
-                icon: "https://win98icons.alexmeub.com/icons/png/msie2-0.png", // Classic IE icon
-                defaultWidth: 700, // Browser windows are usually larger
+                netscape: false,
+                title: "Internet Explorer",
+                icon: "https://win98icons.alexmeub.com/icons/png/msie2-0.png",
+                defaultWidth: 700,
                 defaultHeight: 500,
-                // content and init will be handled by the BrowserApp class
-                // We'll call a static method to get HTML and then an init method
                 generateContent: (windowInstanceId, webviewId) => BrowserApp.generateInitialHTML(webviewId),
-                initApp: (windowEl, windowInstanceId, webviewId) => {
-                    return new BrowserApp(windowEl, windowInstanceId, webviewId);
+                initApp: (windowEl, windowInstanceId, webviewId, appDefinition) => {
+                    return new BrowserApp(windowEl, windowInstanceId, webviewId, appDefinition.netscape);
                 }
             },
-
             netscapeNavigator: {
                 netscape: true,
-                title: "Netscape Navigator", // Or "Netscape", "Explorer"
-                icon: "./n2-2.png", // Classic IE icon
-                defaultWidth: 700, // Browser windows are usually larger
+                title: "Netscape Navigator",
+                icon: "./n2-2.png", // Ensure this icon exists or use placeholder
+                defaultWidth: 700,
                 defaultHeight: 500,
-                // content and init will be handled by the BrowserApp class
-                // We'll call a static method to get HTML and then an init method
                 generateContent: (windowInstanceId, webviewId) => BrowserApp.generateInitialHTML(webviewId),
-                initApp: (windowEl, windowInstanceId, webviewId) => {
-                    return new BrowserApp(windowEl, windowInstanceId, webviewId, true);
+                initApp: (windowEl, windowInstanceId, webviewId, appDefinition) => {
+                    return new BrowserApp(windowEl, windowInstanceId, webviewId, appDefinition.netscape);
                 }
             },
         };
-
         document.addEventListener('DOMContentLoaded', () => {
             const clockElement = document.getElementById('clock');
             const startButton = document.getElementById('startButton');
@@ -717,7 +630,7 @@
 
                 // --- NEW: Call appDef.initApp if it exists to initialize app-specific logic ---
                 if (appDef.initApp && typeof appDef.initApp === 'function') {
-                    newWindowData.appInstance = appDef.initApp(windowEl, windowInstanceId, webviewId);
+                    newWindowData.appInstance = appDef.initApp(windowEl, windowInstanceId, webviewId, appDef);
                 }
 
                 // Setup standard window controls
