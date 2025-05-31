@@ -12,14 +12,14 @@ export const notepadAppDefinition = {
                 <div class="notepad-menu-item disabled" data-action="edit" style="margin-left:8px;"><u>E</u>dit</div>
                 <div class="notepad-menu-item disabled" data-action="search" style="margin-left:8px;"><u>S</u>earch</div>
                 <div class="notepad-menu-item disabled" data-action="help" style="margin-left:8px;"><u>H</u>elp</div>
-            </div>
-            <div id="notepad-file-dropdown" class="notepad-dropdown-menu" style="display:none; position:absolute; /* top is set by JS */ /* left is set by JS */ background:#c0c0c0; border:1px outset #dfdfdf; box-shadow: 1px 1px 3px rgba(0,0,0,0.4); z-index:10; padding:1px;">
-                <div class="notepad-dropdown-item" data-action="new"><u>N</u>ew</div>
-                <div class="notepad-dropdown-item" data-action="open"><u>O</u>pen...</div>
-                <div class="notepad-dropdown-item" data-action="save"><u>S</u>ave</div>
-                <div class="notepad-dropdown-item" data-action="saveas">Save <u>A</u>s...</div>
-                <div class="notepad-dropdown-separator" style="height:1px; background:#808080; margin:2px 1px; border-bottom:1px solid #fff;"></div>
-                <div class="notepad-dropdown-item" data-action="exit">E<u>x</u>it</div>
+                <div id="notepad-file-dropdown" class="notepad-dropdown-menu" style="display:none; position:absolute; /* top is set by JS */ /* left is set by JS */ background:#c0c0c0; border:1px outset #dfdfdf; box-shadow: 1px 1px 3px rgba(0,0,0,0.4); z-index:10; padding:1px;">
+                    <div class="notepad-dropdown-item" data-action="new"><u>N</u>ew</div>
+                    <div class="notepad-dropdown-item" data-action="open"><u>O</u>pen...</div>
+                    <div class="notepad-dropdown-item" data-action="save"><u>S</u>ave</div>
+                    <div class="notepad-dropdown-item" data-action="saveas">Save <u>A</u>s...</div>
+                    <div class="notepad-dropdown-separator" style="height:1px; background:#808080; margin:2px 1px; border-bottom:1px solid #fff;"></div>
+                    <div class="notepad-dropdown-item" data-action="exit">E<u>x</u>it</div>
+                </div>
             </div>
             <textarea id="notepad-textarea" style="width: calc(100% - 2px); height: calc(100% - 25px); border: 1px inset #808080; font-family: 'Lucida Console', 'Courier New', monospace; font-size:12px; resize:none; box-sizing: border-box; padding:2px; margin:1px; background:white;" placeholder=""></textarea>
         </div>
@@ -92,7 +92,7 @@ export const notepadAppDefinition = {
                 } else {
                     // Position the dropdown right below the "File" menu item
                     fileDropdown.style.left = targetMenuItem.offsetLeft + 'px';
-                    fileDropdown.style.top = (targetMenuItem.offsetTop + targetMenuItem.offsetHeight) + 'px';
+                    fileDropdown.style.top = (targetMenuItem.parentElement.offsetHeight) + 1 + 'px';
                     fileDropdown.style.display = 'block';
                     // Add listener to close dropdown when clicking outside
                     // Use capture to catch clicks on other elements before they might stop propagation
