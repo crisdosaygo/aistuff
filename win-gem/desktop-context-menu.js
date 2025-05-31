@@ -215,17 +215,6 @@
                 text: "P<u>r</u>operties",
                 action: openDisplayProperties 
             },
-            { separator: true }, // Fun section!
-            {
-                text: "LSD Tr<u>i</u>p",
-                action: () => {
-                     if (window.Win9xDesktopUtils && typeof window.Win9xDesktopUtils.triggerLsdEffect === 'function') {
-                        window.Win9xDesktopUtils.triggerLsdEffect(5000); // 5 seconds
-                    } else {
-                        alert("LSD Effect not available. (lsd-effect.js not loaded?)");
-                    }
-                }
-            }
         ];
 
         menuItems.forEach((itemDef, index) => {
@@ -370,6 +359,12 @@
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initDesktopContextMenu);
+        document.addEventListener('mousedown', e => {
+          console.log('click');
+          if ( contextMenuElement.style.display === 'block' && !e.target.closest('.desktop-context-menu') ) {
+            setTimeout(() => hideContextMenu(), 100);
+          }
+        }, {capture:true});
     } else {
         initDesktopContextMenu(); 
     }
