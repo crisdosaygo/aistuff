@@ -1,0 +1,59 @@
+/* lsd-effect.css */
+
+/* Inject SVG filters */
+body svg#lsd-filters-svg-container {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+}
+
+@keyframes lsdOverlayFadeInOut {
+    0% { opacity: 0; }
+    15% { opacity: 0.6; } /* Fade in fast */
+    85% { opacity: 0.5; } /* Hold */
+    100% { opacity: 0; }   /* Fade out */
+}
+
+@keyframes lsdRainbowFlow {
+    0% { background-position: 0% 0%; filter: hue-rotate(0deg) saturate(1.5); }
+    100% { background-position: 200% 200%; filter: hue-rotate(360deg) saturate(1.5); }
+    /* background-position animates the gradient, hue-rotate cycles colors */
+}
+
+
+.lsd-effect-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 29999; 
+    
+    /* Finer, more numerous bands with conic-gradient for a circular shimmer */
+    background: conic-gradient(
+        from 0deg,
+        red, orange, yellow, lime, cyan, blue, indigo, violet, red
+    );
+    /* Or keep linear for bands:
+    background: linear-gradient(135deg, 
+        hsl(0, 100%, 60%), hsl(30, 100%, 60%), hsl(60, 100%, 60%), 
+        hsl(90, 100%, 60%), hsl(120, 100%, 60%), hsl(150, 100%, 60%),
+        hsl(180, 100%, 60%), hsl(210, 100%, 60%), hsl(240, 100%, 60%),
+        hsl(270, 100%, 60%), hsl(300, 100%, 60%), hsl(330, 100%, 60%),
+        hsl(0, 100%, 60%) 
+    );
+    */
+    background-size: 400% 400%; /* Larger size for smooth animation */
+    
+    mix-blend-mode: overlay; /* overlay, hard-light, color-dodge are good */
+    opacity: 0; /* Start transparent, animated by JS/CSS */
+    
+    /* Apply SVG filter for warp/displacement */
+    filter: url(#lsd-displacement-filter); 
+
+    animation: 
+        lsdOverlayFadeInOut 5s ease-in-out forwards, /* Duration matches JS */
+        lsdRainbowFlow 3s linear infinite; /* Speed of color shimmer */
+}

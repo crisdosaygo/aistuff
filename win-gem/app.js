@@ -1,65 +1,19 @@
 import {BrowserApp} from './browser.js';
+import { myComputerAppDefinition } from './my-computer.js'; // ADD THIS
+import { notepadAppDefinition } from './notepad.js';       // ADD THIS
+import { calculatorAppDefinition } from './calculator.js'; // ADD THIS
 
 // windows awesome
   const APP_DEFINITIONS = {
-      myComputer: {
-          title: "My Computer",
-          icon: "https://win98icons.alexmeub.com/icons/png/computer_explorer-0.png",
-          content: () => `
-              <div style="display: flex; flex-direction: column; height: 100%; font-size:11px;">
-                  <div style="padding: 2px 5px; border-bottom: 1px solid #808080; background: #c0c0c0;"><u>F</u>ile <u>E</u>dit <u>V</u>iew <u>H</u>elp</div>
-                  <div style="padding:10px; flex-grow:1; background: white;">
-                      <ul style="list-style-type:none; padding-left:5px; margin-top:0;">
-                          <li style="margin-bottom:5px;"><img src="https://win98icons.alexmeub.com/icons/png/drive_3_5-0.png" style="width:20px; height:20px; vertical-align:middle; margin-right:5px;"> 3½ Floppy (A:)</li>
-                          <li style="margin-bottom:5px;"><img src="https://win98icons.alexmeub.com/icons/png/drive_cd_rom-1.png" style="width:20px; height:20px; vertical-align:middle; margin-right:5px;"> (C:) Local Disk</li>
-                          <li style="margin-bottom:5px;"><img src="https://win98icons.alexmeub.com/icons/png/folder_network_cool-0.png" style="width:20px; height:20px; vertical-align:middle; margin-right:5px;"> Network Neighborhood</li>
-                          <li style="margin-bottom:5px;"><img src="https://win98icons.alexmeub.com/icons/png/settings_gear_cool-0.png" style="width:20px; height:20px; vertical-align:middle; margin-right:5px;"> Control Panel</li>
-                      </ul>
-                  </div>
-                  <div style="padding: 2px 5px; border-top: 1px solid #808080; background: #c0c0c0;">4 object(s)</div>
-              </div>`
-      },
-      notepad: {
-          title: "Untitled - Notepad",
-          icon: "https://win98icons.alexmeub.com/icons/png/notepad-0.png",
-          content: () => `
-              <div style="display: flex; flex-direction: column; height: 100%; font-size:11px;">
-                  <div style="padding: 2px 5px; border-bottom: 1px solid #808080; background: #c0c0c0;">
-                      <u>F</u>ile <u>E</u>dit <u>S</u>earch <u>H</u>elp
-                  </div>
-                  <textarea style="width: 100%; height: 100%; border: none; font-family: 'Lucida Console', 'Courier New', monospace; font-size:12px; resize:none; box-sizing: border-box; padding:2px;" placeholder=""></textarea>
-              </div>`
-      },
-      recycleBin: {
+      myComputer: myComputerAppDefinition, // UPDATE THIS
+      notepad: notepadAppDefinition,       // UPDATE THIS
+      recycleBin: { // This one was not requested to be moved, so it stays
           title: "Recycle Bin",
           icon: "https://win98icons.alexmeub.com/icons/png/recycle_bin_empty-0.png",
           iconFull: "https://win98icons.alexmeub.com/icons/png/recycle_bin_full_cool-0.png",
           content: () => `<div style="padding:10px; text-align:center; flex-grow:1; display:flex; flex-direction:column; justify-content:center; align-items:center; background:white;"><img src="https://win98icons.alexmeub.com/icons/png/recycle_bin_empty_cool-0.png" style="width:48px; height:48px; display:block; margin-bottom:10px;"><p>Recycle Bin is empty.</p></div>`
       },
-      calculator: {
-          title: "Calculator",
-          icon: "https://win98icons.alexmeub.com/icons/png/calculator-0.png",
-          content: () => `
-              <div style="display: flex; flex-direction: column; height: 100%; background: #c0c0c0; padding: 5px; font-family: 'MS Sans Serif', Arial; font-size:11px;">
-                  <div style="padding: 0px 3px 3px 3px;"><u>E</u>dit <u>V</u>iew <u>H</u>elp</div>
-                  <input type="text" readonly value="0" style="width: calc(100% - 0px); margin-bottom: 5px; text-align: right; padding: 3px 5px; border: 1px inset #808080; background: white; height:24px; box-sizing:border-box; font-size:14px;">
-                  <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; flex-grow:1;">
-                      ${['', 'Backspace', 'CE', 'C', 
-                      'MC', '7', '8', '9', '/', 'sqrt',
-                      'MR', '4', '5', '6', '*', '%',
-                      'MS', '1', '2', '3', '-', '1/x',
-                      'M+', '0', '+/-', '.', '+', '='
-                      ].map(key => {
-                          let style = "border: 1px outset #dfdfdf; background: #c0c0c0; aspect-ratio: 1.2 / 1; font-size:10px; padding:0;";
-                          if (['/', '*', '-', '+', '='].includes(key)) style += "color:red;";
-                          if (['Backspace', 'CE', 'C'].includes(key)) style += "color:red;";
-                          if (['MC', 'MR', 'MS', 'M+'].includes(key)) style += "color:blue;";
-                          if (key === '') return '<div></div>'; // Empty cell for layout
-                          return `<button style="${style}" onclick="alert('Calculator button ${key} clicked - not implemented')">${key}</button>`
-                      }).join('')}
-                  </div>
-              </div>`
-      },
+      calculator: calculatorAppDefinition, // UPDATE THIS
       shutdownDialog: {
           title: "Shut Down Windows",
           icon: "https://win98icons.alexmeub.com/icons/png/shut_down_cool-0.png",
@@ -281,9 +235,10 @@ import {BrowserApp} from './browser.js';
           openWindows[windowInstanceId] = newWindowData;
 
           // --- NEW: Call appDef.initApp if it exists to initialize app-specific logic ---
+          let root;
           if (appDef.initApp && typeof appDef.initApp === 'function') {
               newWindowData.appInstance = appDef.initApp(windowEl, windowInstanceId, webviewId, appDef);
-              const root = (newWindowData.appInstance.webviewEl.shadowRoot || newWindowData.appInstance.webviewEl);
+              root = (newWindowData?.appInstance?.webviewEl?.shadowRoot || newWindowData?.appInstance?.webviewEl);
           }
 
           // Setup standard window controls
@@ -452,7 +407,10 @@ import {BrowserApp} from './browser.js';
           });
           // --- END NEW ---
 
-
+          if (windowEl.hasAttribute('tabindex') && document.activeElement !== windowEl) {
+              windowEl.focus({ preventScroll: true }); // Ensure the window itself can receive key events
+          }
+          // ---- END NEW LINE ----
           highestZIndex++;
           windowEl.style.zIndex = highestZIndex;
 

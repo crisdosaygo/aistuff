@@ -1,0 +1,28 @@
+/* desktop-icons.css */
+
+.desktop.dragging-icon {
+    /* user-select: none; */ /* Already handled by .no-select in your main CSS */
+}
+
+.desktop-icon.is-positioned {
+    /* Styles applied by JS:
+    position: absolute;
+    margin: 0;
+    */
+}
+
+/* --- NEW FOR MARQUEE --- */
+.marquee-select-box {
+    position: absolute;
+    border: 1px solid #000080; /* Classic Windows selection blue */
+    background-color: rgba(0, 0, 255, 0.2); /* Semi-transparent blue */
+    z-index: 999; /* Above static icons, below actively dragged icon */
+    pointer-events: none; /* Crucial: allows events to pass through to icons underneath */
+}
+
+/* Ensure desktop icons have a base z-index if they are positioned.
+   This helps with layering relative to the marquee. */
+.desktop-icon {
+    position: relative; /* Needed for z-index to apply on static elements if not already absolute */
+    z-index: 1;
+}

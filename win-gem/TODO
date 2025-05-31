@@ -1,0 +1,3 @@
+- OG positions should include actual layout positions otherwise as they are clicked and slightly moved they collapse. 
+- dragging should not select text
+
