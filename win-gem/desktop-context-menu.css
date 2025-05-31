@@ -1,0 +1,200 @@
+/* desktop-context-menu.css */
+
+.desktop-context-menu {
+    position: absolute;
+    background-color: #c0c0c0; /* Classic Gray */
+    border: 2px outset #dfdfdf;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+    padding: 2px;
+    z-index: 20000; /* Above most other elements */
+    min-width: 150px;
+    font-family: "MS Sans Serif", "Tahoma", Arial, sans-serif;
+    font-size: 12px;
+    user-select: none;
+}
+
+.desktop-context-menu-item {
+    padding: 5px 20px 5px 25px; /* More space for potential icons on left */
+    cursor: pointer;
+    position: relative; /* For potential submenu arrows or icons */
+    white-space: nowrap;
+}
+
+.desktop-context-menu-item:hover {
+    background-color: #000080; /* Dark Blue */
+    color: white;
+}
+
+.desktop-context-menu-item.disabled {
+    color: #808080; /* Disabled text color */
+    cursor: default;
+}
+
+.desktop-context-menu-item.disabled:hover {
+    background-color: #c0c0c0; /* No hover effect for disabled */
+    color: #808080;
+}
+
+.desktop-context-menu-separator {
+    height: 1px;
+    background-color: #808080; /* Dark gray line */
+    margin: 2px 0;
+    border-bottom: 1px solid #ffffff; /* White highlight below */
+}
+
+/* Optional: for icons in context menu items */
+.desktop-context-menu-item-icon {
+    position: absolute;
+    left: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+}
+
+/* desktop-context-menu.css */
+/* ... (existing styles for .desktop-context-menu, .desktop-context-menu-item, etc.) ... */
+
+/* --- STYLES FOR DISPLAY PROPERTIES DIALOG --- */
+.display-properties-dialog {
+    position: absolute;
+    background-color: #c0c0c0;
+    border: 2px outset #dfdfdf;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+    min-width: 350px; /* Wider for tabs/content */
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 15000; /* Below context menu, above regular windows */
+    font-family: "MS Sans Serif", "Tahoma", Arial, sans-serif;
+    font-size: 12px;
+}
+
+.display-properties-dialog-titlebar {
+    background-color: #000080; /* Dark Blue */
+    color: white;
+    padding: 3px 5px;
+    font-weight: bold;
+    cursor: grab;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 20px;
+    box-sizing: border-box;
+}
+.display-properties-dialog-titlebar:active {
+    cursor: grabbing;
+}
+
+.display-properties-dialog-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1;
+}
+
+.display-properties-dialog-controls button {
+    background-color: #c0c0c0;
+    border: 1px outset #dfdfdf;
+    color: black;
+    font-family: "Marlett", "Webdings"; /* For close icon 'r' */
+    font-size: 10px;
+    width: 16px;
+    height: 14px;
+    line-height: 10px;
+    padding: 0;
+    margin-left: 2px;
+    cursor: pointer;
+}
+.display-properties-dialog-controls button:active {
+    border-style: inset;
+}
+
+.display-properties-dialog-content {
+    flex-grow: 1;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+}
+
+.display-properties-tabs {
+    display: flex;
+    border-bottom: 1px solid #808080;
+    margin-bottom: 10px;
+}
+
+.display-properties-tab {
+    padding: 5px 10px;
+    border: 1px solid #c0c0c0;
+    border-bottom: none;
+    margin-right: 2px;
+    background-color: #a0a0a0;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    cursor: pointer;
+}
+
+.display-properties-tab.active {
+    background-color: #c0c0c0; /* Same as dialog content area */
+    border-color: #808080;
+    border-bottom-color: #c0c0c0; /* Blend with content area */
+    position: relative;
+    top: 1px; /* Slight lift effect */
+}
+
+.display-properties-tab-content {
+    display: none; /* Hidden by default */
+    flex-grow: 1;
+}
+
+.display-properties-tab-content.active {
+    display: block; /* Show active tab content */
+}
+
+.display-properties-tab-content fieldset {
+    border: 1px solid #808080;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+.display-properties-tab-content legend {
+    padding: 0 5px;
+}
+.display-properties-tab-content label {
+    display: block;
+    margin-bottom: 5px;
+}
+.display-properties-tab-content input[type="color"],
+.display-properties-tab-content input[type="file"] {
+    margin-left: 5px;
+    margin-bottom: 10px;
+}
+
+.display-properties-preview {
+    width: 150px;
+    height: 100px;
+    border: 1px inset #808080;
+    background-color: #008080; /* Default desktop teal */
+    background-size: cover;
+    background-position: center;
+    margin: 10px auto;
+}
+
+.display-properties-buttons {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 10px;
+    border-top: 1px solid #808080;
+    margin-top: auto; /* Push to bottom */
+}
+.display-properties-buttons button {
+    background-color: #c0c0c0;
+    border: 2px outset #dfdfdf;
+    padding: 5px 15px;
+    margin-left: 5px;
+    min-width: 70px;
+    cursor: pointer;
+}
+.display-properties-buttons button:active {
+    border-style: inset;
+}
