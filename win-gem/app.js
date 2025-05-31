@@ -283,6 +283,7 @@ import {BrowserApp} from './browser.js';
           // --- NEW: Call appDef.initApp if it exists to initialize app-specific logic ---
           if (appDef.initApp && typeof appDef.initApp === 'function') {
               newWindowData.appInstance = appDef.initApp(windowEl, windowInstanceId, webviewId, appDef);
+              const root = (newWindowData.appInstance.webviewEl.shadowRoot || newWindowData.appInstance.webviewEl);
           }
 
           // Setup standard window controls
@@ -308,6 +309,7 @@ import {BrowserApp} from './browser.js';
 
       // New function: makeResizable
       function makeResizable(element) {
+          console.log('Make resizable called', element);
           const handles = element.querySelectorAll('.resize-handle');
           let isResizing = false;
           let currentHandle = null;
@@ -317,12 +319,14 @@ import {BrowserApp} from './browser.js';
           const minHeight = parseInt(window.getComputedStyle(element).minHeight) || 100;
 
           handles.forEach(handle => {
-              handle.addEventListener('mousedown', (e) => {
+              handle.addEventListener('pointerdown', (e) => {
                   const windowData = openWindows[element.dataset.instanceId];
+                  console.log('Mouse down');
                   if (windowData && windowData.isMaximized) return; // Don't resize if maximized
 
                   e.stopPropagation(); // Prevent window drag
                   isResizing = true;
+                  console.log('Resizing starting');
                   currentHandle = handle;
                   startX = e.clientX;
                   startY = e.clientY;
@@ -337,9 +341,10 @@ import {BrowserApp} from './browser.js';
               });
           });
 
-          document.addEventListener('mousemove', (e) => {
+          globalThis.updateDragMove = (e) => {
+              console.log('Mouse moved');
               if (!isResizing || !currentHandle) return;
-              e.preventDefault();
+              //e.preventDefault();
 
               const dx = e.clientX - startX;
               const dy = e.clientY - startY;
@@ -400,11 +405,13 @@ import {BrowserApp} from './browser.js';
               element.style.height = `${newHeight}px`;
               element.style.left = `${newLeft}px`;
               element.style.top = `${newTop}px`;
-          });
+          };
+          document.addEventListener('pointermove', updateDragMove);
 
-          document.addEventListener('mouseup', () => {
+          document.addEventListener('pointerup', () => {
               if (isResizing) {
                   isResizing = false;
+                  console.log('Resizing complete');
                   currentHandle = null;
                   document.body.style.cursor = 'default'; // Reset body cursor
                   // Update originalRect if window was resized (for maximize/restore)
@@ -501,7 +508,7 @@ import {BrowserApp} from './browser.js';
           const titleBar = element.querySelector('.window-titlebar');
           let offsetX, offsetY, isDragging = false;
 
-          titleBar.addEventListener('mousedown', (e) => {
+          titleBar.addEventListener('pointerdown', (e) => {
               const windowData = openWindows[element.dataset.instanceId];
               if (windowData && windowData.isMaximized) return;
               if (e.target.closest('.window-controls button')) return;
@@ -513,9 +520,9 @@ import {BrowserApp} from './browser.js';
               // focusWindow is called by the window's mousedown listener
           });
 
-          document.addEventListener('mousemove', (e) => {
+          document.addEventListener('pointermove', (e) => {
               if (!isDragging) return;
-              e.preventDefault(); // Prevent text selection while dragging
+              //e.preventDefault(); // Prevent text selection while dragging
 
               let newX = e.clientX - offsetX;
               let newY = e.clientY - offsetY;
@@ -531,7 +538,7 @@ import {BrowserApp} from './browser.js';
               element.style.top = `${newY}px`;
           });
 
-          document.addEventListener('mouseup', () => {
+          document.addEventListener('pointerup', () => {
               if (isDragging) {
                   isDragging = false;
                   titleBar.style.cursor = 'grab';
@@ -676,4 +683,25 @@ import {BrowserApp} from './browser.js';
               }
           });
       });
+  });
+  window.addEventListener('message', ({isTrusted, data, origin}) => {
+    if ( ! isTrusted ) return;
+    //console.log('message from', origin, 'is', data);
+    const topOffset = window.screen.availHeight - window.visualViewport.height;
+    const leftOffset = window.screen.availWidth - window.visualViewport.width;
+    switch(data.type) {
+      case "pointermove": {
+        const {pointermove} = data;
+        const {clientX,clientY,pageX,pageY} = pointermove;
+        pointermove.screenX -= window.screenX + leftOffset;
+        pointermove.screenY -= window.screenY + topOffset;
+        pointermove.clientX = pointermove.screenX;
+        pointermove.clientY = pointermove.screenY;
+        console.log(pointermove);
+        globalThis.updateDragMove(pointermove);
+      }; break;
+      default: {
+
+      }; break;
+    }
   });

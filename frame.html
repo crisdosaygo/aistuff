@@ -1,0 +1,17 @@
+<script>
+  document.addEventListener('pointermove', e => {
+    const {clientX, clientY, pageX, pageY, screenX, screenY, type} = e;
+    console.log('inside frame move', screenX, screenY);
+    window.parent.postMessage({type:'pointermove', pointermove: {clientX, screenX, clientY, screenY, pageX, pageY, type}}, '*');
+  });
+  document.addEventListener('pointerup', e => {
+    const {clientX, clientY, pageX, pageY, screenX, screenY, type} = e;
+    console.log('inside frame up', screenX, screenY);
+    window.parent.postMessage({type:'pointerup', pointerup: {clientX, screenX, clientY, screenY, pageX, pageY, type}}, '*');
+  });
+  document.addEventListener('pointerdown', e => {
+    const {clientX, clientY, pageX, pageY, screenX, screenY, type} = e;
+    console.log('inside frame down', screenX, screenY);
+    window.parent.postMessage({type:'pointerdown', pointerdown: {clientX, screenX, clientY, screenY, pageX, pageY, type}}, '*');
+  });
+</script>

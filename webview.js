@@ -108,7 +108,7 @@ export class BrowserWebview extends HTMLElement {
 
     constructor(browserConnection) {
         super();
-        this.#browserConnection = browserConnection || '/'; // This path would be to a dummy html for the iframe
+        this.#browserConnection = browserConnection || '/frame'; // This path would be to a dummy html for the iframe
     }
 
     connectedCallback() {
