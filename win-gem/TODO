@@ -1,3 +1,4 @@
-- OG positions should include actual layout positions otherwise as they are clicked and slightly moved they collapse. 
+- OG desktop icon positions should include actual layout positions otherwise as they are clicked and slightly moved they collapse. 
 - dragging should not select text
+- windows should open in position they were last in (size and position), localstorage save. 
 
