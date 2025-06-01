@@ -187,54 +187,6 @@
                    rectA.top > rectB.bottom);
     }
 
-    // --- Dragging Logic (Single and Group) ---
-    function startIconDrag(event, iconElement) {
-        if (event.button !== 0) return; 
-         
-        hasDragged = false; 
-        primaryDraggedIcon = iconElement;
-        desktopRectCache = desktopElement.getBoundingClientRect(); 
-
-        if (!event.ctrlKey && !selectedIcons.has(iconElement)) { // If not Ctrl key and icon not selected
-            clearSelection();
-            selectIcon(iconElement);
-        } else if (!selectedIcons.has(iconElement)) { // For Ctrl key click on unselected icon
-             selectIcon(iconElement, true); // Add to selection (toggleSelectIcon does this more or less)
-        }
-        // If icon IS selected (with or without Ctrl), drag the whole group.
-
-        isDraggingGroup = selectedIcons.size > 0;
-
-        const clickedIconRect = primaryDraggedIcon.getBoundingClientRect();
-        const desktopStyle = window.getComputedStyle(desktopElement);
-        const desktopPaddingLeft = parseFloat(desktopStyle.paddingLeft) || 0;
-        const desktopPaddingTop = parseFloat(desktopStyle.paddingTop) || 0;
-
-        dragOffsetX = event.clientX - clickedIconRect.left;
-        dragOffsetY = event.clientY - clickedIconRect.top;
-
-        draggedItemsInitialStates.clear();
-        selectedIcons.forEach(icon => {
-            if (window.getComputedStyle(icon).position !== 'absolute') {
-                const rect = icon.getBoundingClientRect();
-                icon.style.position = 'absolute';
-                icon.style.left = `${rect.left - desktopRectCache.left - desktopPaddingLeft}px`;
-                icon.style.top = `${rect.top - desktopRectCache.top - desktopPaddingTop}px`;
-                icon.style.margin = '0';
-                icon.classList.add('is-positioned');
-            }
-            draggedItemsInitialStates.set(icon, {
-                x: icon.offsetLeft,
-                y: icon.offsetTop,
-                zIndex: icon.style.zIndex || ''
-            });
-            icon.style.zIndex = '10000'; 
-        });
-        
-        document.body.classList.add('no-select');
-        primaryDraggedIcon.setPointerCapture(event.pointerId);
-    }
-
     function processDrag(event) {
         if (!primaryDraggedIcon) return;
         if (!hasDragged && (Math.abs(event.movementX) > 2 || Math.abs(event.movementY) > 2)) { // Threshold
@@ -278,32 +230,112 @@
         });
     }
 
+    // --- Dragging Logic (Single and Group) ---
+    function startIconDrag(event, iconElement) {
+        if (event.button !== 0) return;
+
+        hasDragged = false;
+        primaryDraggedIcon = iconElement;
+        desktopRectCache = desktopElement.getBoundingClientRect();
+
+        if (!event.ctrlKey && !selectedIcons.has(iconElement)) {
+            clearSelection();
+            selectIcon(iconElement);
+        } else if (event.ctrlKey && !selectedIcons.has(iconElement)) { // For Ctrl key click on unselected icon
+            // If Ctrl is pressed and the icon is not selected, toggle it into selection.
+            // If it was already selected, toggleSelectIcon would deselect it,
+            // but a pointerdown usually means "select and prepare to drag this".
+            // So, we ensure it's selected.
+            selectIcon(iconElement, true); // Add to selection
+        }
+        // If icon IS selected (with or without Ctrl), drag the whole group.
+
+        isDraggingGroup = selectedIcons.size > 0;
+
+        const clickedIconRect = primaryDraggedIcon.getBoundingClientRect();
+        const desktopStyle = window.getComputedStyle(desktopElement);
+        const desktopPaddingLeft = parseFloat(desktopStyle.paddingLeft) || 0;
+        const desktopPaddingTop = parseFloat(desktopStyle.paddingTop) || 0;
+
+        dragOffsetX = event.clientX - clickedIconRect.left;
+        dragOffsetY = event.clientY - clickedIconRect.top;
+
+        draggedItemsInitialStates.clear();
+        selectedIcons.forEach(icon => {
+            let wasFlowLayout = false;
+            const iconStyle = window.getComputedStyle(icon);
+            const originalInlinePosition = icon.style.position; // Store original inline style
+            const originalInlineMargin = icon.style.margin;
+
+            if (iconStyle.position !== 'absolute') {
+                wasFlowLayout = true;
+                const rect = icon.getBoundingClientRect();
+                icon.style.position = 'absolute';
+                icon.style.left = `${rect.left - desktopRectCache.left - desktopPaddingLeft}px`;
+                icon.style.top = `${rect.top - desktopRectCache.top - desktopPaddingTop}px`;
+                icon.style.margin = '0'; // Standardize margin for absolute
+                if (!icon.classList.contains('is-positioned')) {
+                    icon.classList.add('is-positioned');
+                }
+            }
+            draggedItemsInitialStates.set(icon, {
+                x: icon.offsetLeft,
+                y: icon.offsetTop,
+                zIndex: icon.style.zIndex || '',
+                wasFlowLayout: wasFlowLayout,
+                originalInlinePosition: originalInlinePosition, // Store for potential revert
+                originalInlineMargin: originalInlineMargin   // Store for potential revert
+            });
+            icon.style.zIndex = '10000'; // Bring to front during drag
+        });
+
+        document.body.classList.add('no-select');
+        primaryDraggedIcon.setPointerCapture(event.pointerId);
+    }
+
     function endIconDrag(event) {
         if (!primaryDraggedIcon) return;
 
         primaryDraggedIcon.releasePointerCapture(event.pointerId);
         document.body.classList.remove('no-select');
 
-        if (hasDragged) { // Only save if actual drag occurred
+        if (hasDragged) { // Actual drag occurred
             draggedItemsInitialStates.forEach((state, icon) => {
-                icon.style.zIndex = state.zIndex; 
+                icon.style.zIndex = state.zIndex; // Restore original or persisted z-index
                 const appId = icon.dataset.appId;
                 if (appId) {
                     saveIconPosition(appId, icon.offsetLeft, icon.offsetTop);
                 }
+                // Ensure 'is-positioned' is present if dragged
+                if (!icon.classList.contains('is-positioned')) {
+                     icon.classList.add('is-positioned');
+                }
             });
-        } else {
-            // This was a click, not a drag. Selection is handled by onIconPointerDown/startIconDrag.
-            // Restore z-index if it was changed optimistically
-             draggedItemsInitialStates.forEach((state, icon) => {
-                icon.style.zIndex = state.zIndex;
+        } else { // This was a click, not a drag
+            draggedItemsInitialStates.forEach((state, icon) => {
+                icon.style.zIndex = state.zIndex; // Restore z-index
+                if (state.wasFlowLayout) {
+                    // Revert to original flow layout styling
+                    icon.style.position = state.originalInlinePosition || ''; // Revert to original inline or remove
+                    icon.style.left = '';   // Clear absolute positioning
+                    icon.style.top = '';    // Clear absolute positioning
+                    icon.style.margin = state.originalInlineMargin || ''; // Revert to original inline or remove
+                    icon.classList.remove('is-positioned');
+
+                    // If style attributes were empty, ensure they are removed to fallback to CSS
+                    if (!icon.style.position) icon.style.removeProperty('position');
+                    if (!icon.style.margin) icon.style.removeProperty('margin');
+
+                }
+                // If it was already absolute (state.wasFlowLayout is false),
+                // and not dragged, it just remains as is. No position save.
             });
         }
-        
+
         primaryDraggedIcon = null;
         isDraggingGroup = false;
         draggedItemsInitialStates.clear();
-        // hasDragged = false; // Reset here or at start of next drag
+        // hasDragged is reset at the beginning of startIconDrag or onIconPointerDown
     }
 
     // --- Event Handlers Attachments ---
