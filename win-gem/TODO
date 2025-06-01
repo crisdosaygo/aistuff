@@ -1,12 +1,9 @@
 Next steps
-  - OG desktop icon positions should include actual layout positions otherwise as they are clicked and slightly moved they collapse. 
-    - however i love the little effect how they all shift up after default or arrange, so...rather than give them OG positions, let's just ONLY initiate drag from OG pos when and IFF they moved by 'enough'. So a double click, in other words, is not gonna trigger it, but an actual drag move by 'enough'? Will. Definitely will. Think that's a nice way to keep both the nice effect and the desired effect.
   - stuff that's offscreen (after a resize, when opening on mobile) must come on screen again (ideally in a defconflicted, 'grid snapped' way). Maybe a good way to do is to store the "% position" from the closest edge of the icon on desktop. Then, when desktop is resized, those can adjust naturally, with (snap to grid) after the fact (decounced)? One way, sounds good enough.
-  - dragging should not select text (basically pointer down and move should select text NOWHERE EVER, unless IFF the point was down on some text (like in a textarea or whatever) that SHOULD be normally selectable). So universal no select, with some exceptions
-  - windows should open in position they were last in (size and position), localstorage save. 
   - rather than my computer which can only be fake, and i don't want fake nothing esle is fake (browser is real, calc is real, notepad is real) let's make it a my network or network explorer. And it's just a list of a couple websites with like their favicon (same style as my computer or a network explorer or whatever). and...when you CLICK on the website in the network explorer, it opens it -- in the built in browser. fucking nice. 
   - the other thing is, you can "add" you own little list of websites. so it's like a bookmarks list, basically. nice little feature. 
   - everything should work on mobile just fine (right now dragging icons is very nice)
+  - start menu should close when clicked outside of? yes.
 
 Rest
 - do landing webpage (pixels, aquamarine, 'hi', small company)
