@@ -299,7 +299,7 @@ import { calculatorAppDefinition } from './calculator.js'; // ADD THIS
           globalThis.updateDragMove = (e) => {
               console.log('Mouse moved');
               if (!isResizing || !currentHandle) return;
-              //e.preventDefault();
+              e.preventDefault();
 
               const dx = e.clientX - startX;
               const dy = e.clientY - startY;
@@ -480,7 +480,7 @@ import { calculatorAppDefinition } from './calculator.js'; // ADD THIS
 
           document.addEventListener('pointermove', (e) => {
               if (!isDragging) return;
-              //e.preventDefault(); // Prevent text selection while dragging
+              e.preventDefault(); // Prevent text selection while dragging
 
               let newX = e.clientX - offsetX;
               let newY = e.clientY - offsetY;
