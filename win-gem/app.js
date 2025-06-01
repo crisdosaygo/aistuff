@@ -655,7 +655,8 @@ import { calculatorAppDefinition } from './calculator.js'; // ADD THIS
         pointermove.screenY -= window.screenY + topOffset;
         pointermove.clientX = pointermove.screenX;
         pointermove.clientY = pointermove.screenY;
-        console.log(pointermove);
+        pointermove.preventDefault = () => void 0;
+        pointermove.stopPropagation = () => void 0;
         globalThis.updateDragMove(pointermove);
       }; break;
       default: {
