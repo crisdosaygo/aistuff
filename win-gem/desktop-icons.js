@@ -187,6 +187,49 @@
                    rectA.top > rectB.bottom);
     }
 
+    function processDrag(event) {
+        if (!primaryDraggedIcon) return;
+        if (!hasDragged && (Math.abs(event.movementX) > 2 || Math.abs(event.movementY) > 2)) { // Threshold
+            hasDragged = true;
+        }
+        if (!hasDragged) return; // Don't move if threshold not met
+
+        const desktopStyle = window.getComputedStyle(desktopElement);
+        const desktopPaddingLeft = parseFloat(desktopStyle.paddingLeft) || 0;
+        const desktopPaddingTop = parseFloat(desktopStyle.paddingTop) || 0;
+        
+        const contentWidth = desktopElement.clientWidth; // clientWidth includes padding
+        const contentHeight = desktopElement.clientHeight; // clientHeight includes padding
+        // Effective draggable area:
+        const draggableWidth = contentWidth - (parseFloat(desktopStyle.paddingLeft) || 0) - (parseFloat(desktopStyle.paddingRight) || 0);
+        const draggableHeight = contentHeight - (parseFloat(desktopStyle.paddingTop) || 0) - (parseFloat(desktopStyle.paddingBottom) || 0);
+
+
+        let newPrimaryX = event.clientX - desktopRectCache.left - desktopPaddingLeft - dragOffsetX;
+        let newPrimaryY = event.clientY - desktopRectCache.top - desktopPaddingTop - dragOffsetY;
+        
+        newPrimaryX = Math.max(0, Math.min(newPrimaryX, draggableWidth - primaryDraggedIcon.offsetWidth));
+        newPrimaryY = Math.max(0, Math.min(newPrimaryY, draggableHeight - primaryDraggedIcon.offsetHeight));
+
+        const primaryInitialState = draggedItemsInitialStates.get(primaryDraggedIcon);
+        const deltaX = newPrimaryX - primaryInitialState.x;
+        const deltaY = newPrimaryY - primaryInitialState.y;
+
+        selectedIcons.forEach(icon => {
+            const initialState = draggedItemsInitialStates.get(icon);
+            if (!initialState) return; // Should not happen if logic is correct
+
+            let newX = initialState.x + deltaX;
+            let newY = initialState.y + deltaY;
+
+            newX = Math.max(0, Math.min(newX, draggableWidth - icon.offsetWidth));
+            newY = Math.max(0, Math.min(newY, draggableHeight - icon.offsetHeight));
+            
+            icon.style.left = `${newX}px`;
+            icon.style.top = `${newY}px`;
+        });
+    }
+
     // --- Dragging Logic (Single and Group) ---
     function startIconDrag(event, iconElement) {
         if (event.button !== 0) return; 
@@ -233,49 +276,6 @@
         
         document.body.classList.add('no-select');
         primaryDraggedIcon.setPointerCapture(event.pointerId);
-    }
-
-    function processDrag(event) {
-        if (!primaryDraggedIcon) return;
-        if (!hasDragged && (Math.abs(event.movementX) > 2 || Math.abs(event.movementY) > 2)) { // Threshold
-            hasDragged = true;
-        }
-        if (!hasDragged) return; // Don't move if threshold not met
-
-        const desktopStyle = window.getComputedStyle(desktopElement);
-        const desktopPaddingLeft = parseFloat(desktopStyle.paddingLeft) || 0;
-        const desktopPaddingTop = parseFloat(desktopStyle.paddingTop) || 0;
-        
-        const contentWidth = desktopElement.clientWidth; // clientWidth includes padding
-        const contentHeight = desktopElement.clientHeight; // clientHeight includes padding
-        // Effective draggable area:
-        const draggableWidth = contentWidth - (parseFloat(desktopStyle.paddingLeft) || 0) - (parseFloat(desktopStyle.paddingRight) || 0);
-        const draggableHeight = contentHeight - (parseFloat(desktopStyle.paddingTop) || 0) - (parseFloat(desktopStyle.paddingBottom) || 0);
-
-
-        let newPrimaryX = event.clientX - desktopRectCache.left - desktopPaddingLeft - dragOffsetX;
-        let newPrimaryY = event.clientY - desktopRectCache.top - desktopPaddingTop - dragOffsetY;
-        
-        newPrimaryX = Math.max(0, Math.min(newPrimaryX, draggableWidth - primaryDraggedIcon.offsetWidth));
-        newPrimaryY = Math.max(0, Math.min(newPrimaryY, draggableHeight - primaryDraggedIcon.offsetHeight));
-
-        const primaryInitialState = draggedItemsInitialStates.get(primaryDraggedIcon);
-        const deltaX = newPrimaryX - primaryInitialState.x;
-        const deltaY = newPrimaryY - primaryInitialState.y;
-
-        selectedIcons.forEach(icon => {
-            const initialState = draggedItemsInitialStates.get(icon);
-            if (!initialState) return; // Should not happen if logic is correct
-
-            let newX = initialState.x + deltaX;
-            let newY = initialState.y + deltaY;
-
-            newX = Math.max(0, Math.min(newX, draggableWidth - icon.offsetWidth));
-            newY = Math.max(0, Math.min(newY, draggableHeight - icon.offsetHeight));
-            
-            icon.style.left = `${newX}px`;
-            icon.style.top = `${newY}px`;
-        });
     }
 
     function endIconDrag(event) {

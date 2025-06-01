@@ -1,0 +1,2378 @@
+== index.html ==
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windows 98?</title>
+    <link rel=icon href="https://win98icons.alexmeub.com/icons/png/internet_connection_wiz-0.png">
+    <style>
+        body {
+            background-color: #008080; /* Classic Teal */
+            font-family: "MS Sans Serif", "Tahoma", Arial, sans-serif;
+            font-size: 12px;
+            margin: 0;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .desktop {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 30px; /* Space for taskbar */
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            flex-wrap: wrap;
+            align-content: flex-start; /* Align icons to the left */
+        }
+        /* Add :focus style for desktop for visual feedback when it has keyboard focus */
+        .desktop:focus {
+            /* Example: subtle border to show it's the active container */
+            /* outline: 1px dashed rgba(255, 255, 255, 0.3); */
+            /* outline-offset: -1px; */
+            /* Script handles .keyboard-focused on items, this is for the container itself */
+        }
+
+
+        .desktop-icon {
+            width: 75px;
+            margin: 10px;
+            text-align: center;
+            color: white;
+            cursor: pointer;
+            padding: 5px;
+            /* Ensure icons don't get a default browser outline if script handles focus */
+        }
+        .desktop-icon:focus {
+            outline: none;
+        }
+
+        .desktop-icon:hover {
+            background-color: rgba(0, 0, 128, 0.5); /* Dark blue transparent */
+            outline: 1px dotted white;
+        }
+        .desktop-icon img {
+            width: 32px;
+            height: 32px;
+            display: block;
+            margin: 0 auto 5px auto;
+        }
+        .desktop-icon.selected {
+            background-color: rgba(0, 0, 128, 0.7); /* Darker selection */
+            outline: 1px dotted white;
+        }
+        .desktop-icon.selected span {
+            background-color: #000080; /* Opaque background for text */
+            color: white; /* Ensure text is visible */
+            padding: 1px 2px;
+        }
+
+
+        .taskbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            background-color: #c0c0c0; /* Classic Gray */
+            border-top: 2px solid #ffffff;
+            display: flex;
+            align-items: center;
+            padding: 0 5px;
+            z-index: 10000; /* Always on top */
+        }
+
+        .start-button {
+            background-color: #c0c0c0;
+            border: 2px outset #dfdfdf;
+            padding: 2px 10px;
+            margin-right: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+        .start-button:active {
+            border-style: inset;
+        }
+        .start-button img {
+            width: 16px;
+            height: 16px;
+            margin-right: 5px;
+        }
+        .start-button:focus { /* Style for when start button itself has focus */
+            outline: 1px dotted black;
+            outline-offset: -2px;
+        }
+
+
+        .start-menu {
+            position: absolute;
+            bottom: 30px; /* Above taskbar */
+            left: 0;
+            /* width: 200px; /* Slightly wider for icons (now auto) */
+            background-color: #c0c0c0;
+            border: 2px outset #dfdfdf;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+            /* padding: 2px; (now handled by items-container) */
+            display: none; /* Hidden by default */
+            z-index: 9999;
+            flex-direction: row; /* Changed for sidebar layout */
+            width: auto;
+        }
+        .start-menu:focus { /* Style for when start menu container has focus */
+            /* outline: 1px dotted blue; */ /* Example */
+            outline: none; /* Script manages item focus visuals */
+        }
+
+        .start-menu-item {
+            padding: 5px 10px 5px 5px; /* Adjusted padding */
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .start-menu-item:hover {
+            background-color: #000080; /* Dark Blue */
+            color: white;
+        }
+        .start-menu-item:focus { /* Remove default outline if script handles visual focus */
+            outline: none;
+        }
+        .start-menu-icon {
+            width: 20px; /* Slightly larger for start menu */
+            height: 20px;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        .start-menu-separator {
+            height: 1px;
+            background-color: #808080;
+            margin: 2px 0;
+            border-bottom: 1px solid #ffffff;
+        }
+        .start-menu-item.disabled {
+            color: #808080;
+            cursor: default;
+        }
+        .start-menu-item.disabled:hover {
+            background-color: #c0c0c0;
+            color: #808080;
+        }
+
+
+        .start-menu-sidebar {
+            background-color: #000080; /* Dark Blue */
+            color: white;
+            padding: 10px 5px;
+            writing-mode: vertical-lr; /* Rotate text */
+            text-orientation: mixed;
+            transform: rotate(180deg); /* Correct orientation after vertical-rl */
+            font-weight: bold;
+            font-size: 16px; /* Adjust as needed */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-right: 2px outset #dfdfdf; /* 3D effect */
+            min-width: 25px; /* Ensure it has some width */
+        }
+        .start-menu-sidebar .and-half {
+          display: inline-block;
+          transform:rotate(90deg);
+        }
+        .start-menu-sidebar-text {
+            white-space: nowrap; /* Prevent text from wrapping */
+        }
+
+        .start-menu-items-container {
+            background-color: #c0c0c0; /* Original start menu background */
+            padding: 2px; /* Original start menu padding */
+            width: 180px; /* Original width of items area, adjust if needed */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .taskbar-windows {
+            display: flex;
+            flex-grow: 1;
+            margin: 0 5px;
+            overflow: hidden;
+        }
+        .taskbar-button {
+            background-color: #c0c0c0;
+            border: 2px outset #dfdfdf;
+            padding: 1px 5px; /* Adjusted padding */
+            margin-right: 3px;
+            font-size: 11px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 150px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            height: 22px; /* Consistent height */
+            box-sizing: border-box;
+        }
+        .taskbar-button:focus { /* Style for focused taskbar buttons */
+            outline: 1px dotted black;
+            outline-offset: -2px;
+        }
+        .taskbar-button.active {
+            border-style: inset;
+            font-weight: bold;
+        }
+        .taskbar-button img {
+            width: 16px;
+            height: 16px;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+        .taskbar-button.minimized {
+            opacity: 0.9; /* Slightly different look for minimized */
+        }
+
+
+        .clock {
+            border: 1px inset #808080;
+            padding: 3px 8px;
+            margin-left: auto; /* Pushes to the right */
+            font-size: 11px;
+            min-width: 60px;
+            text-align: center;
+            height: 20px; /* Consistent height */
+            line-height: 12px;
+            box-sizing: border-box;
+        }
+
+        /* Window Styling */
+        .window {
+            position: absolute;
+            background-color: #c0c0c0;
+            border: 2px outset #dfdfdf;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            min-width: 200px;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .window:focus, .window:focus-within { /* Indicate active window subtly */
+             /* border-color: #666; */ /* Example: darker border for focused window */
+             /* The .inactive class handles visual distinction well, so direct focus style might be redundant */
+        }
+
+
+        .window-titlebar {
+            background-color: #000080; /* Dark Blue */
+            color: white;
+            padding: 3px 5px;
+            font-weight: bold;
+            cursor: grab;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 20px;
+            box-sizing: border-box;
+        }
+        .window-titlebar:active {
+            cursor: grabbing;
+        }
+        .window-titlebar-icon {
+            margin-right: 5px;
+            vertical-align: middle;
+            width: 16px;
+            height: 16px;
+        }
+        .window-title {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-grow: 1;
+        }
+        .window.inactive .window-titlebar {
+            background-color: #808080;
+        }
+        .window.inactive .window-titlebar-icon {
+            opacity: 0.7;
+        }
+        .window.inactive .window-title {
+            color: #D3D3D3;
+        }
+
+
+        .window-controls button {
+            background-color: #c0c0c0;
+            border: 1px outset #dfdfdf;
+            color: black;
+            font-family: "Marlett", "Webdings";
+            font-size: 10px;
+            width: 16px;
+            height: 14px;
+            line-height: 10px;
+            padding: 0;
+            margin-left: 2px;
+            cursor: pointer;
+        }
+        .window-controls button:active {
+            border-style: inset;
+        }
+        .window-controls button:focus { /* Style for focused window control buttons */
+            outline: 1px dotted black;
+            outline-offset: -1px;
+        }
+        .window-controls {
+          min-width: fit-content;
+        }
+
+
+        .window-content {
+            padding: 0;
+            background-color: #ffffff;
+            flex-grow: 1;
+            margin: 3px;
+            border: 1px inset #808080;
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .window-content:focus { /* Style for when content area itself gets focus */
+             /* outline: 1px solid blue; */ /* Example, if needed */
+        }
+
+
+        .window.maximized .window-titlebar {
+            cursor: default;
+        }
+
+        .win95-button {
+            background-color: #c0c0c0;
+            border: 2px outset #dfdfdf;
+            padding: 5px 15px;
+            margin: 0 5px;
+            min-width: 70px;
+            cursor: pointer;
+        }
+        .win95-button:active {
+            border-style: inset;
+        }
+        .win95-button:focus { /* Style for focused dialog buttons */
+            outline: 1px dotted black;
+            outline-offset: -2px;
+        }
+
+
+        .resize-handle {
+            position: absolute;
+        }
+        .resize-handle-n { top: -3px; left: 5px; right: 5px; height: 6px; cursor: n-resize; }
+        .resize-handle-ne { top: -3px; right: -3px; width: 6px; height: 6px; cursor: ne-resize; }
+        .resize-handle-e { top: 5px; bottom: 5px; right: -3px; width: 6px; cursor: e-resize; }
+        .resize-handle-se { bottom: -3px; right: -3px; width: 6px; height: 6px; cursor: se-resize; }
+        .resize-handle-s { bottom: -3px; left: 5px; right: 5px; height: 6px; cursor: s-resize; }
+        .resize-handle-sw { bottom: -3px; left: -3px; width: 6px; height: 6px; cursor: sw-resize; }
+        .resize-handle-w { top: 5px; bottom: 5px; left: -3px; width: 6px; cursor: w-resize; }
+        .resize-handle-nw { top: -3px; left: -3px; width: 6px; height: 6px; cursor: nw-resize; }
+
+        .window.maximized .resize-handle {
+            display: none;
+        }
+
+        /* ===== BROWSER UI STYLES ===== */
+        .browser-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background-color: #c0c0c0;
+        }
+
+        .browser-toolbar, .browser-address-toolbar {
+            padding: 3px;
+            border-bottom: 1px solid #808080;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .browser-toolbar button, .browser-address-toolbar button {
+            background-color: #c0c0c0;
+            border: 1px outset #dfdfdf;
+            padding: 3px 6px;
+            margin-right: 3px;
+            font-size: 11px;
+            min-width: 50px;
+        }
+        .browser-toolbar button:active, .browser-address-toolbar button:active {
+            border-style: inset;
+        }
+        .browser-toolbar button:disabled {
+            color: #808080;
+            border-color: #808080;
+            cursor: default;
+        }
+        .browser-toolbar button:focus, .browser-address-toolbar button:focus { /* Focus style for browser buttons */
+            outline: 1px dotted black;
+            outline-offset: -2px;
+        }
+
+
+        .browser-address-toolbar label {
+            margin-right: 5px;
+            font-weight: bold;
+        }
+        .browser-address-bar {
+            flex-grow: 1;
+            margin-right: 3px;
+            padding: 3px;
+            border: 1px inset #808080;
+            font-size: 12px;
+            height: 20px;
+            box-sizing: border-box;
+        }
+        .browser-address-bar:focus { /* Focus style for address bar */
+            outline: 1px dotted blue;
+            outline-offset: -1px;
+        }
+
+
+        .browser-tab-bar {
+            display: flex;
+            background-color: #c0c0c0;
+            padding: 2px 2px 0 2px;
+            border-bottom: 1px solid #808080;
+            flex-shrink: 0;
+            align-items: flex-end;
+        }
+        .browser-tab {
+            background-color: #a0a0a0;
+            border: 1px outset #dfdfdf;
+            border-bottom: none;
+            padding: 4px 8px;
+            margin-right: -1px;
+            font-size: 11px;
+            cursor: pointer;
+            position: relative;
+            max-width: 150px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border-top-left-radius: 3px;
+            border-top-right-radius: 3px;
+        }
+        .browser-tab:focus { /* Remove default outline if script handles visual focus */
+            outline: none;
+        }
+
+        .browser-tab.active {
+            background-color: #e0e0e0;
+            z-index: 1;
+            padding-bottom: 5px;
+            margin-bottom: -1px;
+            font-weight: bold;
+        }
+        .browser-tab .tab-close-btn {
+            margin-left: 8px;
+            font-size: 10px;
+            color: #404040;
+            cursor: pointer;
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+        .browser-tab .tab-close-btn:hover {
+            background-color: #ff6060;
+            color: white;
+        }
+        .browser-new-tab-btn {
+            background-color: #c0c0c0;
+            border: 1px outset #dfdfdf;
+            padding: 2px 6px;
+            margin-left: 3px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            height: 20px;
+            align-self: center;
+        }
+        .browser-new-tab-btn:active {
+            border-style: inset;
+        }
+        .browser-new-tab-btn:focus { /* Focus style for new tab button */
+            outline: 1px dotted black;
+            outline-offset: -2px;
+        }
+
+
+        browser-webview {
+            flex-grow: 1;
+            background-color: white;
+            border: 1px solid #000;
+            margin: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-style: italic;
+            color: #666;
+        }
+
+
+        .browser-toolbar {
+            padding: 3px;
+            border-bottom: 1px solid #808080;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .browser-nav-buttons {
+            display: flex;
+            align-items: center;
+        }
+
+        .browser-throbber {
+            width: 28px;
+            height: 28px;
+            margin-left: auto;
+            margin-right: 5px;
+        }
+        .no-select {
+            user-select: none;
+            -webkit-user-select: none; // Safari
+            -moz-user-select: none;    // Firefox
+            -ms-user-select: none;     // IE10+/Edge
+        }
+    </style>
+    <link rel=stylesheet href=desktop-icons.css>
+    <link rel="stylesheet" href="desktop-context-menu.css">
+</head>
+<body>
+    <div class="desktop" id="desktop" tabindex="0"> <!-- MODIFIED -->
+        <div class="desktop-icon" data-app-id="myComputer">
+            <img src="https://win98icons.alexmeub.com/icons/png/computer_explorer-0.png" alt="My Computer">
+            <span>My Computer</span>
+        </div>
+        <div class="desktop-icon" data-app-id="notepad">
+            <img src="https://win98icons.alexmeub.com/icons/png/notepad-0.png" alt="Notepad">
+            <span>Notepad</span>
+        </div>
+        <div class="desktop-icon" data-app-id="recycleBin">
+            <img src="https://win98icons.alexmeub.com/icons/png/recycle_bin_empty-0.png" alt="Recycle Bin">
+            <span>Recycle Bin</span>
+        </div>
+        <div class="desktop-icon" data-app-id="calculator">
+            <img src="https://win98icons.alexmeub.com/icons/png/calculator-0.png" alt="Calculator">
+            <span>Calculator</span>
+        </div>
+
+        <div class="desktop-icon" data-app-id="internetBrowser">
+            <img
+              src="https://win98icons.alexmeub.com/icons/png/search_web-0.png"
+              alt="Internet Browser">
+            <span>Internet Browser</span>
+        </div>
+
+        <div class="desktop-icon" data-app-id="internetExplorer">
+            <img
+              src="https://win98icons.alexmeub.com/icons/png/msie2-0.png"
+              alt="Internet Explorer">
+            <span>Internet Explorer</span>
+        </div>
+
+        <div class="desktop-icon" data-app-id="netscapeNavigator">
+            <img
+              src="./n2-2.png"
+              alt="Netscape Navigator">
+            <span>Netscape Navigator</span>
+        </div>
+    </div>
+
+    <div class="start-menu" id="startMenu" tabindex="-1"> <!-- MODIFIED -->
+        <div class="start-menu-sidebar">
+            <span class="start-menu-sidebar-text">Windows 98<span class="and-half">?</span></span> <!-- Used   for non-breaking space -->
+        </div>
+        <div class="start-menu-items-container">
+            <div class="start-menu-item" data-app-id="notepad">
+                <img src="https://win98icons.alexmeub.com/icons/png/notepad-0.png" class="start-menu-icon" alt=""> Notepad
+            </div>
+            <div class="start-menu-item" data-app-id="calculator">
+                <img src="https://win98icons.alexmeub.com/icons/png/calculator-0.png" class="start-menu-icon" alt=""> Calculator
+            </div>
+            <div class="start-menu-item" data-app-id="myComputer">
+                <img src="https://win98icons.alexmeub.com/icons/png/computer_explorer-0.png" class="start-menu-icon" alt=""> My Computer
+            </div>
+            <div class="start-menu-item" data-app-id="internetBrowser">
+                <img src="https://win98icons.alexmeub.com/icons/png/search_web-0.png" class="start-menu-icon" alt=""> Internet Browser
+            </div>
+            <div class="start-menu-item" data-app-id="internetExplorer">
+                <img src="https://win98icons.alexmeub.com/icons/png/msie2-0.png" class="start-menu-icon" alt=""> Internet Explorer <!-- Corrected text -->
+            </div>
+            <div class="start-menu-item" data-app-id="netscapeNavigator">
+                <img src="./n2-2.png" class="start-menu-icon" alt=""> Netscape Navigator <!-- Corrected text -->
+            </div>
+            <div class="start-menu-separator"></div>
+            <div class="start-menu-item disabled">
+                <img src="https://win98icons.alexmeub.com/icons/png/settings_gear-0.png" class="start-menu-icon" alt=""> Settings
+            </div>
+            <div class="start-menu-item disabled">
+                <img src="https://win98icons.alexmeub.com/icons/png/help_book_cool-0.png" class="start-menu-icon" alt=""> Help
+            </div>
+            <div class="start-menu-separator"></div>
+            <div class="start-menu-item" id="shutdownButtonTrigger">
+                <img src="https://win98icons.alexmeub.com/icons/png/shut_down_cool-0.png" class="start-menu-icon" alt=""> Shut Down...
+            </div>
+        </div>
+    </div>
+    <div class="taskbar">
+        <button class="start-button" id="startButton" tabindex="0"> <!-- MODIFIED -->
+            <img src="https://win98icons.alexmeub.com/icons/png/windows-0.png" alt="Start">
+            Start
+        </button>
+        <div class="taskbar-windows" id="taskbarWindows">
+            <!-- Taskbar buttons for open windows go here -->
+        </div>
+        <div class="clock" id="clock"></div>
+    </div>
+
+    <template id="windowTemplate">
+        <div class="window" tabindex="-1"> <!-- MODIFIED -->
+            <div class="window-titlebar">
+                <img class="window-titlebar-icon" src="" alt="" width="16" height="16">
+                <span class="window-title">Window</span>
+                <div class="window-controls">
+                    <button class="window-minimize-btn" title="Minimize" tabindex="-1">0</button>
+                    <button class="window-maximize-btn" title="Maximize" tabindex="-1">1</button>
+                    <button class="window-close-btn" title="Close" tabindex="-1">r</button>
+                </div>
+            </div>
+            <div class="window-content">
+                <!-- Content will be injected here -->
+            </div>
+            <!-- !!! RESIZE HANDLES !!! -->
+            <div class="resize-handle resize-handle-n"></div>
+            <div class="resize-handle resize-handle-ne"></div>
+            <div class="resize-handle resize-handle-e"></div>
+            <div class="resize-handle resize-handle-se"></div>
+            <div class="resize-handle resize-handle-s"></div>
+            <div class="resize-handle resize-handle-sw"></div>
+            <div class="resize-handle resize-handle-w"></div>
+            <div class="resize-handle resize-handle-nw"></div>
+        </div>
+    </template>
+    <script type=module src=./app.js></script>
+    <script src=./desktop-icons.js></script>
+    <script src=./desktop-context-menu.js></script>
+    <script src=./snap-to-grid.js></script>
+</body>
+</html>
+== app.js ==
+import {BrowserApp} from './browser.js';
+import { myComputerAppDefinition } from './my-computer.js'; // ADD THIS
+import { notepadAppDefinition } from './notepad.js';       // ADD THIS
+import { calculatorAppDefinition } from './calculator.js'; // ADD THIS
+
+// windows awesome
+  const APP_DEFINITIONS = {
+      myComputer: myComputerAppDefinition, // UPDATE THIS
+      notepad: notepadAppDefinition,       // UPDATE THIS
+      recycleBin: { // This one was not requested to be moved, so it stays
+          title: "Recycle Bin",
+          icon: "https://win98icons.alexmeub.com/icons/png/recycle_bin_empty-0.png",
+          iconFull: "https://win98icons.alexmeub.com/icons/png/recycle_bin_full_cool-0.png",
+          content: () => `<div style="padding:10px; text-align:center; flex-grow:1; display:flex; flex-direction:column; justify-content:center; align-items:center; background:white;"><img src="https://win98icons.alexmeub.com/icons/png/recycle_bin_empty_cool-0.png" style="width:48px; height:48px; display:block; margin-bottom:10px;"><p>Recycle Bin is empty.</p></div>`
+      },
+      calculator: calculatorAppDefinition, // UPDATE THIS
+      shutdownDialog: {
+          title: "Shut Down Windows",
+          icon: "https://win98icons.alexmeub.com/icons/png/shut_down_cool-0.png",
+          isDialog: true,
+          content: () => `
+              <div style="text-align: center; padding: 20px 20px 10px 20px; background: #c0c0c0; height:100%; display:flex; flex-direction:column; justify-content:space-around;">
+                  <div>
+                      <img src="https://win98icons.alexmeub.com/icons/png/computer_shut_down_cool-2.png" alt="Shut down" style="width: 32px; height: 32px; margin-bottom: 15px; float:left; margin-right:15px;">
+                      <p style="text-align:left; margin-top:0;">Are you sure you want to:</p>
+                      <div style="margin-bottom: 20px; text-align:left;">
+                          <label style="display:block; margin-bottom:5px;"><input type="radio" name="shutdownAction" value="shutdown" checked> Shut down the computer?</label>
+                          <label style="display:block; margin-bottom:5px;"><input type="radio" name="shutdownAction" value="restart"> Restart the computer?</label>
+                          <label style="display:block;"><input type="radio" name="shutdownAction" value="msdos"> Restart in MS-DOS mode?</label>
+                      </div>
+                  </div>
+                  <div style="display:flex; justify-content:center;">
+                      <button class="win95-button" onclick="alert('Okay, performing action... (not really!)'); this.closest('.window').querySelector('.window-close-btn').click();">Yes</button>
+                      <button class="win95-button" onclick="this.closest('.window').querySelector('.window-close-btn').click();">No</button>
+                      <button class="win95-button" onclick="alert('Help not available for shutdown.');">Help</button>
+                  </div>
+              </div>
+          `
+      },
+      // Add this to your existing APP_DEFINITIONS object
+
+      internetBrowser: { // This one is generic, let's ensure it can be IE-like
+          netscape: true, // Default to IE like
+          title: "Internet Browser",
+          icon: "https://win98icons.alexmeub.com/icons/png/search_web-0.png",
+          defaultWidth: 700,
+          defaultHeight: 500,
+          generateContent: (windowInstanceId, webviewId) => BrowserApp.generateInitialHTML(webviewId),
+          initApp: (windowEl, windowInstanceId, webviewId, appDefinition) => { // Pass appDefinition
+              return new BrowserApp(windowEl, windowInstanceId, webviewId, appDefinition.netscape, appDefinition);
+          }
+      },
+      internetExplorer: {
+          netscape: false,
+          title: "Internet Explorer",
+          icon: "https://win98icons.alexmeub.com/icons/png/msie2-0.png",
+          defaultWidth: 700,
+          defaultHeight: 500,
+          generateContent: (windowInstanceId, webviewId) => BrowserApp.generateInitialHTML(webviewId),
+          initApp: (windowEl, windowInstanceId, webviewId, appDefinition) => {
+              return new BrowserApp(windowEl, windowInstanceId, webviewId, appDefinition.netscape, appDefinition);
+          }
+      },
+      netscapeNavigator: {
+          netscape: true,
+          title: "Netscape Navigator",
+          icon: "./n2-2.png", // Ensure this icon exists or use placeholder
+          defaultWidth: 700,
+          defaultHeight: 500,
+          generateContent: (windowInstanceId, webviewId) => BrowserApp.generateInitialHTML(webviewId),
+          initApp: (windowEl, windowInstanceId, webviewId, appDefinition) => {
+              return new BrowserApp(windowEl, windowInstanceId, webviewId, appDefinition.netscape, appDefinition);
+          }
+      },
+  };
+  document.addEventListener('DOMContentLoaded', () => {
+      const clockElement = document.getElementById('clock');
+      const startButton = document.getElementById('startButton');
+      const startMenu = document.getElementById('startMenu');
+      const desktop = document.getElementById('desktop');
+      const windowTemplate = document.getElementById('windowTemplate');
+      const taskbarWindows = document.getElementById('taskbarWindows');
+
+      let highestZIndex = 100;
+      let openWindows = {}; // instanceId: { element, taskbarButton, appId, originalRect, isMinimized, isMaximized }
+      let windowIdCounter = 0;
+
+      // --- Clock ---
+      function updateClock() {
+          const now = new Date();
+          const hours = now.getHours();
+          const minutes = now.getMinutes().toString().padStart(2, '0');
+          const ampm = hours >= 12 ? 'PM' : 'AM';
+          const displayHours = (hours % 12) || 12; // Convert 0 to 12 for 12 AM
+          clockElement.textContent = `${displayHours}:${minutes} ${ampm}`;
+      }
+      setInterval(updateClock, 1000); // Update every second
+      updateClock(); // Initial call
+
+      // --- Start Menu ---
+      startButton.addEventListener('click', (event) => {
+          event.stopPropagation();
+          startMenu.style.display = startMenu.style.display === 'flex' ? 'none' : 'flex';
+          if (startMenu.style.display === 'flex') {
+              startButton.style.borderStyle = 'inset';
+          } else {
+              startButton.style.borderStyle = 'outset';
+          }
+      });
+
+      document.addEventListener('click', (event) => {
+          if (startMenu.style.display === 'flex' && !startMenu.contains(event.target) && event.target !== startButton && !startButton.contains(event.target)) {
+              startMenu.style.display = 'none';
+              startButton.style.borderStyle = 'outset';
+          }
+           // Deselect desktop icons if clicking on empty desktop or taskbar
+          if (event.target === desktop || event.target.closest('.taskbar')) {
+              if (!event.target.closest('.desktop-icon')) { // Don't deselect if clicking an icon itself
+                   deselectAllDesktopIcons();
+              }
+          }
+      });
+
+      // --- Desktop Icon Selection ---
+      function deselectAllDesktopIcons() {
+          document.querySelectorAll('.desktop-icon.selected').forEach(icon => {
+              icon.classList.remove('selected');
+          });
+      }
+
+      // --- Window Management ---
+      function createWindow(appId) {
+          startMenu.style.display = 'none';
+          startButton.style.borderStyle = 'outset';
+
+          const appDef = APP_DEFINITIONS[appId];
+          if (!appDef) {
+              console.error("App definition not found for:", appId);
+              return;
+          }
+
+          // Prevent multiple instances for non-dialog apps
+          if (!appDef.isDialog) {
+              const existingInstance = Object.values(openWindows).find(ow => ow.appId === appId && ow.element && document.body.contains(ow.element));
+              if (existingInstance) {
+                  if (existingInstance.isMinimized) {
+                      toggleMinimizeWindow(existingInstance.element);
+                  } else {
+                      focusWindow(existingInstance.element);
+                  }
+                  return;
+              }
+          }
+
+          const windowInstanceId = `window-${appId}-${windowIdCounter++}`;
+          const windowEl = windowTemplate.content.firstElementChild.cloneNode(true);
+          windowEl.dataset.appId = appId;
+          windowEl.dataset.instanceId = windowInstanceId;
+
+          // Set window title bar icon and title
+          windowEl.querySelector('.window-titlebar-icon').src = appDef.icon;
+          windowEl.querySelector('.window-titlebar-icon').alt = appDef.title; // Use appDef.title for alt
+          windowEl.querySelector('.window-title').textContent = appDef.netscape ? 'Netscape Navigator' : appDef.title;
+
+          // --- NEW: Generate webviewId if needed by the app ---
+          let webviewId = null;
+          // A more generic check could be a flag in appDef, e.g., appDef.requiresWebviewId
+          // For now, we'll assume if generateContent exists, it might need it, or check specific app ID.
+          if (appId === 'internetBrowser' || (appDef.generateContent && appDef.title === "Internet Browser")) { // Example condition
+              webviewId = `webview-${windowInstanceId}`;
+          }
+
+          // --- NEW: Use appDef.generateContent for dynamic content, otherwise fallback ---
+          if (appDef.generateContent && typeof appDef.generateContent === 'function') {
+              windowEl.querySelector('.window-content').innerHTML = appDef.generateContent(windowInstanceId, webviewId);
+          } else { // Fallback for apps with static content or older definitions
+              windowEl.querySelector('.window-content').innerHTML = typeof appDef.content === 'function' ? appDef.content() : appDef.content;
+          }
+
+          // Default size for new windows, can be overridden by appDef
+          let defaultWidth = 450;
+          let defaultHeight = 300;
+
+          // --- NEW: Use appDef.defaultWidth/Height if specified ---
+          if (appDef.defaultWidth) {
+              defaultWidth = appDef.defaultWidth;
+          }
+          if (appDef.defaultHeight) {
+              defaultHeight = appDef.defaultHeight;
+          }
+
+          // Apply sizes and positions
+          if (appDef.isDialog) {
+              // For dialogs, use their specific default sizes if provided, or fallback
+              defaultWidth = appDef.defaultWidth || 380;
+              defaultHeight = appDef.defaultHeight || 220;
+              windowEl.style.minWidth = appDef.minWidth || '300px'; // Allow appDef to specify min sizes
+              windowEl.style.minHeight = appDef.minHeight || '180px';
+              windowEl.style.left = `${Math.max(0, (desktop.offsetWidth - defaultWidth) / 2)}px`;
+              windowEl.style.top = `${Math.max(0, (desktop.offsetHeight - defaultHeight) / 3)}px`;
+          } else {
+              // For regular windows, random position
+              windowEl.style.left = `${Math.floor(Math.random() * Math.max(0, (desktop.offsetWidth - defaultWidth - 40))) + 20}px`;
+              windowEl.style.top = `${Math.floor(Math.random() * Math.max(0, (desktop.offsetHeight - defaultHeight - 40))) + 20}px`;
+          }
+          windowEl.style.width = `${defaultWidth}px`;
+          windowEl.style.height = `${defaultHeight}px`;
+
+
+          highestZIndex++;
+          windowEl.style.zIndex = highestZIndex;
+
+          desktop.appendChild(windowEl); // IMPORTANT: Append to DOM before initializing app logic that might need the element
+
+          Object.values(openWindows).forEach(ow => {
+              if (ow.element) { // Check if element exists (it might if this is not the first window)
+                  ow.element.classList.add('inactive');
+              }
+          });
+
+          const newWindowData = {
+              element: windowEl,
+              taskbarButton: null,
+              appId: appId,
+              originalRect: { // <<<< SET INITIAL originalRect HERE
+                  left: windowEl.style.left,
+                  top: windowEl.style.top,
+                  width: windowEl.style.width,
+                  height: windowEl.style.height
+              },
+              isMinimized: false,
+              isMaximized: false,
+              appInstance: null
+          };
+          openWindows[windowInstanceId] = newWindowData;
+
+          // --- NEW: Call appDef.initApp if it exists to initialize app-specific logic ---
+          let root;
+          if (appDef.initApp && typeof appDef.initApp === 'function') {
+              newWindowData.appInstance = appDef.initApp(windowEl, windowInstanceId, webviewId, appDef);
+              root = (newWindowData?.appInstance?.webviewEl?.shadowRoot || newWindowData?.appInstance?.webviewEl);
+          }
+
+          // Setup standard window controls
+          if (!appDef.isDialog) {
+              makeDraggable(windowEl);
+              makeResizable(windowEl);
+              addWindowToTaskbar(windowEl, appDef.title, appDef.icon, windowInstanceId);
+              windowEl.querySelector('.window-minimize-btn').addEventListener('click', () => toggleMinimizeWindow(windowEl));
+              windowEl.querySelector('.window-maximize-btn').addEventListener('click', () => toggleMaximizeWindow(windowEl));
+          } else {
+              // Dialogs typically don't have minimize/maximize, but can be draggable
+              windowEl.querySelector('.window-minimize-btn').style.display = 'none';
+              windowEl.querySelector('.window-maximize-btn').style.display = 'none';
+              makeDraggable(windowEl); // Allow dragging dialogs
+          }
+
+          windowEl.querySelector('.window-close-btn').addEventListener('click', () => closeWindow(windowEl));
+          windowEl.addEventListener('mousedown', () => focusWindow(windowEl), true); // Use capture for focus
+
+          focusWindow(windowEl);
+          return windowEl;
+      }
+
+      // New function: makeResizable
+      function makeResizable(element) {
+          console.log('Make resizable called', element);
+          const handles = element.querySelectorAll('.resize-handle');
+          let isResizing = false;
+          let currentHandle = null;
+          let startX, startY, startWidth, startHeight, startLeft, startTop;
+
+          const minWidth = parseInt(window.getComputedStyle(element).minWidth) || 150;
+          const minHeight = parseInt(window.getComputedStyle(element).minHeight) || 100;
+
+          handles.forEach(handle => {
+              handle.addEventListener('pointerdown', (e) => {
+                  const windowData = openWindows[element.dataset.instanceId];
+                  console.log('Mouse down');
+                  if (windowData && windowData.isMaximized) return; // Don't resize if maximized
+
+                  e.stopPropagation(); // Prevent window drag
+                  isResizing = true;
+                  console.log('Resizing starting');
+                  currentHandle = handle;
+                  startX = e.clientX;
+                  startY = e.clientY;
+                  startWidth = element.offsetWidth;
+                  startHeight = element.offsetHeight;
+                  startLeft = element.offsetLeft;
+                  startTop = element.offsetTop;
+
+                  // Bring to front when starting resize
+                  focusWindow(element);
+                  document.body.style.cursor = window.getComputedStyle(currentHandle).cursor; // Set body cursor
+              });
+          });
+
+          globalThis.updateDragMove = (e) => {
+              console.log('Mouse moved');
+              if (!isResizing || !currentHandle) return;
+              //e.preventDefault();
+
+              const dx = e.clientX - startX;
+              const dy = e.clientY - startY;
+
+              let newWidth = startWidth;
+              let newHeight = startHeight;
+              let newLeft = startLeft;
+              let newTop = startTop;
+
+              if (currentHandle.classList.contains('resize-handle-e')) {
+                  newWidth = Math.max(minWidth, startWidth + dx);
+              } else if (currentHandle.classList.contains('resize-handle-w')) {
+                  newWidth = Math.max(minWidth, startWidth - dx);
+                  newLeft = startLeft + dx;
+                  if (newWidth === minWidth) newLeft = startLeft + (startWidth - minWidth);
+              }
+
+              if (currentHandle.classList.contains('resize-handle-s')) {
+                  newHeight = Math.max(minHeight, startHeight + dy);
+              } else if (currentHandle.classList.contains('resize-handle-n')) {
+                  newHeight = Math.max(minHeight, startHeight - dy);
+                  newTop = startTop + dy;
+                  if (newHeight === minHeight) newTop = startTop + (startHeight - minHeight);
+              }
+
+              // Corners
+              if (currentHandle.classList.contains('resize-handle-se')) {
+                  newWidth = Math.max(minWidth, startWidth + dx);
+                  newHeight = Math.max(minHeight, startHeight + dy);
+              } else if (currentHandle.classList.contains('resize-handle-sw')) {
+                  newWidth = Math.max(minWidth, startWidth - dx);
+                  newHeight = Math.max(minHeight, startHeight + dy);
+                  newLeft = startLeft + dx;
+                  if (newWidth === minWidth) newLeft = startLeft + (startWidth - minWidth);
+              } else if (currentHandle.classList.contains('resize-handle-ne')) {
+                  newWidth = Math.max(minWidth, startWidth + dx);
+                  newHeight = Math.max(minHeight, startHeight - dy);
+                  newTop = startTop + dy;
+                  if (newHeight === minHeight) newTop = startTop + (startHeight - minHeight);
+              } else if (currentHandle.classList.contains('resize-handle-nw')) {
+                  newWidth = Math.max(minWidth, startWidth - dx);
+                  newHeight = Math.max(minHeight, startHeight - dy);
+                  newLeft = startLeft + dx;
+                  newTop = startTop + dy;
+                  if (newWidth === minWidth) newLeft = startLeft + (startWidth - minWidth);
+                  if (newHeight === minHeight) newTop = startTop + (startHeight - minHeight);
+              }
+
+              // Boundary checks (simple version, against desktop edges)
+              const desktopRect = desktop.getBoundingClientRect();
+              if (newLeft < 0) { newWidth += newLeft; newLeft = 0; }
+              if (newTop < 0) { newHeight += newTop; newTop = 0; }
+              if (newLeft + newWidth > desktopRect.width) { newWidth = desktopRect.width - newLeft; }
+              if (newTop + newHeight > desktopRect.height) { newHeight = desktopRect.height - newTop; }
+
+
+              element.style.width = `${newWidth}px`;
+              element.style.height = `${newHeight}px`;
+              element.style.left = `${newLeft}px`;
+              element.style.top = `${newTop}px`;
+          };
+          document.addEventListener('pointermove', updateDragMove);
+
+          document.addEventListener('pointerup', () => {
+              if (isResizing) {
+                  isResizing = false;
+                  console.log('Resizing complete');
+                  currentHandle = null;
+                  document.body.style.cursor = 'default'; // Reset body cursor
+                  // Update originalRect if window was resized (for maximize/restore)
+                  const windowData = openWindows[element.dataset.instanceId];
+                  if (windowData && !windowData.isMaximized) {
+                      windowData.originalRect = {
+                          left: element.style.left,
+                          top: element.style.top,
+                          width: element.style.width,
+                          height: element.style.height,
+                      };
+                  }
+              }
+          });
+      }
+
+      function focusWindow(windowEl) {
+          if (!windowEl || !document.body.contains(windowEl)) return;
+
+          const instanceId = windowEl.dataset.instanceId;
+          const windowData = openWindows[instanceId];
+          if (!windowData) return;
+
+          if (windowData.isMinimized) {
+              toggleMinimizeWindow(windowEl);
+              return;
+          }
+
+          // --- NEW: Manage inactive class ---
+          // Remove 'inactive' from the currently focused window
+          windowEl.classList.remove('inactive');
+
+          // Add 'inactive' to all OTHER windows
+          Object.values(openWindows).forEach(ow => {
+              if (ow.element && ow.element !== windowEl) {
+                  ow.element.classList.add('inactive');
+              }
+          });
+          // --- END NEW ---
+
+          if (windowEl.hasAttribute('tabindex') && document.activeElement !== windowEl) {
+              windowEl.focus({ preventScroll: true }); // Ensure the window itself can receive key events
+          }
+          // ---- END NEW LINE ----
+          highestZIndex++;
+          windowEl.style.zIndex = highestZIndex;
+
+          document.querySelectorAll('.taskbar-button').forEach(btn => btn.classList.remove('active'));
+          if (windowData.taskbarButton) {
+              windowData.taskbarButton.classList.add('active');
+              windowData.taskbarButton.classList.remove('minimized');
+          }
+          deselectAllDesktopIcons();
+      }
+
+      function closeWindow(windowEl) {
+          const instanceId = windowEl.dataset.instanceId;
+          if (openWindows[instanceId]) {
+              if (openWindows[instanceId].taskbarButton) {
+                  openWindows[instanceId].taskbarButton.remove();
+              }
+              delete openWindows[instanceId];
+          }
+          windowEl.remove();
+      }
+
+      function addWindowToTaskbar(windowEl, title, iconSrc, instanceId) {
+          const taskbarButton = document.createElement('button');
+          taskbarButton.className = 'taskbar-button';
+          taskbarButton.dataset.windowInstanceId = instanceId;
+
+          const img = document.createElement('img');
+          img.src = iconSrc;
+          img.alt = ""; // Decorative
+          taskbarButton.appendChild(img);
+
+          const titleText = document.createTextNode(title.length > 18 ? title.substring(0,15) + '...' : title);
+          taskbarButton.appendChild(titleText);
+
+          taskbarButton.addEventListener('click', () => {
+              const winData = openWindows[instanceId];
+              if (winData) {
+                  // If it's the active window and not minimized, minimize it (classic taskbar toggle)
+                  if (winData.taskbarButton.classList.contains('active') && !winData.isMinimized) {
+                      toggleMinimizeWindow(winData.element);
+                  } else { // Otherwise, focus or restore it
+                     focusWindow(winData.element); // focusWindow handles un-minimizing
+                  }
+              }
+          });
+
+          taskbarWindows.appendChild(taskbarButton);
+          openWindows[instanceId].taskbarButton = taskbarButton;
+      }
+
+      function makeDraggable(element) {
+          const titleBar = element.querySelector('.window-titlebar');
+          let offsetX, offsetY, isDragging = false;
+
+          titleBar.addEventListener('pointerdown', (e) => {
+              const windowData = openWindows[element.dataset.instanceId];
+              if (windowData && windowData.isMaximized) return;
+              if (e.target.closest('.window-controls button')) return;
+
+              isDragging = true;
+              offsetX = e.clientX - element.getBoundingClientRect().left;
+              offsetY = e.clientY - element.getBoundingClientRect().top;
+              titleBar.style.cursor = 'grabbing';
+              // focusWindow is called by the window's mousedown listener
+          });
+
+          document.addEventListener('pointermove', (e) => {
+              if (!isDragging) return;
+              //e.preventDefault(); // Prevent text selection while dragging
+
+              let newX = e.clientX - offsetX;
+              let newY = e.clientY - offsetY;
+
+              const desktopRect = desktop.getBoundingClientRect();
+              const winRect = element.getBoundingClientRect();
+
+              // Clamp within desktop boundaries
+              newX = Math.max(0, Math.min(newX, desktopRect.width - winRect.width));
+              newY = Math.max(0, Math.min(newY, desktopRect.height - winRect.height));
+
+              element.style.left = `${newX}px`;
+              element.style.top = `${newY}px`;
+          });
+
+          document.addEventListener('pointerup', () => {
+              if (isDragging) {
+                  isDragging = false;
+                  titleBar.style.cursor = 'grab';
+              }
+          });
+      }
+
+      function toggleMinimizeWindow(windowEl) {
+          const instanceId = windowEl.dataset.instanceId;
+          const windowData = openWindows[instanceId];
+          if (!windowData) return;
+
+          windowData.isMinimized = !windowData.isMinimized;
+          if (windowData.isMinimized) {
+              // Store current position if not maximized, before hiding
+              if (!windowData.isMaximized) {
+                   windowData.originalRectBeforeMinimize = {
+                      left: windowEl.style.left,
+                      top: windowEl.style.top,
+                      width: windowEl.style.width,
+                      height: windowEl.style.height
+                  };
+              }
+              windowEl.style.display = 'none';
+              if (windowData.taskbarButton) {
+                  windowData.taskbarButton.classList.add('minimized');
+                  windowData.taskbarButton.classList.remove('active');
+              }
+              // TODO: Focus next available window or desktop
+          } else { // Un-minimizing
+              windowEl.style.display = 'flex';
+              // Restore position if it was stored
+              if (windowData.originalRectBeforeMinimize && !windowData.isMaximized) {
+                  windowEl.style.left = windowData.originalRectBeforeMinimize.left;
+                  windowEl.style.top = windowData.originalRectBeforeMinimize.top;
+                  windowEl.style.width = windowData.originalRectBeforeMinimize.width;
+                  windowEl.style.height = windowData.originalRectBeforeMinimize.height;
+              }
+              focusWindow(windowEl); // This will set taskbar button active
+          }
+      }
+
+      function toggleMaximizeWindow(windowEl) {
+          const instanceId = windowEl.dataset.instanceId;
+          const windowData = openWindows[instanceId];
+          if (!windowData || windowData.isMinimized) return; // Don't maximize if minimized
+
+          const maximizeBtn = windowEl.querySelector('.window-maximize-btn');
+          const titleBar = windowEl.querySelector('.window-titlebar'); // Get titleBar reference
+
+          if (windowData.isMaximized) { // ---- RESTORE ----
+              if (windowData.originalRect) {
+                  windowEl.style.left = windowData.originalRect.left;
+                  windowEl.style.top = windowData.originalRect.top;
+                  windowEl.style.width = windowData.originalRect.width;
+                  windowEl.style.height = windowData.originalRect.height;
+              } else {
+                  // Fallback: This should ideally not be hit if originalRect is always set.
+                  // This could happen if a window is created, never moved/resized, and then maximized.
+                  // Let's try to get its initial computed size or a reasonable default.
+                  const initialWidth = windowEl.style.width || `${windowEl.offsetWidth}px`;
+                  const initialHeight = windowEl.style.height || `${windowEl.offsetHeight}px`;
+                  const initialLeft = windowEl.style.left || `${(desktop.clientWidth - parseInt(initialWidth)) / 2}px`;
+                  const initialTop = windowEl.style.top || `${(desktop.clientHeight - parseInt(initialHeight)) / 3}px`;
+
+                  windowEl.style.left = initialLeft;
+                  windowEl.style.top = initialTop;
+                  windowEl.style.width = initialWidth;
+                  windowEl.style.height = initialHeight;
+                  console.warn("Restoring window without originalRect, using current/default dimensions.", windowEl);
+              }
+
+              windowData.isMaximized = false;
+              windowEl.classList.remove('maximized');
+              maximizeBtn.textContent = '1'; // Maximize symbol (Marlett)
+              maximizeBtn.title = 'Maximize';
+              titleBar.style.cursor = 'grab'; // Restore draggable cursor
+
+          } else { // ---- MAXIMIZE ----
+              // Store current dimensions in originalRect IF NOT ALREADY SET by drag/resize.
+              // If originalRect exists, it means the user has already positioned/sized it,
+              // so we want to preserve that specific state for the next restore.
+              // If it doesn't exist, or if the window hasn't been manually changed from its initial spawn state,
+              // then capture the current state.
+              if (!windowData.originalRect ||
+                  (windowData.originalRect.left === windowEl.style.left &&
+                   windowData.originalRect.top === windowEl.style.top &&
+                   windowData.originalRect.width === (windowEl.style.width || `${windowEl.offsetWidth}px`) &&
+                   windowData.originalRect.height === (windowEl.style.height || `${windowEl.offsetHeight}px`))) {
+                  // If originalRect is not set, or if it matches the current state (meaning no drag/resize happened since last originalRect set)
+                  // then update originalRect to the current state before maximizing.
+                  windowData.originalRect = {
+                      left: windowEl.style.left,
+                      top: windowEl.style.top,
+                      width: windowEl.style.width || `${windowEl.offsetWidth}px`, // Use current style or offsetWidth
+                      height: windowEl.style.height || `${windowEl.offsetHeight}px` // Use current style or offsetHeight
+                  };
+              }
+              // If windowData.originalRect was already set by a previous drag/resize, we *don't* overwrite it here.
+              // We want to restore to *that specific user-defined size/position*.
+
+              windowEl.style.left = '0px';
+              windowEl.style.top = '0px';
+              windowEl.style.width = `${desktop.clientWidth}px`;
+              windowEl.style.height = `${desktop.clientHeight}px`;
+
+              windowData.isMaximized = true;
+              windowEl.classList.add('maximized');
+              maximizeBtn.textContent = '2'; // Restore symbol (Marlett)
+              maximizeBtn.title = 'Restore';
+              titleBar.style.cursor = 'default'; // Non-draggable cursor when maximized
+          }
+          focusWindow(windowEl);
+      }
+
+      // --- Icon/Menu Item Click Handlers ---
+      document.querySelectorAll('.desktop-icon').forEach(item => {
+          item.addEventListener('click', (e) => {
+              e.stopPropagation(); // Prevent desktop click from deselecting
+              deselectAllDesktopIcons();
+              item.classList.add('selected');
+          });
+          item.addEventListener('dblclick', (e) => {
+              const appId = item.dataset.appId;
+              if (appId) {
+                  createWindow(appId);
+              }
+          });
+      });
+
+      document.querySelectorAll('.start-menu-item').forEach(item => {
+           item.addEventListener('click', (e) => {
+              if (item.classList.contains('disabled')) return;
+              const appId = item.dataset.appId;
+
+              if (item.id === 'shutdownButtonTrigger') {
+                  createWindow("shutdownDialog");
+                  return;
+              }
+              if (appId) {
+                  createWindow(appId);
+              }
+          });
+      });
+  });
+  window.addEventListener('message', ({isTrusted, data, origin}) => {
+    if ( ! isTrusted ) return;
+    //console.log('message from', origin, 'is', data);
+    const topOffset = window.screen.availHeight - window.visualViewport.height;
+    const leftOffset = window.screen.availWidth - window.visualViewport.width;
+    switch(data.type) {
+      case "pointermove": {
+        const {pointermove} = data;
+        const {clientX,clientY,pageX,pageY} = pointermove;
+        pointermove.screenX -= window.screenX + leftOffset;
+        pointermove.screenY -= window.screenY + topOffset;
+        pointermove.clientX = pointermove.screenX;
+        pointermove.clientY = pointermove.screenY;
+        console.log(pointermove);
+        globalThis.updateDragMove(pointermove);
+      }; break;
+      default: {
+
+      }; break;
+    }
+  });
+== desktop-context-menu.js ==
+// desktop-context-menu.js
+(function() {
+    const DESKTOP_ICON_POSITIONS_KEY = 'desktopIconPositions_win9x_style';
+    const DESKTOP_BACKGROUND_COLOR_KEY = 'desktopBgColor_win9x';
+    const DESKTOP_BACKGROUND_IMAGE_KEY = 'desktopBgImage_win9x';
+
+    let desktopElement;
+    let contextMenuElement = null;
+    let allDesktopIcons = []; // To be populated
+    let displayPropertiesDialog = null;
+    let currentBgColor = '#008080';
+    let currentBgImage = '';
+
+    function makeDialogDraggable(dialogElement, titleBarElement) {
+        let offsetX, offsetY, isDragging = false;
+        titleBarElement.addEventListener('pointerdown', (e) => {
+            if (e.target.closest('button')) return;
+            isDragging = true;
+            const dialogRect = dialogElement.getBoundingClientRect();
+            offsetX = e.clientX - dialogRect.left;
+            offsetY = e.clientY - dialogRect.top;
+            titleBarElement.style.cursor = 'grabbing';
+            const currentZ = parseInt(window.getComputedStyle(dialogElement).zIndex) || 15000;
+            dialogElement.style.zIndex = currentZ + 1;
+            document.body.classList.add('no-select');
+        });
+        document.addEventListener('pointermove', (e) => {
+            if (!isDragging) return;
+            let newX = e.clientX - offsetX;
+            let newY = e.clientY - offsetY;
+            const vpWidth = desktopElement.clientWidth;
+            const vpHeight = desktopElement.clientHeight;
+            const dialogWidth = dialogElement.offsetWidth;
+            const dialogHeight = dialogElement.offsetHeight;
+            newX = Math.max(0, Math.min(newX, vpWidth - dialogWidth));
+            newY = Math.max(0, Math.min(newY, vpHeight - dialogHeight));
+            dialogElement.style.left = `${newX}px`;
+            dialogElement.style.top = `${newY}px`;
+        });
+        document.addEventListener('pointerup', () => {
+            if (isDragging) {
+                isDragging = false;
+                titleBarElement.style.cursor = 'grab';
+                document.body.classList.remove('no-select');
+            }
+        });
+    }
+
+    function openDisplayProperties() {
+        hideContextMenu();
+        if (displayPropertiesDialog && desktopElement.contains(displayPropertiesDialog)) {
+            const currentZ = parseInt(window.getComputedStyle(displayPropertiesDialog).zIndex) || 15000;
+            displayPropertiesDialog.style.zIndex = currentZ + 1;
+            return;
+        }
+        displayPropertiesDialog = document.createElement('div');
+        displayPropertiesDialog.className = 'display-properties-dialog';
+        const initialLeft = Math.max(0, (desktopElement.clientWidth - 350) / 2);
+        const initialTop = Math.max(0, (desktopElement.clientHeight - 300) / 3);
+        displayPropertiesDialog.style.left = `${initialLeft}px`;
+        displayPropertiesDialog.style.top = `${initialTop}px`;
+        displayPropertiesDialog.style.zIndex = '15001';
+        displayPropertiesDialog.innerHTML = `
+            <div class="display-properties-dialog-titlebar">
+                <span class="display-properties-dialog-title">Display Properties</span>
+                <div class="display-properties-dialog-controls">
+                    <button class="dialog-close-btn" title="Close">r</button>
+                </div>
+            </div>
+            <div class="display-properties-dialog-content">
+                <div class="display-properties-tabs">
+                    <div class="display-properties-tab active" data-tab="background">Background</div>
+                </div>
+                <div class="display-properties-tab-content active" data-tab-content="background">
+                    <fieldset>
+                        <legend>Wallpaper</legend>
+                        <div class="display-properties-preview" id="dpPreview"></div>
+                        <label for="dpBgImageFile">Select an image (max 1MB):</label>
+                        <input type="file" id="dpBgImageFile" accept="image/jpeg, image/png, image/gif, image/webp">
+                        <button id="dpClearImageBtn">Remove Image</button>
+                    </fieldset>
+                    <fieldset>
+                        <legend>Color</legend>
+                        <label for="dpBgColor">Select background color:</label>
+                        <input type="color" id="dpBgColor" value="${currentBgColor}">
+                    </fieldset>
+                </div>
+                <div class="display-properties-buttons">
+                    <button id="dpOkBtn">OK</button>
+                    <button id="dpCancelBtn">Cancel</button>
+                    <button id="dpApplyBtn">Apply</button>
+                </div>
+            </div>
+        `;
+        desktopElement.appendChild(displayPropertiesDialog);
+        const titleBar = displayPropertiesDialog.querySelector('.display-properties-dialog-titlebar');
+        makeDialogDraggable(displayPropertiesDialog, titleBar);
+        const closeBtn = displayPropertiesDialog.querySelector('.dialog-close-btn');
+        const okBtn = displayPropertiesDialog.querySelector('#dpOkBtn');
+        const cancelBtn = displayPropertiesDialog.querySelector('#dpCancelBtn');
+        const applyBtn = displayPropertiesDialog.querySelector('#dpApplyBtn');
+        const colorInput = displayPropertiesDialog.querySelector('#dpBgColor');
+        const imageInput = displayPropertiesDialog.querySelector('#dpBgImageFile');
+        const clearImageBtn = displayPropertiesDialog.querySelector('#dpClearImageBtn');
+        const previewEl = displayPropertiesDialog.querySelector('#dpPreview');
+        previewEl.style.backgroundColor = currentBgColor;
+        if (currentBgImage) {
+            previewEl.style.backgroundImage = `url(${currentBgImage})`;
+        } else {
+            previewEl.style.backgroundImage = 'none';
+        }
+        colorInput.value = currentBgColor;
+        colorInput.addEventListener('input', () => {
+            previewEl.style.backgroundColor = colorInput.value;
+        });
+        imageInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                if (file.size > 1 * 1024 * 1024) {
+                    alert("Image is too large! Please select an image under 1MB.");
+                    imageInput.value = "";
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewEl.style.backgroundImage = `url(${e.target.result})`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        clearImageBtn.addEventListener('click', () => {
+            imageInput.value = "";
+            previewEl.style.backgroundImage = 'none';
+            previewEl.style.backgroundColor = colorInput.value;
+        });
+        function applySettings() {
+            currentBgColor = colorInput.value;
+            desktopElement.style.backgroundColor = currentBgColor;
+            localStorage.setItem(DESKTOP_BACKGROUND_COLOR_KEY, currentBgColor);
+            const file = imageInput.files[0];
+            if (file) {
+                if (file.size <= 1 * 1024 * 1024) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        currentBgImage = e.target.result;
+                        desktopElement.style.backgroundImage = `url(${currentBgImage})`;
+                        desktopElement.style.backgroundSize = 'cover';
+                        desktopElement.style.backgroundPosition = 'center';
+                        localStorage.setItem(DESKTOP_BACKGROUND_IMAGE_KEY, currentBgImage);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            } else if (imageInput.value === "" && previewEl.style.backgroundImage === 'none') {
+                currentBgImage = '';
+                desktopElement.style.backgroundImage = 'none';
+                localStorage.removeItem(DESKTOP_BACKGROUND_IMAGE_KEY);
+            }
+        }
+        applyBtn.addEventListener('click', applySettings);
+        okBtn.addEventListener('click', () => {
+            applySettings();
+            displayPropertiesDialog.remove();
+            displayPropertiesDialog = null;
+        });
+        function closeDialogWithoutSaving() {
+            displayPropertiesDialog.remove();
+            displayPropertiesDialog = null;
+        }
+        cancelBtn.addEventListener('click', closeDialogWithoutSaving);
+        closeBtn.addEventListener('click', closeDialogWithoutSaving);
+    }
+
+    function loadDesktopPreferences() {
+        currentBgColor = localStorage.getItem(DESKTOP_BACKGROUND_COLOR_KEY) || '#008080';
+        currentBgImage = localStorage.getItem(DESKTOP_BACKGROUND_IMAGE_KEY) || '';
+        desktopElement.style.backgroundColor = currentBgColor;
+        if (currentBgImage) {
+            desktopElement.style.backgroundImage = `url(${currentBgImage})`;
+            desktopElement.style.backgroundSize = 'cover';
+            desktopElement.style.backgroundPosition = 'center';
+        } else {
+            desktopElement.style.backgroundImage = 'none';
+        }
+    }
+
+    function createContextMenu() {
+        if (contextMenuElement && desktopElement.contains(contextMenuElement)) {
+            contextMenuElement.remove();
+        }
+        contextMenuElement = document.createElement('div');
+        contextMenuElement.className = 'desktop-context-menu';
+
+        const menuItems = [
+            {
+                text: "<u>A</u>rrange Icons",
+                action: arrangeIcons,
+            },
+            {
+                text: "<u>S</u>nap to Grid",
+                action: () => {
+                    if (window.Win9xDesktopUtils && typeof window.Win9xDesktopUtils.snapSelectedIconsToGrid === 'function') {
+                        window.Win9xDesktopUtils.snapSelectedIconsToGrid();
+                    } else {
+                        alert("Snap to Grid feature not available. (desktop-icons.js not configured?)");
+                    }
+                }
+            },
+            { separator: true },
+            {
+                text: "<u>R</u>efresh",
+                action: () => window.location.reload()
+            },
+            { separator: true },
+            {
+                text: "P<u>r</u>operties",
+                action: openDisplayProperties
+            },
+        ];
+
+        menuItems.forEach((itemDef, index) => {
+            if (itemDef.separator && index > 0) {
+                if (contextMenuElement.lastChild && !contextMenuElement.lastChild.classList.contains('desktop-context-menu-separator')) {
+                    const separator = document.createElement('div');
+                    separator.className = 'desktop-context-menu-separator';
+                    contextMenuElement.appendChild(separator);
+                }
+            }
+            if (itemDef.text) {
+                const menuItem = document.createElement('div');
+                menuItem.className = 'desktop-context-menu-item';
+                menuItem.innerHTML = itemDef.text;
+                if (itemDef.disabled) {
+                    menuItem.classList.add('disabled');
+                } else {
+                    menuItem.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (typeof itemDef.action === 'function') {
+                            itemDef.action();
+                        }
+                        if (itemDef.action !== openDisplayProperties) { // Keep menu for dialogs, they handle their own closing
+                             hideContextMenu();
+                        }
+                    });
+                }
+                contextMenuElement.appendChild(menuItem);
+            }
+        });
+        desktopElement.appendChild(contextMenuElement);
+        hideContextMenu();
+    }
+
+    function showContextMenu(event) {
+        if (event.target.closest('.window') || event.target.closest('.display-properties-dialog')) {
+            return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        if (!contextMenuElement || !desktopElement.contains(contextMenuElement)) {
+            createContextMenu();
+        }
+        const desktopRect = desktopElement.getBoundingClientRect();
+        let x = event.clientX - desktopRect.left;
+        let y = event.clientY - desktopRect.top;
+        contextMenuElement.style.display = 'block';
+        const menuRect = contextMenuElement.getBoundingClientRect();
+        const padding = 5;
+        if (x + menuRect.width + padding > desktopElement.clientWidth) {
+            x = desktopElement.clientWidth - menuRect.width - padding;
+        }
+        if (y + menuRect.height + padding > desktopElement.clientHeight) {
+            y = desktopElement.clientHeight - menuRect.height - padding;
+        }
+        x = Math.max(padding, x);
+        y = Math.max(padding, y);
+        contextMenuElement.style.left = `${x}px`;
+        contextMenuElement.style.top = `${y}px`;
+        contextMenuElement.style.zIndex = '20000';
+        setTimeout(() => {
+            document.addEventListener('click', handleClickOutsideContextMenu, { once: true, capture: true });
+            document.addEventListener('contextmenu', handleRightClickOutsideContextMenu, { once: true, capture: true });
+        }, 0);
+    }
+
+    function hideContextMenu() {
+        if (contextMenuElement) {
+            contextMenuElement.style.display = 'none';
+        }
+    }
+
+    function handleClickOutsideContextMenu(event) {
+        if (contextMenuElement && contextMenuElement.style.display === 'block') {
+            if (!contextMenuElement.contains(event.target)) {
+                hideContextMenu();
+            } else {
+                setTimeout(() => {
+                    document.addEventListener('click', handleClickOutsideContextMenu, { once: true, capture: true });
+                    document.addEventListener('contextmenu', handleRightClickOutsideContextMenu, { once: true, capture: true });
+                }, 0);
+            }
+        }
+    }
+
+    function handleRightClickOutsideContextMenu(event) {
+         if (contextMenuElement && contextMenuElement.style.display === 'block') {
+            if (!contextMenuElement.contains(event.target)) {
+                hideContextMenu();
+            } else {
+                event.preventDefault();
+                setTimeout(() => {
+                    document.addEventListener('click', handleClickOutsideContextMenu, { once: true, capture: true });
+                    document.addEventListener('contextmenu', handleRightClickOutsideContextMenu, { once: true, capture: true });
+                }, 0);
+            }
+        }
+    }
+
+    function arrangeIcons() {
+        if (!desktopElement) return;
+        try {
+            localStorage.removeItem(DESKTOP_ICON_POSITIONS_KEY);
+        } catch (e) {
+            console.error("Error clearing icon positions from localStorage:", e);
+        }
+        allDesktopIcons.forEach(icon => {
+            icon.style.position = '';
+            icon.style.left = '';
+            icon.style.top = '';
+            icon.style.margin = '';
+            icon.classList.remove('is-positioned');
+            icon.classList.remove('selected');
+        });
+        hideContextMenu();
+    }
+
+    function initDesktopContextMenu() {
+        desktopElement = document.getElementById('desktop');
+        if (!desktopElement) {
+            console.error('ContextMenu: Desktop element (#desktop) not found.');
+            return;
+        }
+        allDesktopIcons = Array.from(desktopElement.querySelectorAll('.desktop-icon'));
+        loadDesktopPreferences();
+        desktopElement.addEventListener('contextmenu', showContextMenu);
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                if (contextMenuElement && contextMenuElement.style.display === 'block') {
+                    hideContextMenu();
+                } else if (displayPropertiesDialog && desktopElement.contains(displayPropertiesDialog)) {
+                    const closeBtn = displayPropertiesDialog.querySelector('.dialog-close-btn');
+                    if (closeBtn) closeBtn.click();
+                    else {
+                        displayPropertiesDialog.remove();
+                        displayPropertiesDialog = null;
+                    }
+                }
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initDesktopContextMenu);
+        document.addEventListener('pointerdown', e => {
+          if ( ! contextMenuElement ) return;
+          if ( contextMenuElement.style.display === 'block' && !e.target.closest('.desktop-context-menu') ) {
+            setTimeout(() => hideContextMenu(), 100);
+          }
+        }, {capture:true});
+    } else {
+        initDesktopContextMenu();
+    }
+})();
+== desktop-icons.js ==
+// desktop-icons.js
+(function() {
+    'use strict'; // Recommended for IIFEs
+
+    const DESKTOP_ICON_POSITIONS_KEY = 'desktopIconPositions_win9x_style';
+    let desktopElement;
+    let allDesktopIcons = []; // Cache of all discoverable desktop icon elements
+
+    // --- State Variables ---
+    let selectedIcons = new Set();
+
+    let primaryDraggedIcon = null; // The specific icon mouse interaction started on for a drag
+    let isDraggingGroup = false;
+    let dragOffsetX, dragOffsetY;
+    let draggedItemsInitialStates = new Map(); // Stores {iconElement: {x, y, zIndex}} for items being dragged
+
+    let isMarqueeSelecting = false;
+    let marqueeElement = null;
+    let marqueeStartX, marqueeStartY;
+    let desktopRectCache; // To cache desktop's bounding rect during drag/marquee
+
+    // let clickTimeout = null; // Retained, though its direct usage wasn't prominent in the provided drag/select
+    let hasDragged = false; // Flag to check if actual dragging occurred
+
+    // --- LocalStorage Persistence ---
+    function getStoredPositions() {
+        try {
+            const stored = localStorage.getItem(DESKTOP_ICON_POSITIONS_KEY);
+            return stored ? JSON.parse(stored) : {};
+        } catch (e) {
+            console.error("Error reading icon positions from localStorage:", e);
+            return {};
+        }
+    }
+
+    function saveIconPosition(appId, x, y) {
+        const positions = getStoredPositions();
+        positions[appId] = { x, y };
+        try {
+            localStorage.setItem(DESKTOP_ICON_POSITIONS_KEY, JSON.stringify(positions));
+        } catch (e) {
+            console.error("Error saving icon positions to localStorage:", e);
+        }
+    }
+
+    function applyInitialPositions() {
+        if (!desktopElement) return;
+        const positions = getStoredPositions();
+
+        allDesktopIcons.forEach(icon => {
+            const appId = icon.dataset.appId;
+            if (appId && positions[appId]) {
+                const pos = positions[appId];
+                icon.style.position = 'absolute';
+                icon.style.left = `${pos.x}px`;
+                icon.style.top = `${pos.y}px`;
+                icon.style.margin = '0';
+                icon.classList.add('is-positioned');
+            } else {
+                // Ensure icons not in localStorage are relatively positioned for z-index with marquee
+                // This might be less relevant if snap-to-grid or drag always makes them absolute.
+                if (window.getComputedStyle(icon).position === 'static') {
+                    icon.style.position = 'relative';
+                }
+            }
+        });
+    }
+
+    // --- Selection Management ---
+    function clearSelection() {
+        selectedIcons.forEach(icon => icon.classList.remove('selected'));
+        selectedIcons.clear();
+    }
+
+    function selectIcon(iconElement, isAdditive = false) {
+        if (!isAdditive) {
+            clearSelection();
+        }
+        if (iconElement && !selectedIcons.has(iconElement)) {
+            selectedIcons.add(iconElement);
+            iconElement.classList.add('selected');
+        }
+    }
+
+    function toggleSelectIcon(iconElement) {
+        if (selectedIcons.has(iconElement)) {
+            selectedIcons.delete(iconElement);
+            iconElement.classList.remove('selected');
+        } else {
+            selectedIcons.add(iconElement);
+            iconElement.classList.add('selected');
+        }
+    }
+
+    // --- Marquee Logic ---
+    function startMarquee(event) {
+        if (event.button !== 0) return; // Only primary button
+
+        isMarqueeSelecting = true;
+        desktopRectCache = desktopElement.getBoundingClientRect();
+
+        const desktopStyle = window.getComputedStyle(desktopElement);
+        const paddingLeft = parseFloat(desktopStyle.paddingLeft) || 0;
+        const paddingTop = parseFloat(desktopStyle.paddingTop) || 0;
+
+        marqueeStartX = event.clientX - desktopRectCache.left - paddingLeft;
+        marqueeStartY = event.clientY - desktopRectCache.top - paddingTop;
+
+        marqueeElement = document.createElement('div');
+        marqueeElement.className = 'marquee-select-box';
+        marqueeElement.style.left = `${marqueeStartX}px`;
+        marqueeElement.style.top = `${marqueeStartY}px`;
+        marqueeElement.style.width = '0px';
+        marqueeElement.style.height = '0px';
+        desktopElement.appendChild(marqueeElement);
+
+        clearSelection();
+        document.body.classList.add('no-select');
+        desktopElement.setPointerCapture(event.pointerId);
+    }
+
+    function updateMarquee(event) {
+        if (!isMarqueeSelecting) return;
+
+        const desktopStyle = window.getComputedStyle(desktopElement);
+        const paddingLeft = parseFloat(desktopStyle.paddingLeft) || 0;
+        const paddingTop = parseFloat(desktopStyle.paddingTop) || 0;
+
+        let currentX = event.clientX - desktopRectCache.left - paddingLeft;
+        let currentY = event.clientY - desktopRectCache.top - paddingTop;
+
+        const newLeft = Math.min(marqueeStartX, currentX);
+        const newTop = Math.min(marqueeStartY, currentY);
+        const newWidth = Math.abs(currentX - marqueeStartX);
+        const newHeight = Math.abs(currentY - marqueeStartY);
+
+        marqueeElement.style.left = `${newLeft}px`;
+        marqueeElement.style.top = `${newTop}px`;
+        marqueeElement.style.width = `${newWidth}px`;
+        marqueeElement.style.height = `${newHeight}px`;
+
+        const marqueeRect = marqueeElement.getBoundingClientRect();
+        allDesktopIcons.forEach(icon => {
+            const iconRect = icon.getBoundingClientRect();
+            if (isIntersecting(marqueeRect, iconRect)) {
+                if (!selectedIcons.has(icon)) {
+                    selectedIcons.add(icon);
+                    icon.classList.add('selected');
+                }
+            } else {
+                if (selectedIcons.has(icon)) {
+                    selectedIcons.delete(icon);
+                    icon.classList.remove('selected');
+                }
+            }
+        });
+    }
+
+    // Original endMarquee definition before potential override in init
+    let originalEndMarqueeFunction = function(event) {
+        if (!isMarqueeSelecting) return;
+
+        desktopElement.releasePointerCapture(event.pointerId);
+        if (marqueeElement) {
+            marqueeElement.remove();
+            marqueeElement = null;
+        }
+        document.body.classList.remove('no-select');
+        isMarqueeSelecting = false; // Crucial: set state *before* checking target
+
+        // This part is for the marqueeJustFinishedOnDesktop flag logic
+        if (event.target === desktopElement) {
+            // This event.stopPropagation() was in the original code,
+            // but the marqueeJustFinishedOnDesktop mechanism is now primary.
+            // Keep it if it served another purpose, or rely on the capture phase listener.
+            // event.stopPropagation();
+        }
+    };
+    // Assign it to endMarquee, which might be reassigned in initDesktopInteractions
+    let endMarquee = originalEndMarqueeFunction;
+
+
+    function isIntersecting(rectA, rectB) {
+        return !(rectA.right < rectB.left ||
+                   rectA.left > rectB.right ||
+                   rectA.bottom < rectB.top ||
+                   rectA.top > rectB.bottom);
+    }
+
+    // --- Dragging Logic (Single and Group) ---
+    function startIconDrag(event, iconElement) {
+        if (event.button !== 0) return;
+
+        hasDragged = false;
+        primaryDraggedIcon = iconElement;
+        desktopRectCache = desktopElement.getBoundingClientRect();
+
+        if (!event.ctrlKey && !selectedIcons.has(iconElement)) { // If not Ctrl key and icon not selected
+            clearSelection();
+            selectIcon(iconElement);
+        } else if (!selectedIcons.has(iconElement)) { // For Ctrl key click on unselected icon
+             selectIcon(iconElement, true); // Add to selection (toggleSelectIcon does this more or less)
+        }
+        // If icon IS selected (with or without Ctrl), drag the whole group.
+
+        isDraggingGroup = selectedIcons.size > 0;
+
+        const clickedIconRect = primaryDraggedIcon.getBoundingClientRect();
+        const desktopStyle = window.getComputedStyle(desktopElement);
+        const desktopPaddingLeft = parseFloat(desktopStyle.paddingLeft) || 0;
+        const desktopPaddingTop = parseFloat(desktopStyle.paddingTop) || 0;
+
+        dragOffsetX = event.clientX - clickedIconRect.left;
+        dragOffsetY = event.clientY - clickedIconRect.top;
+
+        draggedItemsInitialStates.clear();
+        selectedIcons.forEach(icon => {
+            if (window.getComputedStyle(icon).position !== 'absolute') {
+                const rect = icon.getBoundingClientRect();
+                icon.style.position = 'absolute';
+                icon.style.left = `${rect.left - desktopRectCache.left - desktopPaddingLeft}px`;
+                icon.style.top = `${rect.top - desktopRectCache.top - desktopPaddingTop}px`;
+                icon.style.margin = '0';
+                icon.classList.add('is-positioned');
+            }
+            draggedItemsInitialStates.set(icon, {
+                x: icon.offsetLeft,
+                y: icon.offsetTop,
+                zIndex: icon.style.zIndex || ''
+            });
+            icon.style.zIndex = '10000';
+        });
+
+        document.body.classList.add('no-select');
+        primaryDraggedIcon.setPointerCapture(event.pointerId);
+    }
+
+    function processDrag(event) {
+        if (!primaryDraggedIcon) return;
+        if (!hasDragged && (Math.abs(event.movementX) > 2 || Math.abs(event.movementY) > 2)) { // Threshold
+            hasDragged = true;
+        }
+        if (!hasDragged) return; // Don't move if threshold not met
+
+        const desktopStyle = window.getComputedStyle(desktopElement);
+        const desktopPaddingLeft = parseFloat(desktopStyle.paddingLeft) || 0;
+        const desktopPaddingTop = parseFloat(desktopStyle.paddingTop) || 0;
+
+        const contentWidth = desktopElement.clientWidth; // clientWidth includes padding
+        const contentHeight = desktopElement.clientHeight; // clientHeight includes padding
+        // Effective draggable area:
+        const draggableWidth = contentWidth - (parseFloat(desktopStyle.paddingLeft) || 0) - (parseFloat(desktopStyle.paddingRight) || 0);
+        const draggableHeight = contentHeight - (parseFloat(desktopStyle.paddingTop) || 0) - (parseFloat(desktopStyle.paddingBottom) || 0);
+
+
+        let newPrimaryX = event.clientX - desktopRectCache.left - desktopPaddingLeft - dragOffsetX;
+        let newPrimaryY = event.clientY - desktopRectCache.top - desktopPaddingTop - dragOffsetY;
+
+        newPrimaryX = Math.max(0, Math.min(newPrimaryX, draggableWidth - primaryDraggedIcon.offsetWidth));
+        newPrimaryY = Math.max(0, Math.min(newPrimaryY, draggableHeight - primaryDraggedIcon.offsetHeight));
+
+        const primaryInitialState = draggedItemsInitialStates.get(primaryDraggedIcon);
+        const deltaX = newPrimaryX - primaryInitialState.x;
+        const deltaY = newPrimaryY - primaryInitialState.y;
+
+        selectedIcons.forEach(icon => {
+            const initialState = draggedItemsInitialStates.get(icon);
+            if (!initialState) return; // Should not happen if logic is correct
+
+            let newX = initialState.x + deltaX;
+            let newY = initialState.y + deltaY;
+
+            newX = Math.max(0, Math.min(newX, draggableWidth - icon.offsetWidth));
+            newY = Math.max(0, Math.min(newY, draggableHeight - icon.offsetHeight));
+
+            icon.style.left = `${newX}px`;
+            icon.style.top = `${newY}px`;
+        });
+    }
+
+    function endIconDrag(event) {
+        if (!primaryDraggedIcon) return;
+
+        primaryDraggedIcon.releasePointerCapture(event.pointerId);
+        document.body.classList.remove('no-select');
+
+        if (hasDragged) { // Only save if actual drag occurred
+            draggedItemsInitialStates.forEach((state, icon) => {
+                icon.style.zIndex = state.zIndex;
+                const appId = icon.dataset.appId;
+                if (appId) {
+                    saveIconPosition(appId, icon.offsetLeft, icon.offsetTop);
+                }
+            });
+        } else {
+            // This was a click, not a drag. Selection is handled by onIconPointerDown/startIconDrag.
+            // Restore z-index if it was changed optimistically
+             draggedItemsInitialStates.forEach((state, icon) => {
+                icon.style.zIndex = state.zIndex;
+            });
+        }
+
+        primaryDraggedIcon = null;
+        isDraggingGroup = false;
+        draggedItemsInitialStates.clear();
+        // hasDragged = false; // Reset here or at start of next drag
+    }
+
+    // --- Event Handlers Attachments ---
+    function onIconPointerDown(event) {
+        const iconElement = event.currentTarget;
+
+        hasDragged = false; // Reset drag flag for this interaction
+
+        if (event.ctrlKey) {
+            toggleSelectIcon(iconElement);
+            // If we want Ctrl+click to *only* select and not initiate drag,
+            // we could return here. However, standard UX often allows dragging
+            // the new selection state. startIconDrag will use the current selectedIcons.
+        } else {
+            // If not Ctrl key:
+            // - If icon is NOT selected, it becomes the only selection.
+            // - If icon IS selected (and it's part of a potential group),
+            //   pointerdown on it prepares to drag the current selection.
+            // This logic is implicitly handled by startIconDrag's check:
+            // `if (!event.ctrlKey && !selectedIcons.has(iconElement))`
+        }
+
+        startIconDrag(event, iconElement);
+        event.stopPropagation();
+        // event.preventDefault(); // Can be aggressive, might prevent focus or other desired defaults.
+                               // Test if needed to stop app.js clicks on icons.
+    }
+
+    function onDesktopPointerDown(event) {
+        if (event.target === desktopElement) {
+            startMarquee(event);
+            // event.stopPropagation(); // Already done if startMarquee is called and successful
+        } else {
+            // Click was on something else on the desktop (not an icon, not desktop itself)
+            // This could be a place to clear selection if desired, and if not handled by app.js
+            // clearSelection();
+        }
+    }
+
+    function onDocumentPointerMove(event) {
+        if (isMarqueeSelecting) {
+            updateMarquee(event);
+        } else if (primaryDraggedIcon) {
+            processDrag(event);
+        }
+    }
+
+    function onDocumentPointerUp(event) {
+        // The order matters if both could be true, but they are usually exclusive
+        if (isMarqueeSelecting) {
+            endMarquee(event);
+        } else if (primaryDraggedIcon) {
+            endIconDrag(event);
+        }
+        // If neither, it might be a click on the document not handled elsewhere.
+        // This is where app.js's generic deselect might fire.
+        // The marqueeJustFinishedOnDesktop logic below tries to intercept this.
+    }
+
+    // --- Initialization ---
+    let marqueeJustFinishedOnDesktop = false;
+
+    function initDesktopInteractions() {
+        desktopElement = document.getElementById('desktop');
+        if (!desktopElement) {
+            console.error('DesktopInteractions: Desktop element (#desktop) not found.');
+            return;
+        }
+        allDesktopIcons = Array.from(desktopElement.querySelectorAll('.desktop-icon'));
+
+        applyInitialPositions();
+
+        allDesktopIcons.forEach(icon => {
+            icon.addEventListener('pointerdown', onIconPointerDown);
+            const img = icon.querySelector('img');
+            if (img) {
+                img.addEventListener('dragstart', (e) => e.preventDefault());
+            }
+        });
+
+        desktopElement.addEventListener('pointerdown', onDesktopPointerDown);
+        document.addEventListener('pointermove', onDocumentPointerMove);
+        document.addEventListener('pointerup', onDocumentPointerUp);
+        document.addEventListener('pointercancel', onDocumentPointerUp);
+
+        // Intercept clicks on document to prevent app.js from deselecting after marquee
+        document.addEventListener('click', function(event) {
+            if (marqueeJustFinishedOnDesktop && event.target === desktopElement) {
+                event.stopImmediatePropagation();
+                // console.log("Desktop click propagation stopped after marquee on desktop.");
+            }
+            marqueeJustFinishedOnDesktop = false;
+        }, true);
+
+        // Re-assign endMarquee to include the flag logic
+        // This shadows the `endMarquee` in the wider IIFE scope with this new version.
+        const originalEndMarqueeHandler = endMarquee; // The one defined earlier in this IIFE
+        endMarquee = function(event) {
+            originalEndMarqueeHandler.call(this, event); // Call original logic
+
+            // Check if marquee truly ended (isMarqueeSelecting is now false) AND target was desktop
+            if (isMarqueeSelecting === false && event.target === desktopElement) {
+                marqueeJustFinishedOnDesktop = true;
+                // Reset flag quickly if no click follows immediately (defensive)
+                setTimeout(() => { marqueeJustFinishedOnDesktop = false; }, 0);
+            }
+        };
+
+        // Configure the SnapToGrid module (optional: customize grid size)
+        if (window.SnapToGrid && typeof window.SnapToGrid.configure === 'function') {
+            window.SnapToGrid.configure({ gridSizeX: 85, gridSizeY: 87 }); // Example values
+        }
+    }
+
+    // --- Global Utilities (e.g., for context menu "Arrange Icons by Grid") ---
+    if (!window.Win9xDesktopUtils) {
+        window.Win9xDesktopUtils = {};
+    }
+
+    window.Win9xDesktopUtils.snapSelectedIconsToGrid = () => {
+        if (!window.SnapToGrid || typeof window.SnapToGrid.snap !== 'function') {
+            console.error("SnapToGrid module or its snap function not found.");
+            return;
+        }
+        if (!desktopElement) {
+            console.error("Desktop element not found for snapping.");
+            return;
+        }
+
+        // Refresh the list of all icons in case some were added/removed dynamically
+        allDesktopIcons = Array.from(desktopElement.querySelectorAll('.desktop-icon'));
+
+        const iconsToProcess = selectedIcons.size > 0 ? Array.from(selectedIcons) : [...allDesktopIcons];
+
+        if (iconsToProcess.length > 0) {
+            window.SnapToGrid.snap({
+                iconsToSnap: iconsToProcess,
+                allDesktopIcons: allDesktopIcons,
+                desktopElement: desktopElement,
+                savePositionFn: saveIconPosition // Pass the local save function
+            });
+        } else {
+            // console.log("Snap to Grid: No icons selected or discoverable to snap.");
+        }
+    };
+
+    // Expose selectedIcons for debug button, if needed
+    // window.selectedIcons = selectedIcons; // Uncomment for the debug button in HTML example
+
+    // --- Auto-run Initialization ---
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initDesktopInteractions);
+    } else {
+        initDesktopInteractions();
+    }
+
+})();
+== snap-to-grid.js ==
+// snap-to-grid.js
+(function(window) {
+    'use strict';
+
+    const DEFAULT_GRID_SIZE_X = 85; // Default horizontal grid size
+    const DEFAULT_GRID_SIZE_Y = 87; // Default vertical grid size
+
+    let config = {
+        gridSizeX: DEFAULT_GRID_SIZE_X,
+        gridSizeY: DEFAULT_GRID_SIZE_Y,
+    };
+
+    // --- Helper Functions ---
+
+    function getDesktopMetrics(desktopElement) {
+        const desktopStyle = window.getComputedStyle(desktopElement);
+        const paddingLeft = parseFloat(desktopStyle.paddingLeft) || 0;
+        const paddingTop = parseFloat(desktopStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(desktopStyle.paddingRight) || 0;
+        const paddingBottom = parseFloat(desktopStyle.paddingBottom) || 0;
+
+        const contentWidth = desktopElement.clientWidth - paddingLeft - paddingRight;
+        const contentHeight = desktopElement.clientHeight - paddingTop - paddingBottom;
+
+        const maxCols = Math.floor(contentWidth / config.gridSizeX);
+        const maxRows = Math.floor(contentHeight / config.gridSizeY);
+
+        return {
+            paddingLeft,
+            paddingTop,
+            contentWidth,
+            contentHeight,
+            maxCols,
+            maxRows
+        };
+    }
+
+    /**
+     * Calculates the grid cell {row, col} for a given pixel position.
+     */
+    function getCellFromPosition(x, y, desktopMetrics) {
+        const col = Math.max(0, Math.min(desktopMetrics.maxCols - 1, Math.round(x / config.gridSizeX)));
+        const row = Math.max(0, Math.min(desktopMetrics.maxRows - 1, Math.round(y / config.gridSizeY)));
+        return { col, row };
+    }
+
+    /**
+     * Builds a Set of occupied "row_col" strings for all icons *not* in the current snapping batch.
+     */
+    function getInitiallyOccupiedCells(allDesktopIcons, iconsBeingSnappedSet, desktopMetrics) {
+        const occupied = new Set();
+        allDesktopIcons.forEach(icon => {
+            if (!iconsBeingSnappedSet.has(icon) && icon.classList.contains('is-positioned')) {
+                // Only consider icons already positioned by us or via drag
+                const { col, row } = getCellFromPosition(icon.offsetLeft, icon.offsetTop, desktopMetrics);
+                occupied.add(`${row}_${col}`);
+            }
+        });
+        return occupied;
+    }
+
+    /**
+     * Finds the next available cell, starting from (targetRow, targetCol),
+     * searching downwards, then wrapping to the next column top, etc.
+     */
+    function findNextAvailableCell(targetRow, targetCol, occupiedCells, desktopMetrics) {
+        let r = targetRow;
+        let c = targetCol;
+        const { maxRows, maxCols } = desktopMetrics;
+
+        // Safety break after checking all cells once
+        for (let i = 0; i < maxRows * maxCols; i++) {
+            if (!occupiedCells.has(`${r}_${c}`)) {
+                return { row: r, col: c };
+            }
+            // Move down
+            r++;
+            if (r >= maxRows) {
+                // Reached bottom of column, move to next column, top row
+                r = 0;
+                c++;
+                if (c >= maxCols) {
+                    // Reached end of all columns, wrap to first column
+                    c = 0;
+                }
+            }
+        }
+        // console.warn("SnapToGrid: Could not find an available cell. Desktop might be full.");
+        return null; // Or throw error, or return original target if all full
+    }
+
+
+    // --- Main Snapping Logic ---
+
+    /**
+     * Snaps a collection of icons to the grid, handling conflicts.
+     * @param {HTMLElement[]} iconsToSnap - Array of icon elements to snap.
+     * @param {HTMLElement[]} allDesktopIcons - All icons on the desktop (for occupancy check).
+     * @param {HTMLElement} desktopElement - The desktop container element.
+     * @param {function} savePositionFn - Function to call to save an icon's position.
+     *                                     (e.g., (appId, x, y) => void)
+     */
+    function snapIconsToGrid(iconsToSnap, allDesktopIcons, desktopElement, savePositionFn) {
+        if (!desktopElement || !iconsToSnap || iconsToSnap.length === 0) {
+            // console.log("SnapToGrid: No desktop element or icons to snap.");
+            return;
+        }
+
+        const desktopMetrics = getDesktopMetrics(desktopElement);
+        const iconsBeingSnappedSet = new Set(iconsToSnap);
+
+        // Get cells occupied by icons *not* part of the current snap batch
+        const occupiedCells = getInitiallyOccupiedCells(allDesktopIcons, iconsBeingSnappedSet, desktopMetrics);
+
+        // Sort icons by current visual position (top-then-left) to make deconfliction more predictable.
+        // This helps if multiple selected icons are near each other.
+        const sortedIconsToSnap = [...iconsToSnap].sort((a, b) => {
+            if (a.offsetTop !== b.offsetTop) {
+                return a.offsetTop - b.offsetTop;
+            }
+            return a.offsetLeft - b.offsetLeft;
+        });
+
+        sortedIconsToSnap.forEach(icon => {
+            // Ensure icon is absolutely positioned
+            if (!icon.classList.contains('is-positioned') && window.getComputedStyle(icon).position !== 'absolute') {
+                const rect = icon.getBoundingClientRect();
+                const parentRect = desktopElement.getBoundingClientRect();
+                icon.style.position = 'absolute';
+                icon.style.left = `${rect.left - parentRect.left - desktopMetrics.paddingLeft}px`;
+                icon.style.top = `${rect.top - parentRect.top - desktopMetrics.paddingTop}px`;
+                icon.style.margin = '0';
+                icon.classList.add('is-positioned');
+            }
+
+            // Determine the icon's preferred grid cell based on its current position
+            const preferredCell = getCellFromPosition(icon.offsetLeft, icon.offsetTop, desktopMetrics);
+
+            // Find the actual cell to place it, resolving conflicts
+            const finalCell = findNextAvailableCell(preferredCell.row, preferredCell.col, occupiedCells, desktopMetrics);
+
+            if (finalCell) {
+                let snappedX = finalCell.col * config.gridSizeX;
+                let snappedY = finalCell.row * config.gridSizeY;
+
+                // Ensure it stays within desktop boundaries after snapping (pixel-perfect for icon width/height)
+                snappedX = Math.max(0, Math.min(snappedX, desktopMetrics.contentWidth - icon.offsetWidth));
+                snappedY = Math.max(0, Math.min(snappedY, desktopMetrics.contentHeight - icon.offsetHeight));
+
+                icon.style.left = `${snappedX}px`;
+                icon.style.top = `${snappedY}px`;
+
+                // Mark this cell as occupied for subsequent icons in *this snapping batch*
+                occupiedCells.add(`${finalCell.row}_${finalCell.col}`);
+
+                const appId = icon.dataset.appId;
+                if (appId && typeof savePositionFn === 'function') {
+                    savePositionFn(appId, snappedX, snappedY);
+                }
+            } else {
+                // console.warn(`SnapToGrid: Could not place icon ${icon.dataset.appId || 'unknown'}, no available cell found.`);
+                // Potentially leave icon as is, or move to a default "overflow" spot
+            }
+        });
+    }
+
+    // --- Public API ---
+    const SnapToGrid = {
+        /**
+         * Configures the grid snapping behavior.
+         * @param {object} newConfig - Configuration object.
+         * @param {number} [newConfig.gridSizeX] - Horizontal grid cell size.
+         * @param {number} [newConfig.gridSizeY] - Vertical grid cell size.
+         */
+        configure: function(newConfig) {
+            if (newConfig) {
+                if (typeof newConfig.gridSizeX === 'number') {
+                    config.gridSizeX = newConfig.gridSizeX;
+                }
+                if (typeof newConfig.gridSizeY === 'number') {
+                    config.gridSizeY = newConfig.gridSizeY;
+                }
+            }
+        },
+
+        /**
+         * Snaps the provided icons to the grid.
+         * @param {object} params
+         * @param {HTMLElement[]} params.iconsToSnap - Array of icon elements to snap.
+         * @param {HTMLElement[]} params.allDesktopIcons - All icons on the desktop.
+         * @param {HTMLElement} params.desktopElement - The desktop container element.
+         * @param {function} params.savePositionFn - Function to save icon positions.
+         */
+        snap: function(params) {
+            snapIconsToGrid(
+                params.iconsToSnap,
+                params.allDesktopIcons,
+                params.desktopElement,
+                params.savePositionFn
+            );
+        }
+    };
+
+    // Expose to global window object (or use a module system if available)
+    window.SnapToGrid = SnapToGrid;
+
+})(window);
