@@ -1,36 +1,42 @@
 // desktop-icons.js
 (function() {
-    'use strict'; // Recommended for IIFEs
+    'use strict';
 
     const DESKTOP_ICON_POSITIONS_KEY = 'desktopIconPositions_win9x_style';
     let desktopElement;
-    let allDesktopIcons = []; // Cache of all discoverable desktop icon elements
+    let allDesktopIcons = [];
 
-    // --- State Variables ---
     let selectedIcons = new Set();
-
-    let primaryDraggedIcon = null; // The specific icon mouse interaction started on for a drag
+    let primaryDraggedIcon = null;
     let isDraggingGroup = false;
     let dragOffsetX, dragOffsetY;
-    let draggedItemsInitialStates = new Map(); // Stores {iconElement: {x, y, zIndex}} for items being dragged
-
+    let draggedItemsInitialStates = new Map();
     let isMarqueeSelecting = false;
     let marqueeElement = null;
     let marqueeStartX, marqueeStartY;
-    let desktopRectCache; // To cache desktop's bounding rect during drag/marquee
+    let desktopRectCache;
+    let hasDragged = false;
 
-    // let clickTimeout = null; // Retained, though its direct usage wasn't prominent in the provided drag/select
-    let hasDragged = false; // Flag to check if actual dragging occurred
+    // --- Debounce Utility --- (Add this if not globally available)
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const context = this;
+            const later = () => {
+                timeout = null;
+                func.apply(context, args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
 
     // --- LocalStorage Persistence ---
     function getStoredPositions() {
         try {
             const stored = localStorage.getItem(DESKTOP_ICON_POSITIONS_KEY);
             return stored ? JSON.parse(stored) : {};
-        } catch (e) {
-            console.error("Error reading icon positions from localStorage:", e);
-            return {};
-        }
+        } catch (e) { console.error("LS Error (get):", e); return {}; }
     }
 
     function saveIconPosition(appId, x, y) {
@@ -38,15 +44,14 @@
         positions[appId] = { x, y };
         try {
             localStorage.setItem(DESKTOP_ICON_POSITIONS_KEY, JSON.stringify(positions));
-        } catch (e) {
-            console.error("Error saving icon positions to localStorage:", e);
-        }
+        } catch (e) { console.error("LS Error (save):", e); }
     }
 
     function applyInitialPositions() {
         if (!desktopElement) return;
         const positions = getStoredPositions();
-        
+        allDesktopIcons = Array.from(desktopElement.querySelectorAll('.desktop-icon')); // Refresh here
+
         allDesktopIcons.forEach(icon => {
             const appId = icon.dataset.appId;
             if (appId && positions[appId]) {
@@ -57,16 +62,15 @@
                 icon.style.margin = '0';
                 icon.classList.add('is-positioned');
             } else {
-                // Ensure icons not in localStorage are relatively positioned for z-index with marquee
-                // This might be less relevant if snap-to-grid or drag always makes them absolute.
                 if (window.getComputedStyle(icon).position === 'static') {
-                    icon.style.position = 'relative';
+                    icon.style.position = 'relative'; // For marquee interaction if not positioned
                 }
             }
         });
     }
 
-    // --- Selection Management ---
+    // --- Selection Management (clearSelection, selectIcon, toggleSelectIcon) ---
+    // ... (these functions remain the same as your current version) ...
     function clearSelection() {
         selectedIcons.forEach(icon => icon.classList.remove('selected'));
         selectedIcons.clear();
@@ -91,14 +95,16 @@
             iconElement.classList.add('selected');
         }
     }
-    
-    // --- Marquee Logic ---
+
+
+    // --- Marquee Logic (startMarquee, updateMarquee, endMarquee, isIntersecting) ---
+    // ... (these functions remain the same as your current version) ...
     function startMarquee(event) {
-        if (event.button !== 0) return; // Only primary button
+        if (event.button !== 0) return; 
 
         isMarqueeSelecting = true;
         desktopRectCache = desktopElement.getBoundingClientRect();
-        
+
         const desktopStyle = window.getComputedStyle(desktopElement);
         const paddingLeft = parseFloat(desktopStyle.paddingLeft) || 0;
         const paddingTop = parseFloat(desktopStyle.paddingTop) || 0;
@@ -114,7 +120,7 @@
         marqueeElement.style.height = '0px';
         desktopElement.appendChild(marqueeElement);
 
-        clearSelection(); 
+        clearSelection();
         document.body.classList.add('no-select');
         desktopElement.setPointerCapture(event.pointerId);
     }
@@ -155,82 +161,34 @@
             }
         });
     }
-
-    // Original endMarquee definition before potential override in init
+    
     let originalEndMarqueeFunction = function(event) {
         if (!isMarqueeSelecting) return;
-         
+
         desktopElement.releasePointerCapture(event.pointerId);
         if (marqueeElement) {
             marqueeElement.remove();
             marqueeElement = null;
         }
         document.body.classList.remove('no-select');
-        isMarqueeSelecting = false; // Crucial: set state *before* checking target
+        isMarqueeSelecting = false; 
 
-        // This part is for the marqueeJustFinishedOnDesktop flag logic
         if (event.target === desktopElement) {
-            // This event.stopPropagation() was in the original code,
-            // but the marqueeJustFinishedOnDesktop mechanism is now primary.
-            // Keep it if it served another purpose, or rely on the capture phase listener.
-            // event.stopPropagation(); 
+            // Stop propagation logic is handled by marqueeJustFinishedOnDesktop flag
         }
     };
-    // Assign it to endMarquee, which might be reassigned in initDesktopInteractions
     let endMarquee = originalEndMarqueeFunction;
 
 
     function isIntersecting(rectA, rectB) {
-        return !(rectA.right < rectB.left || 
-                   rectA.left > rectB.right || 
-                   rectA.bottom < rectB.top || 
+        return !(rectA.right < rectB.left ||
+                   rectA.left > rectB.right ||
+                   rectA.bottom < rectB.top ||
                    rectA.top > rectB.bottom);
     }
 
-    function processDrag(event) {
-        if (!primaryDraggedIcon) return;
-        if (!hasDragged && (Math.abs(event.movementX) > 2 || Math.abs(event.movementY) > 2)) { // Threshold
-            hasDragged = true;
-        }
-        if (!hasDragged) return; // Don't move if threshold not met
-
-        const desktopStyle = window.getComputedStyle(desktopElement);
-        const desktopPaddingLeft = parseFloat(desktopStyle.paddingLeft) || 0;
-        const desktopPaddingTop = parseFloat(desktopStyle.paddingTop) || 0;
-        
-        const contentWidth = desktopElement.clientWidth; // clientWidth includes padding
-        const contentHeight = desktopElement.clientHeight; // clientHeight includes padding
-        // Effective draggable area:
-        const draggableWidth = contentWidth - (parseFloat(desktopStyle.paddingLeft) || 0) - (parseFloat(desktopStyle.paddingRight) || 0);
-        const draggableHeight = contentHeight - (parseFloat(desktopStyle.paddingTop) || 0) - (parseFloat(desktopStyle.paddingBottom) || 0);
-
-
-        let newPrimaryX = event.clientX - desktopRectCache.left - desktopPaddingLeft - dragOffsetX;
-        let newPrimaryY = event.clientY - desktopRectCache.top - desktopPaddingTop - dragOffsetY;
-        
-        newPrimaryX = Math.max(0, Math.min(newPrimaryX, draggableWidth - primaryDraggedIcon.offsetWidth));
-        newPrimaryY = Math.max(0, Math.min(newPrimaryY, draggableHeight - primaryDraggedIcon.offsetHeight));
-
-        const primaryInitialState = draggedItemsInitialStates.get(primaryDraggedIcon);
-        const deltaX = newPrimaryX - primaryInitialState.x;
-        const deltaY = newPrimaryY - primaryInitialState.y;
-
-        selectedIcons.forEach(icon => {
-            const initialState = draggedItemsInitialStates.get(icon);
-            if (!initialState) return; // Should not happen if logic is correct
-
-            let newX = initialState.x + deltaX;
-            let newY = initialState.y + deltaY;
-
-            newX = Math.max(0, Math.min(newX, draggableWidth - icon.offsetWidth));
-            newY = Math.max(0, Math.min(newY, draggableHeight - icon.offsetHeight));
-            
-            icon.style.left = `${newX}px`;
-            icon.style.top = `${newY}px`;
-        });
-    }
-
-    // --- Dragging Logic (Single and Group) ---
+    // --- Dragging Logic (startIconDrag, processDrag, endIconDrag) ---
+    // ... (these functions remain the same as your current version, which includes the wasFlowLayout logic) ...
     function startIconDrag(event, iconElement) {
         if (event.button !== 0) return;
 
@@ -241,15 +199,10 @@
         if (!event.ctrlKey && !selectedIcons.has(iconElement)) {
             clearSelection();
             selectIcon(iconElement);
-        } else if (event.ctrlKey && !selectedIcons.has(iconElement)) { // For Ctrl key click on unselected icon
-            // If Ctrl is pressed and the icon is not selected, toggle it into selection.
-            // If it was already selected, toggleSelectIcon would deselect it,
-            // but a pointerdown usually means "select and prepare to drag this".
-            // So, we ensure it's selected.
-            selectIcon(iconElement, true); // Add to selection
+        } else if (event.ctrlKey && !selectedIcons.has(iconElement)) { 
+            selectIcon(iconElement, true); 
         }
-        // If icon IS selected (with or without Ctrl), drag the whole group.
-
+        
         isDraggingGroup = selectedIcons.size > 0;
 
         const clickedIconRect = primaryDraggedIcon.getBoundingClientRect();
@@ -264,7 +217,7 @@
         selectedIcons.forEach(icon => {
             let wasFlowLayout = false;
             const iconStyle = window.getComputedStyle(icon);
-            const originalInlinePosition = icon.style.position; // Store original inline style
+            const originalInlinePosition = icon.style.position; 
             const originalInlineMargin = icon.style.margin;
 
             if (iconStyle.position !== 'absolute') {
@@ -273,7 +226,7 @@
                 icon.style.position = 'absolute';
                 icon.style.left = `${rect.left - desktopRectCache.left - desktopPaddingLeft}px`;
                 icon.style.top = `${rect.top - desktopRectCache.top - desktopPaddingTop}px`;
-                icon.style.margin = '0'; // Standardize margin for absolute
+                icon.style.margin = '0'; 
                 if (!icon.classList.contains('is-positioned')) {
                     icon.classList.add('is-positioned');
                 }
@@ -283,14 +236,59 @@
                 y: icon.offsetTop,
                 zIndex: icon.style.zIndex || '',
                 wasFlowLayout: wasFlowLayout,
-                originalInlinePosition: originalInlinePosition, // Store for potential revert
-                originalInlineMargin: originalInlineMargin   // Store for potential revert
+                originalInlinePosition: originalInlinePosition, 
+                originalInlineMargin: originalInlineMargin   
             });
-            icon.style.zIndex = '10000'; // Bring to front during drag
+            icon.style.zIndex = '10000'; 
         });
 
         document.body.classList.add('no-select');
         primaryDraggedIcon.setPointerCapture(event.pointerId);
+    }
+
+    function processDrag(event) {
+        if (!primaryDraggedIcon) return;
+        if (!hasDragged && (Math.abs(event.movementX) > 2 || Math.abs(event.movementY) > 2)) { 
+            hasDragged = true;
+        }
+        if (!hasDragged) return; 
+
+        const desktopStyle = window.getComputedStyle(desktopElement);
+        const desktopPaddingLeft = parseFloat(desktopStyle.paddingLeft) || 0;
+        const desktopPaddingTop = parseFloat(desktopStyle.paddingTop) || 0;
+        
+        // Use SnapToGrid's metrics to define draggable area, respecting icon padding
+        const iconAreaMetrics = window.SnapToGrid.getDesktopIconAreaMetrics(desktopElement);
+        const draggableWidth = iconAreaMetrics.iconAreaOffsetX + iconAreaMetrics.contentWidthForGrid;
+        const draggableHeight = iconAreaMetrics.iconAreaOffsetY + iconAreaMetrics.contentHeightForGrid;
+        const minX = iconAreaMetrics.iconAreaOffsetX;
+        const minY = iconAreaMetrics.iconAreaOffsetY;
+
+        let newPrimaryX = event.clientX - desktopRectCache.left - desktopPaddingLeft - dragOffsetX;
+        let newPrimaryY = event.clientY - desktopRectCache.top - desktopPaddingTop - dragOffsetY;
+
+        // Clamp primary icon to the icon area
+        newPrimaryX = Math.max(minX, Math.min(newPrimaryX, draggableWidth - primaryDraggedIcon.offsetWidth));
+        newPrimaryY = Math.max(minY, Math.min(newPrimaryY, draggableHeight - primaryDraggedIcon.offsetHeight));
+
+        const primaryInitialState = draggedItemsInitialStates.get(primaryDraggedIcon);
+        const deltaX = newPrimaryX - primaryInitialState.x;
+        const deltaY = newPrimaryY - primaryInitialState.y;
+
+        selectedIcons.forEach(icon => {
+            const initialState = draggedItemsInitialStates.get(icon);
+            if (!initialState) return; 
+
+            let newX = initialState.x + deltaX;
+            let newY = initialState.y + deltaY;
+
+            // Clamp each icon to the icon area
+            newX = Math.max(minX, Math.min(newX, draggableWidth - icon.offsetWidth));
+            newY = Math.max(minY, Math.min(newY, draggableHeight - icon.offsetHeight));
+
+            icon.style.left = `${newX}px`;
+            icon.style.top = `${newY}px`;
+        });
     }
 
     function endIconDrag(event) {
@@ -299,82 +297,55 @@
         primaryDraggedIcon.releasePointerCapture(event.pointerId);
         document.body.classList.remove('no-select');
 
-        if (hasDragged) { // Actual drag occurred
+        if (hasDragged) { 
             draggedItemsInitialStates.forEach((state, icon) => {
-                icon.style.zIndex = state.zIndex; // Restore original or persisted z-index
+                icon.style.zIndex = state.zIndex; 
                 const appId = icon.dataset.appId;
                 if (appId) {
                     saveIconPosition(appId, icon.offsetLeft, icon.offsetTop);
                 }
-                // Ensure 'is-positioned' is present if dragged
                 if (!icon.classList.contains('is-positioned')) {
                      icon.classList.add('is-positioned');
                 }
             });
-        } else { // This was a click, not a drag
+        } else { 
             draggedItemsInitialStates.forEach((state, icon) => {
-                icon.style.zIndex = state.zIndex; // Restore z-index
+                icon.style.zIndex = state.zIndex; 
                 if (state.wasFlowLayout) {
-                    // Revert to original flow layout styling
-                    icon.style.position = state.originalInlinePosition || ''; // Revert to original inline or remove
-                    icon.style.left = '';   // Clear absolute positioning
-                    icon.style.top = '';    // Clear absolute positioning
-                    icon.style.margin = state.originalInlineMargin || ''; // Revert to original inline or remove
+                    icon.style.position = state.originalInlinePosition || ''; 
+                    icon.style.left = '';   
+                    icon.style.top = '';    
+                    icon.style.margin = state.originalInlineMargin || ''; 
                     icon.classList.remove('is-positioned');
-
-                    // If style attributes were empty, ensure they are removed to fallback to CSS
                     if (!icon.style.position) icon.style.removeProperty('position');
                     if (!icon.style.margin) icon.style.removeProperty('margin');
-
                 }
-                // If it was already absolute (state.wasFlowLayout is false),
-                // and not dragged, it just remains as is. No position save.
             });
         }
-
         primaryDraggedIcon = null;
         isDraggingGroup = false;
         draggedItemsInitialStates.clear();
-        // hasDragged is reset at the beginning of startIconDrag or onIconPointerDown
     }
 
-    // --- Event Handlers Attachments ---
+
+    // --- Event Handlers Attachments (onIconPointerDown, onDesktopPointerDown, onDocumentPointerMove, onDocumentPointerUp) ---
+    // ... (these functions remain the same as your current version) ...
     function onIconPointerDown(event) {
         const iconElement = event.currentTarget;
-        
-        hasDragged = false; // Reset drag flag for this interaction
-
+        hasDragged = false; 
         if (event.ctrlKey) {
             toggleSelectIcon(iconElement);
-            // If we want Ctrl+click to *only* select and not initiate drag,
-            // we could return here. However, standard UX often allows dragging
-            // the new selection state. startIconDrag will use the current selectedIcons.
-        } else {
-            // If not Ctrl key:
-            // - If icon is NOT selected, it becomes the only selection.
-            // - If icon IS selected (and it's part of a potential group),
-            //   pointerdown on it prepares to drag the current selection.
-            // This logic is implicitly handled by startIconDrag's check:
-            // `if (!event.ctrlKey && !selectedIcons.has(iconElement))`
         }
-        
-        startIconDrag(event, iconElement); 
-        event.stopPropagation(); 
-        // event.preventDefault(); // Can be aggressive, might prevent focus or other desired defaults.
-                               // Test if needed to stop app.js clicks on icons.
+        startIconDrag(event, iconElement);
+        event.stopPropagation();
     }
 
     function onDesktopPointerDown(event) {
         if (event.target === desktopElement) {
             startMarquee(event);
-            // event.stopPropagation(); // Already done if startMarquee is called and successful
-        } else {
-            // Click was on something else on the desktop (not an icon, not desktop itself)
-            // This could be a place to clear selection if desired, and if not handled by app.js
-            // clearSelection(); 
         }
     }
-    
+
     function onDocumentPointerMove(event) {
         if (isMarqueeSelecting) {
             updateMarquee(event);
@@ -384,16 +355,59 @@
     }
 
     function onDocumentPointerUp(event) {
-        // The order matters if both could be true, but they are usually exclusive
-        if (isMarqueeSelecting) { 
-            endMarquee(event); 
+        if (isMarqueeSelecting) {
+            endMarquee(event);
         } else if (primaryDraggedIcon) {
             endIconDrag(event);
         }
-        // If neither, it might be a click on the document not handled elsewhere.
-        // This is where app.js's generic deselect might fire.
-        // The marqueeJustFinishedOnDesktop logic below tries to intercept this.
     }
+
+    // --- NEW: Check and Snap Icons if Offscreen ---
+    function checkAndSnapIconsIfOffscreen() {
+        if (!desktopElement || !window.SnapToGrid || typeof window.SnapToGrid.getDesktopIconAreaMetrics !== 'function') {
+            return;
+        }
+        allDesktopIcons = Array.from(desktopElement.querySelectorAll('.desktop-icon')); // Refresh
+        const iconAreaMetrics = window.SnapToGrid.getDesktopIconAreaMetrics(desktopElement);
+        let anIconIsOffscreen = false;
+
+        for (const icon of allDesktopIcons) {
+            if (icon.classList.contains('is-positioned')) { // Only check absolutely positioned icons
+                const iconLeft = icon.offsetLeft;
+                const iconTop = icon.offsetTop;
+                const iconRight = iconLeft + icon.offsetWidth;
+                const iconBottom = iconTop + icon.offsetHeight;
+
+                // Check against the effective icon placement area
+                const minX = iconAreaMetrics.iconAreaOffsetX;
+                const minY = iconAreaMetrics.iconAreaOffsetY;
+                const maxX = iconAreaMetrics.iconAreaOffsetX + iconAreaMetrics.contentWidthForGrid;
+                const maxY = iconAreaMetrics.iconAreaOffsetY + iconAreaMetrics.contentHeightForGrid;
+
+                if (iconLeft < minX || iconTop < minY || iconRight > maxX || iconBottom > maxY) {
+                    anIconIsOffscreen = true;
+                    break; 
+                }
+            }
+        }
+
+        if (anIconIsOffscreen) {
+            console.log("An icon is offscreen, triggering snap to grid for all positioned icons.");
+            // Snap all positioned icons. If some are selected, snap only selected.
+            // For this case, we want to ensure all offscreen icons are handled, so snap all.
+            const currentlySelected = new Set(selectedIcons); // Preserve current selection
+            clearSelection(); // Snap all by clearing selection temporarily
+            
+            if (window.Win9xDesktopUtils && typeof window.Win9xDesktopUtils.snapSelectedIconsToGrid === 'function') {
+                window.Win9xDesktopUtils.snapSelectedIconsToGrid(); // This will snap all if selection is empty
+            }
+            
+            // Restore selection
+            currentlySelected.forEach(icon => selectIcon(icon, true));
+        }
+    }
+
+    const debouncedCheckAndSnapIcons = debounce(checkAndSnapIconsIfOffscreen, 300);
 
     // --- Initialization ---
     let marqueeJustFinishedOnDesktop = false;
@@ -404,57 +418,58 @@
             console.error('DesktopInteractions: Desktop element (#desktop) not found.');
             return;
         }
-        allDesktopIcons = Array.from(desktopElement.querySelectorAll('.desktop-icon'));
-
-        applyInitialPositions();
+        
+        applyInitialPositions(); // This now refreshes allDesktopIcons
 
         allDesktopIcons.forEach(icon => {
             icon.addEventListener('pointerdown', onIconPointerDown);
             const img = icon.querySelector('img');
-            if (img) {
-                img.addEventListener('dragstart', (e) => e.preventDefault()); 
-            }
+            if (img) img.addEventListener('dragstart', (e) => e.preventDefault());
         });
 
         desktopElement.addEventListener('pointerdown', onDesktopPointerDown);
         document.addEventListener('pointermove', onDocumentPointerMove);
         document.addEventListener('pointerup', onDocumentPointerUp);
-        document.addEventListener('pointercancel', onDocumentPointerUp); 
+        document.addEventListener('pointercancel', onDocumentPointerUp);
 
-        // Intercept clicks on document to prevent app.js from deselecting after marquee
         document.addEventListener('click', function(event) {
             if (marqueeJustFinishedOnDesktop && event.target === desktopElement) {
-                event.stopImmediatePropagation(); 
-                // console.log("Desktop click propagation stopped after marquee on desktop.");
+                event.stopImmediatePropagation();
             }
-            marqueeJustFinishedOnDesktop = false; 
-        }, true); 
+            marqueeJustFinishedOnDesktop = false;
+        }, true);
 
-        // Re-assign endMarquee to include the flag logic
-        // This shadows the `endMarquee` in the wider IIFE scope with this new version.
-        const originalEndMarqueeHandler = endMarquee; // The one defined earlier in this IIFE
-        endMarquee = function(event) { 
-            originalEndMarqueeHandler.call(this, event); // Call original logic
-            
-            // Check if marquee truly ended (isMarqueeSelecting is now false) AND target was desktop
-            if (isMarqueeSelecting === false && event.target === desktopElement) { 
+        const originalEndMarqueeHandler = endMarquee;
+        endMarquee = function(event) {
+            originalEndMarqueeHandler.call(this, event);
+            if (isMarqueeSelecting === false && event.target === desktopElement) {
                 marqueeJustFinishedOnDesktop = true;
-                // Reset flag quickly if no click follows immediately (defensive)
                 setTimeout(() => { marqueeJustFinishedOnDesktop = false; }, 0);
             }
         };
 
-        // Configure the SnapToGrid module (optional: customize grid size)
         if (window.SnapToGrid && typeof window.SnapToGrid.configure === 'function') {
-            window.SnapToGrid.configure({ gridSizeX: 85, gridSizeY: 87 }); // Example values
+            window.SnapToGrid.configure({ 
+                gridSizeX: 85, 
+                gridSizeY: 87,
+                desktopPadding: 10 // Example: 10px padding for icons from desktop edge
+            });
+        }
+
+        // Initial check on load
+        checkAndSnapIconsIfOffscreen();
+
+        // Listen for desktop resize
+        if (typeof ResizeObserver !== 'undefined') {
+            const resizeObserver = new ResizeObserver(debouncedCheckAndSnapIcons);
+            resizeObserver.observe(desktopElement);
+        } else {
+            window.addEventListener('resize', debouncedCheckAndSnapIcons);
         }
     }
 
-    // --- Global Utilities (e.g., for context menu "Arrange Icons by Grid") ---
-    if (!window.Win9xDesktopUtils) {
-        window.Win9xDesktopUtils = {};
-    }
-
+    // --- Global Utilities ---
+    if (!window.Win9xDesktopUtils) window.Win9xDesktopUtils = {};
     window.Win9xDesktopUtils.snapSelectedIconsToGrid = () => {
         if (!window.SnapToGrid || typeof window.SnapToGrid.snap !== 'function') {
             console.error("SnapToGrid module or its snap function not found.");
@@ -464,32 +479,32 @@
             console.error("Desktop element not found for snapping.");
             return;
         }
+        allDesktopIcons = Array.from(desktopElement.querySelectorAll('.desktop-icon')); // Refresh
 
-        // Refresh the list of all icons in case some were added/removed dynamically
-        allDesktopIcons = Array.from(desktopElement.querySelectorAll('.desktop-icon'));
-
-        const iconsToProcess = selectedIcons.size > 0 ? Array.from(selectedIcons) : [...allDesktopIcons];
+        // If icons are selected, snap only those. Otherwise, snap all *positioned* icons.
+        let iconsToProcess;
+        if (selectedIcons.size > 0) {
+            iconsToProcess = Array.from(selectedIcons);
+        } else {
+            iconsToProcess = allDesktopIcons.filter(icon => icon.classList.contains('is-positioned'));
+            if (iconsToProcess.length === 0) { // If no icons are positioned, snap all icons
+                iconsToProcess = [...allDesktopIcons];
+            }
+        }
         
         if (iconsToProcess.length > 0) {
             window.SnapToGrid.snap({
                 iconsToSnap: iconsToProcess,
                 allDesktopIcons: allDesktopIcons,
                 desktopElement: desktopElement,
-                savePositionFn: saveIconPosition // Pass the local save function
+                savePositionFn: saveIconPosition
             });
-        } else {
-            // console.log("Snap to Grid: No icons selected or discoverable to snap.");
         }
     };
 
-    // Expose selectedIcons for debug button, if needed
-    // window.selectedIcons = selectedIcons; // Uncomment for the debug button in HTML example
-
-    // --- Auto-run Initialization ---
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initDesktopInteractions);
     } else {
         initDesktopInteractions();
     }
-
 })();

@@ -2,45 +2,61 @@
 (function(window) {
     'use strict';
 
-    const DEFAULT_GRID_SIZE_X = 85; // Default horizontal grid size
-    const DEFAULT_GRID_SIZE_Y = 87; // Default vertical grid size
+    const DEFAULT_GRID_SIZE_X = 85;
+    const DEFAULT_GRID_SIZE_Y = 87;
+    const DEFAULT_DESKTOP_PADDING = 5; // New: Padding around the desktop for icons
 
     let config = {
         gridSizeX: DEFAULT_GRID_SIZE_X,
         gridSizeY: DEFAULT_GRID_SIZE_Y,
+        desktopPadding: DEFAULT_DESKTOP_PADDING // Store padding in config
     };
 
     // --- Helper Functions ---
 
     function getDesktopMetrics(desktopElement) {
         const desktopStyle = window.getComputedStyle(desktopElement);
-        const paddingLeft = parseFloat(desktopStyle.paddingLeft) || 0;
-        const paddingTop = parseFloat(desktopStyle.paddingTop) || 0;
-        const paddingRight = parseFloat(desktopStyle.paddingRight) || 0;
-        const paddingBottom = parseFloat(desktopStyle.paddingBottom) || 0;
+        // These are the visual paddings of the desktop element itself
+        const visualPaddingLeft = parseFloat(desktopStyle.paddingLeft) || 0;
+        const visualPaddingTop = parseFloat(desktopStyle.paddingTop) || 0;
+        const visualPaddingRight = parseFloat(desktopStyle.paddingRight) || 0;
+        const visualPaddingBottom = parseFloat(desktopStyle.paddingBottom) || 0;
 
-        const contentWidth = desktopElement.clientWidth - paddingLeft - paddingRight;
-        const contentHeight = desktopElement.clientHeight - paddingTop - paddingBottom;
+        // Effective area for icons, considering the configured internal padding
+        const iconAreaPadding = config.desktopPadding;
 
-        const maxCols = Math.floor(contentWidth / config.gridSizeX);
-        const maxRows = Math.floor(contentHeight / config.gridSizeY);
+        const totalHorizontalPadding = visualPaddingLeft + visualPaddingRight + (2 * iconAreaPadding);
+        const totalVerticalPadding = visualPaddingTop + visualPaddingBottom + (2 * iconAreaPadding);
+
+        // The contentWidth/Height for icon placement starts *after* the visual padding AND our internal iconAreaPadding
+        const contentWidthForIcons = desktopElement.clientWidth - totalHorizontalPadding;
+        const contentHeightForIcons = desktopElement.clientHeight - totalVerticalPadding;
         
+        const maxCols = Math.max(1, Math.floor(contentWidthForIcons / config.gridSizeX));
+        const maxRows = Math.max(1, Math.floor(contentHeightForIcons / config.gridSizeY));
+
         return {
-            paddingLeft,
-            paddingTop,
-            contentWidth,
-            contentHeight,
+            // Offset for placing icons: visual padding + our internal icon area padding
+            iconAreaOffsetX: visualPaddingLeft + iconAreaPadding,
+            iconAreaOffsetY: visualPaddingTop + iconAreaPadding,
+            // Actual width/height available for the grid of icons
+            contentWidthForGrid: contentWidthForIcons,
+            contentHeightForGrid: contentHeightForIcons,
             maxCols,
             maxRows
         };
     }
 
     /**
-     * Calculates the grid cell {row, col} for a given pixel position.
+     * Calculates the grid cell {row, col} for a given pixel position (relative to desktop's padded content box).
      */
     function getCellFromPosition(x, y, desktopMetrics) {
-        const col = Math.max(0, Math.min(desktopMetrics.maxCols - 1, Math.round(x / config.gridSizeX)));
-        const row = Math.max(0, Math.min(desktopMetrics.maxRows - 1, Math.round(y / config.gridSizeY)));
+        // Adjust x, y to be relative to the start of the icon grid area
+        const xInGrid = x - desktopMetrics.iconAreaOffsetX;
+        const yInGrid = y - desktopMetrics.iconAreaOffsetY;
+
+        const col = Math.max(0, Math.min(desktopMetrics.maxCols - 1, Math.round(xInGrid / config.gridSizeX)));
+        const row = Math.max(0, Math.min(desktopMetrics.maxRows - 1, Math.round(yInGrid / config.gridSizeY)));
         return { col, row };
     }
 
@@ -51,7 +67,6 @@
         const occupied = new Set();
         allDesktopIcons.forEach(icon => {
             if (!iconsBeingSnappedSet.has(icon) && icon.classList.contains('is-positioned')) {
-                // Only consider icons already positioned by us or via drag
                 const { col, row } = getCellFromPosition(icon.offsetLeft, icon.offsetTop, desktopMetrics);
                 occupied.add(`${row}_${col}`);
             }
@@ -60,137 +75,122 @@
     }
 
     /**
-     * Finds the next available cell, starting from (targetRow, targetCol),
-     * searching downwards, then wrapping to the next column top, etc.
+     * Finds the next available cell.
      */
     function findNextAvailableCell(targetRow, targetCol, occupiedCells, desktopMetrics) {
-        let r = targetRow;
-        let c = targetCol;
+        let r = Math.max(0, Math.min(targetRow, desktopMetrics.maxRows - 1)); // Clamp initial row
+        let c = Math.max(0, Math.min(targetCol, desktopMetrics.maxCols - 1)); // Clamp initial col
         const { maxRows, maxCols } = desktopMetrics;
 
-        // Safety break after checking all cells once
         for (let i = 0; i < maxRows * maxCols; i++) {
             if (!occupiedCells.has(`${r}_${c}`)) {
                 return { row: r, col: c };
             }
-            // Move down
             r++;
             if (r >= maxRows) {
-                // Reached bottom of column, move to next column, top row
                 r = 0;
                 c++;
                 if (c >= maxCols) {
-                    // Reached end of all columns, wrap to first column
                     c = 0;
                 }
             }
         }
-        // console.warn("SnapToGrid: Could not find an available cell. Desktop might be full.");
-        return null; // Or throw error, or return original target if all full
+        return null;
     }
 
 
     // --- Main Snapping Logic ---
-
-    /**
-     * Snaps a collection of icons to the grid, handling conflicts.
-     * @param {HTMLElement[]} iconsToSnap - Array of icon elements to snap.
-     * @param {HTMLElement[]} allDesktopIcons - All icons on the desktop (for occupancy check).
-     * @param {HTMLElement} desktopElement - The desktop container element.
-     * @param {function} savePositionFn - Function to call to save an icon's position.
-     *                                     (e.g., (appId, x, y) => void)
-     */
     function snapIconsToGrid(iconsToSnap, allDesktopIcons, desktopElement, savePositionFn) {
         if (!desktopElement || !iconsToSnap || iconsToSnap.length === 0) {
-            // console.log("SnapToGrid: No desktop element or icons to snap.");
             return;
         }
 
         const desktopMetrics = getDesktopMetrics(desktopElement);
+        if (desktopMetrics.maxCols <= 0 || desktopMetrics.maxRows <= 0) {
+            console.warn("SnapToGrid: Not enough space on desktop for even one icon cell with current padding.");
+            // Optionally, force icons to 0,0 or handle differently
+            iconsToSnap.forEach(icon => {
+                icon.style.left = `${desktopMetrics.iconAreaOffsetX}px`;
+                icon.style.top = `${desktopMetrics.iconAreaOffsetY}px`;
+                 if (icon.dataset.appId && typeof savePositionFn === 'function') {
+                    savePositionFn(icon.dataset.appId, desktopMetrics.iconAreaOffsetX, desktopMetrics.iconAreaOffsetY);
+                }
+            });
+            return;
+        }
+
         const iconsBeingSnappedSet = new Set(iconsToSnap);
-        
-        // Get cells occupied by icons *not* part of the current snap batch
         const occupiedCells = getInitiallyOccupiedCells(allDesktopIcons, iconsBeingSnappedSet, desktopMetrics);
 
-        // Sort icons by current visual position (top-then-left) to make deconfliction more predictable.
-        // This helps if multiple selected icons are near each other.
         const sortedIconsToSnap = [...iconsToSnap].sort((a, b) => {
-            if (a.offsetTop !== b.offsetTop) {
-                return a.offsetTop - b.offsetTop;
+            // Sort by current on-screen position primarily, then by original DOM order as fallback
+            const aIsPositioned = a.classList.contains('is-positioned');
+            const bIsPositioned = b.classList.contains('is-positioned');
+
+            if (aIsPositioned && bIsPositioned) {
+                 if (a.offsetTop !== b.offsetTop) return a.offsetTop - b.offsetTop;
+                 return a.offsetLeft - b.offsetLeft;
+            } else if (aIsPositioned) {
+                return -1; // Positioned icons first
+            } else if (bIsPositioned) {
+                return 1;
             }
-            return a.offsetLeft - b.offsetLeft;
+            // If neither is positioned, maintain original order (or could use data-app-id)
+            return 0; 
         });
 
         sortedIconsToSnap.forEach(icon => {
-            // Ensure icon is absolutely positioned
-            if (!icon.classList.contains('is-positioned') && window.getComputedStyle(icon).position !== 'absolute') {
-                const rect = icon.getBoundingClientRect();
-                const parentRect = desktopElement.getBoundingClientRect();
+            const iconRect = icon.getBoundingClientRect(); // Get this once
+            const parentRect = desktopElement.getBoundingClientRect();
+
+            if (!icon.classList.contains('is-positioned') || window.getComputedStyle(icon).position !== 'absolute') {
                 icon.style.position = 'absolute';
-                icon.style.left = `${rect.left - parentRect.left - desktopMetrics.paddingLeft}px`;
-                icon.style.top = `${rect.top - parentRect.top - desktopMetrics.paddingTop}px`;
+                // Calculate position relative to desktop's content box (ignoring desktop's own CSS padding)
+                icon.style.left = `${iconRect.left - parentRect.left - (parseFloat(window.getComputedStyle(desktopElement).paddingLeft) || 0)}px`;
+                icon.style.top = `${iconRect.top - parentRect.top - (parseFloat(window.getComputedStyle(desktopElement).paddingTop) || 0)}px`;
                 icon.style.margin = '0';
                 icon.classList.add('is-positioned');
             }
 
-            // Determine the icon's preferred grid cell based on its current position
             const preferredCell = getCellFromPosition(icon.offsetLeft, icon.offsetTop, desktopMetrics);
-            
-            // Find the actual cell to place it, resolving conflicts
             const finalCell = findNextAvailableCell(preferredCell.row, preferredCell.col, occupiedCells, desktopMetrics);
 
             if (finalCell) {
-                let snappedX = finalCell.col * config.gridSizeX;
-                let snappedY = finalCell.row * config.gridSizeY;
+                // Calculate snappedX/Y relative to the start of the icon grid area
+                let snappedX = desktopMetrics.iconAreaOffsetX + (finalCell.col * config.gridSizeX);
+                let snappedY = desktopMetrics.iconAreaOffsetY + (finalCell.row * config.gridSizeY);
 
-                // Ensure it stays within desktop boundaries after snapping (pixel-perfect for icon width/height)
-                snappedX = Math.max(0, Math.min(snappedX, desktopMetrics.contentWidth - icon.offsetWidth));
-                snappedY = Math.max(0, Math.min(snappedY, desktopMetrics.contentHeight - icon.offsetHeight));
+                // Ensure icon (its top-left corner) doesn't go outside the overall desktop content area
+                // (This is a fallback, grid logic should prevent this if maxCols/Rows are correct)
+                snappedX = Math.max(desktopMetrics.iconAreaOffsetX, snappedX);
+                snappedY = Math.max(desktopMetrics.iconAreaOffsetY, snappedY);
                 
+                // Also ensure the icon's right/bottom edge doesn't exceed the icon area
+                snappedX = Math.min(snappedX, desktopMetrics.iconAreaOffsetX + desktopMetrics.contentWidthForGrid - icon.offsetWidth);
+                snappedY = Math.min(snappedY, desktopMetrics.iconAreaOffsetY + desktopMetrics.contentHeightForGrid - icon.offsetHeight);
+
+
                 icon.style.left = `${snappedX}px`;
                 icon.style.top = `${snappedY}px`;
-
-                // Mark this cell as occupied for subsequent icons in *this snapping batch*
                 occupiedCells.add(`${finalCell.row}_${finalCell.col}`);
 
                 const appId = icon.dataset.appId;
                 if (appId && typeof savePositionFn === 'function') {
                     savePositionFn(appId, snappedX, snappedY);
                 }
-            } else {
-                // console.warn(`SnapToGrid: Could not place icon ${icon.dataset.appId || 'unknown'}, no available cell found.`);
-                // Potentially leave icon as is, or move to a default "overflow" spot
             }
         });
     }
 
     // --- Public API ---
     const SnapToGrid = {
-        /**
-         * Configures the grid snapping behavior.
-         * @param {object} newConfig - Configuration object.
-         * @param {number} [newConfig.gridSizeX] - Horizontal grid cell size.
-         * @param {number} [newConfig.gridSizeY] - Vertical grid cell size.
-         */
         configure: function(newConfig) {
             if (newConfig) {
-                if (typeof newConfig.gridSizeX === 'number') {
-                    config.gridSizeX = newConfig.gridSizeX;
-                }
-                if (typeof newConfig.gridSizeY === 'number') {
-                    config.gridSizeY = newConfig.gridSizeY;
-                }
+                if (typeof newConfig.gridSizeX === 'number') config.gridSizeX = newConfig.gridSizeX;
+                if (typeof newConfig.gridSizeY === 'number') config.gridSizeY = newConfig.gridSizeY;
+                if (typeof newConfig.desktopPadding === 'number') config.desktopPadding = newConfig.desktopPadding;
             }
         },
-
-        /**
-         * Snaps the provided icons to the grid.
-         * @param {object} params
-         * @param {HTMLElement[]} params.iconsToSnap - Array of icon elements to snap.
-         * @param {HTMLElement[]} params.allDesktopIcons - All icons on the desktop.
-         * @param {HTMLElement} params.desktopElement - The desktop container element.
-         * @param {function} params.savePositionFn - Function to save icon positions.
-         */
         snap: function(params) {
             snapIconsToGrid(
                 params.iconsToSnap,
@@ -198,10 +198,11 @@
                 params.desktopElement,
                 params.savePositionFn
             );
+        },
+        // Expose for checking off-screen status
+        getDesktopIconAreaMetrics: function(desktopEl) {
+            return getDesktopMetrics(desktopEl || document.getElementById('desktop'));
         }
     };
-
-    // Expose to global window object (or use a module system if available)
     window.SnapToGrid = SnapToGrid;
-
 })(window);

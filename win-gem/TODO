@@ -1,9 +1,8 @@
 Next steps
-  - stuff that's offscreen (after a resize, when opening on mobile) must come on screen again (ideally in a defconflicted, 'grid snapped' way). Maybe a good way to do is to store the "% position" from the closest edge of the icon on desktop. Then, when desktop is resized, those can adjust naturally, with (snap to grid) after the fact (decounced)? One way, sounds good enough.
   - rather than my computer which can only be fake, and i don't want fake nothing esle is fake (browser is real, calc is real, notepad is real) let's make it a my network or network explorer. And it's just a list of a couple websites with like their favicon (same style as my computer or a network explorer or whatever). and...when you CLICK on the website in the network explorer, it opens it -- in the built in browser. fucking nice. 
   - the other thing is, you can "add" you own little list of websites. so it's like a bookmarks list, basically. nice little feature. 
-  - everything should work on mobile just fine (right now dragging icons is very nice)
   - start menu should close when clicked outside of? yes.
+  - everything should work on mobile just fine (right now dragging icons is very nice)
 
 Rest
 - do landing webpage (pixels, aquamarine, 'hi', small company)
