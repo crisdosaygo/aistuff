@@ -1,12 +1,14 @@
 // app.js
 
 import {BrowserApp} from './browser.js';
+import { networkExplorerAppDefinition } from './network-explorer.js'; // ADD THIS
 import { myComputerAppDefinition } from './my-computer.js';
 import { notepadAppDefinition } from './notepad.js';
 import { calculatorAppDefinition } from './calculator.js';
 
 // windows awesome
 const APP_DEFINITIONS = {
+    networkExplorer: networkExplorerAppDefinition, // ADD THIS
     myComputer: myComputerAppDefinition,
     notepad: notepadAppDefinition,
     recycleBin: {
@@ -100,6 +102,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let highestZIndex = 100;
     let openWindows = {};
     let windowIdCounter = 0;
+
+    window.openWindows = openWindows;
+    window.focusWindow = focusWindow; // Expose focusWindow if needed by Network Explorer
 
     // --- Keep Windows On Screen ---
     function keepAllWindowsOnScreen() {
@@ -203,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Window Management ---
-    function createWindow(appId) {
+    function createWindow(appId, dataForApp) {
         startMenu.style.display = 'none';
         startButton.style.borderStyle = 'outset';
 
@@ -223,6 +228,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 return;
             }
+        }
+
+        let appInstanceSpecificData = null;
+        if (appId === 'networkExplorer') {
+            appInstanceSpecificData = createWindow; // Pass the createWindow function itself
         }
 
         const windowInstanceId = `window-${appId}-${windowIdCounter++}`;
@@ -288,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
         openWindows[windowInstanceId] = newWindowData;
 
         if (appDef.initApp && typeof appDef.initApp === 'function') {
-            newWindowData.appInstance = appDef.initApp(windowEl, windowInstanceId, webviewId, appDef);
+            newWindowData.appInstance = appDef.initApp(windowEl, windowInstanceId, webviewId, appDef, appInstanceSpecificData, dataForApp);
         }
 
         if (!appDef.isDialog) {
@@ -311,6 +321,22 @@ document.addEventListener('DOMContentLoaded', () => {
         // Ensure the newly created window is on screen
         if (!newWindowData.isMinimized && !newWindowData.isMaximized) {
             keepSingleWindowOnScreen(windowEl, newWindowData);
+        }
+
+        if (dataForApp && dataForApp.navigateToUrl &&
+            (appId === 'internetBrowser' || appId === 'internetExplorer' || appId === 'netscapeNavigator')) {
+
+            // Need to wait for the browser app instance to be ready
+            const checkBrowserReadyAndNavigate = () => {
+                const winData = openWindows[windowInstanceId];
+                if (winData && winData.appInstance && typeof winData.appInstance.navigateTo === 'function') {
+                    winData.appInstance.navigateTo(dataForApp.navigateToUrl);
+                } else if (winData && newWindowData.element && document.body.contains(newWindowData.element)) {
+                    // If instance not ready yet, try again shortly
+                    setTimeout(checkBrowserReadyAndNavigate, 200);
+                }
+            };
+            setTimeout(checkBrowserReadyAndNavigate, 100); //
         }
         return windowEl;
     }
