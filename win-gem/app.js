@@ -468,30 +468,37 @@ import { calculatorAppDefinition } from './calculator.js'; // ADD THIS
 
           titleBar.addEventListener('pointerdown', (e) => {
               const windowData = openWindows[element.dataset.instanceId];
-              if (windowData && windowData.isMaximized) return;
-              if (e.target.closest('.window-controls button')) return;
+              if (windowData && windowData.isMaximized) return; // Don't drag if maximized
+              if (e.target.closest('.window-controls button')) return; // Don't drag if clicking on controls
 
               isDragging = true;
-              offsetX = e.clientX - element.getBoundingClientRect().left;
-              offsetY = e.clientY - element.getBoundingClientRect().top;
+              const rect = element.getBoundingClientRect();
+              offsetX = e.clientX - rect.left;
+              offsetY = e.clientY - rect.top;
               titleBar.style.cursor = 'grabbing';
-              // focusWindow is called by the window's mousedown listener
+              document.body.classList.add('no-select'); // Add no-select class to body
+
+              // focusWindow is typically called by the window's mousedown listener,
+              // which should still fire to bring the window to the front.
+              // If focusWindow wasn't already being called, you might add:
+              // focusWindow(element);
           });
 
           document.addEventListener('pointermove', (e) => {
               if (!isDragging) return;
-              //e.preventDefault(); // Prevent text selection while dragging
+              // e.preventDefault(); // Not strictly necessary if .no-select works well and pointer capture is on titlebar
 
               let newX = e.clientX - offsetX;
               let newY = e.clientY - offsetY;
 
+              // Assuming 'desktop' is the constraining parent element
               const desktopRect = desktop.getBoundingClientRect();
-              const winRect = element.getBoundingClientRect();
+              const winRect = element.getBoundingClientRect(); // Use current winRect for width/height
 
               // Clamp within desktop boundaries
               newX = Math.max(0, Math.min(newX, desktopRect.width - winRect.width));
               newY = Math.max(0, Math.min(newY, desktopRect.height - winRect.height));
-              
+
               element.style.left = `${newX}px`;
               element.style.top = `${newY}px`;
           });
@@ -500,6 +507,18 @@ import { calculatorAppDefinition } from './calculator.js'; // ADD THIS
               if (isDragging) {
                   isDragging = false;
                   titleBar.style.cursor = 'grab';
+                  document.body.classList.remove('no-select'); // Remove no-select class from body
+
+                  // Update originalRect for restore after maximize, if not maximized
+                  const windowData = openWindows[element.dataset.instanceId];
+                  if (windowData && !windowData.isMaximized) {
+                      windowData.originalRect = {
+                          left: element.style.left,
+                          top: element.style.top,
+                          width: element.style.width,
+                          height: element.style.height,
+                      };
+                  }
               }
           });
       }
