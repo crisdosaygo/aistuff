@@ -480,7 +480,7 @@ import { calculatorAppDefinition } from './calculator.js'; // ADD THIS
 
           document.addEventListener('pointermove', (e) => {
               if (!isDragging) return;
-              e.preventDefault(); // Prevent text selection while dragging
+              e.preventdefault(); // Prevent text selection while dragging
 
               let newX = e.clientX - offsetX;
               let newY = e.clientY - offsetY;
