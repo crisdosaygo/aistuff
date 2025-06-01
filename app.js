@@ -299,7 +299,7 @@ import { calculatorAppDefinition } from './calculator.js'; // ADD THIS
           globalThis.updateDragMove = (e) => {
               console.log('Mouse moved');
               if (!isResizing || !currentHandle) return;
-              //e.preventDefault();
+              e.preventDefault();
 
               const dx = e.clientX - startX;
               const dy = e.clientY - startY;
@@ -480,7 +480,7 @@ import { calculatorAppDefinition } from './calculator.js'; // ADD THIS
 
           document.addEventListener('pointermove', (e) => {
               if (!isDragging) return;
-              //e.preventDefault(); // Prevent text selection while dragging
+              e.preventdefault(); // Prevent text selection while dragging
 
               let newX = e.clientX - offsetX;
               let newY = e.clientY - offsetY;
@@ -502,41 +502,6 @@ import { calculatorAppDefinition } from './calculator.js'; // ADD THIS
                   titleBar.style.cursor = 'grab';
               }
           });
-      }
-
-      function toggleMinimizeWindow(windowEl) {
-          const instanceId = windowEl.dataset.instanceId;
-          const windowData = openWindows[instanceId];
-          if (!windowData) return;
-
-          windowData.isMinimized = !windowData.isMinimized;
-          if (windowData.isMinimized) {
-              // Store current position if not maximized, before hiding
-              if (!windowData.isMaximized) {
-                   windowData.originalRectBeforeMinimize = {
-                      left: windowEl.style.left,
-                      top: windowEl.style.top,
-                      width: windowEl.style.width,
-                      height: windowEl.style.height
-                  };
-              }
-              windowEl.style.display = 'none';
-              if (windowData.taskbarButton) {
-                  windowData.taskbarButton.classList.add('minimized');
-                  windowData.taskbarButton.classList.remove('active');
-              }
-              // TODO: Focus next available window or desktop
-          } else { // Un-minimizing
-              windowEl.style.display = 'flex';
-              // Restore position if it was stored
-              if (windowData.originalRectBeforeMinimize && !windowData.isMaximized) {
-                  windowEl.style.left = windowData.originalRectBeforeMinimize.left;
-                  windowEl.style.top = windowData.originalRectBeforeMinimize.top;
-                  windowEl.style.width = windowData.originalRectBeforeMinimize.width;
-                  windowEl.style.height = windowData.originalRectBeforeMinimize.height;
-              }
-              focusWindow(windowEl); // This will set taskbar button active
-          }
       }
 
       function toggleMaximizeWindow(windowEl) {
@@ -610,6 +575,41 @@ import { calculatorAppDefinition } from './calculator.js'; // ADD THIS
               titleBar.style.cursor = 'default'; // Non-draggable cursor when maximized
           }
           focusWindow(windowEl);
+      }
+
+      function toggleMinimizeWindow(windowEl) {
+          const instanceId = windowEl.dataset.instanceId;
+          const windowData = openWindows[instanceId];
+          if (!windowData) return;
+
+          windowData.isMinimized = !windowData.isMinimized;
+          if (windowData.isMinimized) {
+              // Store current position if not maximized, before hiding
+              if (!windowData.isMaximized) {
+                   windowData.originalRectBeforeMinimize = {
+                      left: windowEl.style.left,
+                      top: windowEl.style.top,
+                      width: windowEl.style.width,
+                      height: windowEl.style.height
+                  };
+              }
+              windowEl.style.display = 'none';
+              if (windowData.taskbarButton) {
+                  windowData.taskbarButton.classList.add('minimized');
+                  windowData.taskbarButton.classList.remove('active');
+              }
+              // TODO: Focus next available window or desktop
+          } else { // Un-minimizing
+              windowEl.style.display = 'flex';
+              // Restore position if it was stored
+              if (windowData.originalRectBeforeMinimize && !windowData.isMaximized) {
+                  windowEl.style.left = windowData.originalRectBeforeMinimize.left;
+                  windowEl.style.top = windowData.originalRectBeforeMinimize.top;
+                  windowEl.style.width = windowData.originalRectBeforeMinimize.width;
+                  windowEl.style.height = windowData.originalRectBeforeMinimize.height;
+              }
+              focusWindow(windowEl); // This will set taskbar button active
+          }
       }
 
       // --- Icon/Menu Item Click Handlers ---
