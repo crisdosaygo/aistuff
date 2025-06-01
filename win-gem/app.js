@@ -189,7 +189,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.addEventListener('click', (event) => {
-        if (startMenu.style.display === 'flex' && !startMenu.contains(event.target) && !startButton.contains(event.target)) {
+        console.log('click', startMenu.style.display);
+        if (startMenu.style.display !== 'none' && !startMenu.contains(event.target) && !startButton.contains(event.target)) {
             startMenu.style.display = 'none';
             startButton.style.borderStyle = 'outset';
         }
@@ -314,7 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         windowEl.querySelector('.window-close-btn').addEventListener('click', () => closeWindow(windowEl));
-        windowEl.addEventListener('mousedown', () => focusWindow(windowEl), true);
+        windowEl.addEventListener('pointerdown', () => focusWindow(windowEl), true);
 
         focusWindow(windowEl);
         
