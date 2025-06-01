@@ -121,13 +121,6 @@ import { calculatorAppDefinition } from './calculator.js'; // ADD THIS
           }
       });
 
-      // --- Desktop Icon Selection ---
-      function deselectAllDesktopIcons() {
-          document.querySelectorAll('.desktop-icon.selected').forEach(icon => {
-              icon.classList.remove('selected');
-          });
-      }
-
       // --- Window Management ---
       function createWindow(appId) {
           startMenu.style.display = 'none';
@@ -383,6 +376,55 @@ import { calculatorAppDefinition } from './calculator.js'; // ADD THIS
           });
       }
 
+      function makeDraggable(element) {
+          const titleBar = element.querySelector('.window-titlebar');
+          let offsetX, offsetY, isDragging = false;
+
+          titleBar.addEventListener('pointerdown', (e) => {
+              const windowData = openWindows[element.dataset.instanceId];
+              if (windowData && windowData.isMaximized) return;
+              if (e.target.closest('.window-controls button')) return;
+
+              isDragging = true;
+              offsetX = e.clientX - element.getBoundingClientRect().left;
+              offsetY = e.clientY - element.getBoundingClientRect().top;
+              titleBar.style.cursor = 'grabbing';
+              // focusWindow is called by the window's mousedown listener
+          });
+
+          document.addEventListener('pointermove', (e) => {
+              if (!isDragging) return;
+              e.preventdefault(); // Prevent text selection while dragging
+
+              let newX = e.clientX - offsetX;
+              let newY = e.clientY - offsetY;
+
+              const desktopRect = desktop.getBoundingClientRect();
+              const winRect = element.getBoundingClientRect();
+
+              // Clamp within desktop boundaries
+              newX = Math.max(0, Math.min(newX, desktopRect.width - winRect.width));
+              newY = Math.max(0, Math.min(newY, desktopRect.height - winRect.height));
+              
+              element.style.left = `${newX}px`;
+              element.style.top = `${newY}px`;
+          });
+
+          document.addEventListener('pointerup', () => {
+              if (isDragging) {
+                  isDragging = false;
+                  titleBar.style.cursor = 'grab';
+              }
+          });
+      }
+
+      // --- Desktop Icon Selection ---
+      function deselectAllDesktopIcons() {
+          document.querySelectorAll('.desktop-icon.selected').forEach(icon => {
+              icon.classList.remove('selected');
+          });
+      }
+
       function focusWindow(windowEl) {
           if (!windowEl || !document.body.contains(windowEl)) return;
 
@@ -460,48 +502,6 @@ import { calculatorAppDefinition } from './calculator.js'; // ADD THIS
 
           taskbarWindows.appendChild(taskbarButton);
           openWindows[instanceId].taskbarButton = taskbarButton;
-      }
-
-      function makeDraggable(element) {
-          const titleBar = element.querySelector('.window-titlebar');
-          let offsetX, offsetY, isDragging = false;
-
-          titleBar.addEventListener('pointerdown', (e) => {
-              const windowData = openWindows[element.dataset.instanceId];
-              if (windowData && windowData.isMaximized) return;
-              if (e.target.closest('.window-controls button')) return;
-
-              isDragging = true;
-              offsetX = e.clientX - element.getBoundingClientRect().left;
-              offsetY = e.clientY - element.getBoundingClientRect().top;
-              titleBar.style.cursor = 'grabbing';
-              // focusWindow is called by the window's mousedown listener
-          });
-
-          document.addEventListener('pointermove', (e) => {
-              if (!isDragging) return;
-              e.preventdefault(); // Prevent text selection while dragging
-
-              let newX = e.clientX - offsetX;
-              let newY = e.clientY - offsetY;
-
-              const desktopRect = desktop.getBoundingClientRect();
-              const winRect = element.getBoundingClientRect();
-
-              // Clamp within desktop boundaries
-              newX = Math.max(0, Math.min(newX, desktopRect.width - winRect.width));
-              newY = Math.max(0, Math.min(newY, desktopRect.height - winRect.height));
-              
-              element.style.left = `${newX}px`;
-              element.style.top = `${newY}px`;
-          });
-
-          document.addEventListener('pointerup', () => {
-              if (isDragging) {
-                  isDragging = false;
-                  titleBar.style.cursor = 'grab';
-              }
-          });
       }
 
       function toggleMaximizeWindow(windowEl) {
