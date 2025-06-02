@@ -1,205 +1,254 @@
 /* browser.css */
 
-/* ===== BROWSER UI STYLES ===== */
 .browser-container {
     display: flex;
     flex-direction: column;
     height: 100%;
-    background-color: #c0c0c0; /* Classic gray for the browser window background */
+    background-color: #c0c0c0; 
 }
 
 /* Main toolbar container - Netscape Style */
 .browser-toolbar {
-    padding: 2px; /* Small padding around the toolbar */
-    border-bottom: 1px solid #808080; /* Separator line */
+    padding: 2px;
+    border-bottom: 1px solid #808080; 
     display: flex;
-    align-items: center; /* Vertically align items in the toolbar */
-    justify-content: space-between; /* Pushes throbber to the right */
+    align-items: center; 
+    justify-content: space-between; 
     flex-shrink: 0;
-    background-color: #c0c0c0; /* Classic gray */
+    background-color: #c0c0c0; 
 }
 
-/* Container for the icon buttons */
 .browser-nav-buttons {
     display: flex;
-    align-items: center; /* Align buttons themselves */
-    gap: 2px; /* Minimal spacing between buttons */
+    align-items: center; 
 }
 
 /* Common style for all nav buttons - Netscape Style */
 .browser-nav-buttons button {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px; /* Fixed width for icon-only buttons */
-    height: 30px; /* Fixed height for icon-only buttons */
-    border: 1px outset #dfdfdf; /* Classic 3D outset border */
-    background-color: #c0c0c0;
-    padding: 0; /* No padding, icon fills the button */
-    margin: 0; /* No margin for tight packing */
+    flex-direction: column; 
+    align-items: center;   
+    justify-content: center; 
+    width: auto; 
+    min-width: 45px; /* Made more compact */
+    height: 45px;    /* Made more compact */
+    border: 1px solid #c0c0c0; /* Match background for "flat" look */
+    border-right-color: #808080;
+    border-bottom-color: #808080;
+    border-left-color: #ededed; /* Lighter for 3D outset */
+    border-top-color: #ededed;  /* Lighter for 3D outset */
+    box-shadow: 1px 1px 0 #fff inset, -1px -1px 0 #404040 inset; /* Subtle inner shadow for depth */
+    background-color: #c0c0c0; /* Default button color */
+    padding: 2px; 
+    margin: 0 1px; /* Tighter packing */
+    font-size: 9px; /* Smaller font for labels */
+    color: black;
     cursor: pointer;
+    text-align: center;
     background-repeat: no-repeat;
+    position: relative; /* For potential future pseudo-elements */
 }
 
 .browser-nav-buttons button:hover {
-    border: 1px outset #ffffff; /* Brighter border on hover */
-    background-color: #d4d0c8; /* Slightly lighter gray on hover */
+    /* Keep the outset border, maybe slightly change bg or keep as is for classic feel */
+    background-color: #cacaca; 
 }
 
 .browser-nav-buttons button:active {
-    border: 1px inset #808080; /* Inset border on active */
-    background-color: #b0b0b0; /* Darker on active */
+    border-top-color: #808080;
+    border-left-color: #808080;
+    border-right-color: #ededed;
+    border-bottom-color: #ededed;
+    box-shadow: -1px -1px 0 #fff inset, 1px 1px 0 #404040 inset;
+    background-color: #b0b0b0;
 }
+.browser-nav-buttons button:active .icon-area,
+.browser-nav-buttons button:active span:not(.icon-area) { /* Shift content on press */
+    transform: translate(1px, 1px);
+}
+
 
 /* Span to hold the icon via background */
 .browser-nav-buttons button .icon-area {
-    width: 20px;  /* Icon width */
-    height: 20px; /* Icon height */
+    width: 20px; 
+    height: 20px; 
+    margin-bottom: 2px; 
     background-repeat: no-repeat;
+    /* Default to color icons */
+    background-image: url('./browser-toolbar-icons-color.png');
 }
 
-/* Individual Button Icons (from grayscale strip by default) */
-.browser-nav-button-back .icon-area {
-    background-image: url('./browser-toolbar-icons-gray.png');
-    background-position: 0 0; /* Back icon */
-}
-.browser-nav-button-forward .icon-area {
-    background-image: url('./browser-toolbar-icons-gray.png');
-    background-position: -20px 0; /* Forward icon */
-}
-.browser-nav-button-reload .icon-area {
-    background-image: url('./browser-toolbar-icons-gray.png');
-    background-position: -40px 0; /* Reload icon */
-}
-.browser-nav-button-stop .icon-area {
-    background-image: url('./browser-toolbar-icons-gray.png');
-    background-position: -60px 0; /* Stop icon */
-}
-.browser-nav-button-home .icon-area {
-    background-image: url('./browser-toolbar-icons-gray.png');
-    background-position: -80px 0; /* Home icon */
-}
-.browser-nav-button-search .icon-area {
-    background-image: url('./browser-toolbar-icons-gray.png');
-    background-position: -100px 0; /* Search icon */
-}
-.browser-nav-button-print .icon-area {
-    background-image: url('./browser-toolbar-icons-gray.png');
-    background-position: -120px 0; /* Print icon */
-}
-
-/* Hover/Active States for Icons (use color strip) */
-.browser-nav-button-back:hover .icon-area,
-.browser-nav-button-back:active .icon-area {
-    background-image: url('./browser-toolbar-icons-color.png');
-}
-.browser-nav-button-forward:hover .icon-area,
-.browser-nav-button-forward:active .icon-area {
-    background-image: url('./browser-toolbar-icons-color.png');
-}
-.browser-nav-button-reload:hover .icon-area,
-.browser-nav-button-reload:active .icon-area {
-    background-image: url('./browser-toolbar-icons-color.png');
-}
-.browser-nav-button-stop:hover .icon-area,
-.browser-nav-button-stop:active .icon-area {
-    background-image: url('./browser-toolbar-icons-color.png');
-}
-.browser-nav-button-home:hover .icon-area,
-.browser-nav-button-home:active .icon-area {
-    background-image: url('./browser-toolbar-icons-color.png');
-}
-.browser-nav-button-search:hover .icon-area,
-.browser-nav-button-search:active .icon-area {
-    background-image: url('./browser-toolbar-icons-color.png');
-}
-.browser-nav-button-print:hover .icon-area,
-.browser-nav-button-print:active .icon-area {
-    background-image: url('./browser-toolbar-icons-color.png');
-}
+/* Individual Button Icon Positions (same for color and gray) */
+.browser-nav-button-back .icon-area    { background-position: 0 0; }
+.browser-nav-button-forward .icon-area { background-position: -20px 0; }
+.browser-nav-button-reload .icon-area  { background-position: -40px 0; }
+.browser-nav-button-stop .icon-area    { background-position: -60px 0; }
+.browser-nav-button-home .icon-area    { background-position: -80px 0; }
+.browser-nav-button-search .icon-area  { background-position: -100px 0; }
+.browser-nav-button-print .icon-area   { background-position: -120px 0; }
 
 /* Disabled state for buttons */
-.browser-nav-buttons button.disabled .icon-area {
-    background-image: url('./browser-toolbar-icons-gray.png') !important;
-}
 .browser-nav-buttons button.disabled {
-    border: 1px outset #dfdfdf; /* Keep outset but look disabled */
-    background-color: #c0c0c0;
+    color: #808080; 
     cursor: default;
+    border-top-color: #c0c0c0; /* Flatten border for disabled */
+    border-left-color: #c0c0c0;
+    border-right-color: #c0c0c0;
+    border-bottom-color: #c0c0c0;
+    box-shadow: none;
+    background-color: #c0c0c0; /* Match background */
 }
+
+.browser-nav-buttons button.disabled .icon-area {
+    background-image: url('./browser-toolbar-icons-gray.png') !important; /* Switch to gray icons */
+    /* filter: grayscale(100%) opacity(0.7); Alternative if gray sprite not available */
+}
+
 .browser-nav-buttons button.disabled:hover,
 .browser-nav-buttons button.disabled:active {
-    border: 1px outset #dfdfdf;
-    background-color: #c0c0c0;
+    /* No visual change on hover/active for disabled */
 }
+.browser-nav-buttons button.disabled:active .icon-area,
+.browser-nav-buttons button.disabled:active span:not(.icon-area) {
+    transform: none; /* No shift for disabled */
+}
+
 
 /* Netscape Throbber <img> tag */
 .browser-throbber-netscape {
-    width: 48px;  /* Larger size as per target */
-    height: 48px;
-    margin-right: 5px; /* Some spacing from the edge */
+    width: 38px; 
+    height: 38px; 
+    margin-right: 5px; 
+    border: 1px solid #808080; /* Optional: slight border like in some themes */
 }
+
 
 /* Address Toolbar */
 .browser-address-toolbar {
-    padding: 3px 5px; /* Consistent padding */
+    padding: 3px 5px; 
     border-bottom: 1px solid #808080;
     display: flex;
     align-items: center;
     flex-shrink: 0;
-    background-color: #c0c0c0; /* Classic gray */
+    background-color: #c0c0c0; 
 }
-.browser-address-toolbar label {
-    margin-right: 5px;
-    font-size: 11px;
+.browser-address-toolbar label.browser-address-label { /* Specific class for "Go to:" */
+    margin-right: 4px;
+    font-size: 11px; /* Netscape typically used a slightly smaller, non-bold font for this */
+    color: black;
+    font-weight: normal; /* Ensure it's not bold if inherited */
 }
 .browser-address-bar { /* Input field */
     flex-grow: 1;
-    margin-right: 3px;
-    padding: 2px 3px;
-    border: 1px inset #808080;
+    margin-right: 3px; /* Only if there was a button next to it, can be 0 now */
+    padding: 1px 3px; /* Reduced padding */
+    border: 1px inset #808080; /* Classic sunken look */
     font-size: 12px;
-    height: 21px; /* Classic height */
+    height: 20px; /* Classic height */
     box-sizing: border-box;
-    background-color: #ffffff; /* White background for input */
+    background-color: #ffffff; 
 }
 .browser-address-bar:focus {
-    /* Default focus outline is fine */
+    /* Standard browser focus is usually fine */
 }
-.browser-address-toolbar button[data-action="dropdown"] { /* Dropdown button */
+
+/* Go button styles removed/commented as the button is removed from HTML */
+/*
+.browser-address-toolbar button[data-action="go"] {
     background-color: #c0c0c0;
     border: 1px outset #dfdfdf;
-    padding: 0;
-    width: 21px; /* Match input height */
-    height: 21px;
+    padding: 1px 8px;
+    font-size: 11px;
+    min-width: auto; 
     cursor: pointer;
 }
-.browser-address-toolbar button[data-action="dropdown"] .dropdown-arrow {
-    display: block;
-    width: 100%;
-    height: 100%;
-    background-image: url('./dropdown-arrow.png'); /* Placeholder for dropdown arrow */
-    background-repeat: no-repeat;
-    background-position: center;
-}
-.browser-address-toolbar button[data-action="dropdown"]:active {
+.browser-address-toolbar button[data-action="go"]:active {
     border-style: inset;
 }
-.browser-address-toolbar button[data-action="dropdown"]:focus {
+.browser-address-toolbar button[data-action="go"]:focus {
     outline: 1px dotted black;
     outline-offset: -2px;
 }
+*/
+
+
+/* Tab Bar - Kept for functionality, styled to somewhat fit */
+.browser-tab-bar {
+    display: flex;
+    background-color: #c0c0c0;
+    padding: 2px 2px 0 2px;
+    border-bottom: 1px solid #808080; 
+    flex-shrink: 0;
+    align-items: flex-end; /* Align tabs to bottom for classic feel */
+}
+.browser-tab {
+    background-color: #b0b0b0; /* Darker inactive tabs */
+    border: 1px outset #dfdfdf;
+    border-bottom: none; /* Important for "attached" look */
+    padding: 3px 7px; /* Slightly adjusted padding */
+    margin-right: -1px; 
+    font-size: 10px; /* Smaller font for tabs */
+    cursor: pointer;
+    position: relative;
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    color: black;
+}
+
+.browser-tab.active {
+    background-color: #d4d0c8; /* Lighter gray for active tab, closer to window bg */
+    z-index: 1;
+    padding-bottom: 4px; 
+    margin-bottom: -1px; 
+    font-weight: bold; /* Often active tabs were bold */
+    border-color: #ededed #808080 #c0c0c0 #ededed; /* More defined outset for active */
+}
+.browser-tab .tab-title-text {
+    /* No specific styles needed now */
+}
+.browser-tab .tab-close-btn {
+    margin-left: 6px;
+    font-size: 10px;
+    color: #404040;
+    cursor: pointer;
+    padding: 0 2px;
+    border-radius: 2px;
+    font-family: "Marlett", "Webdings"; 
+}
+.browser-tab .tab-close-btn:hover {
+    background-color: #ff8080; /* Softer red */
+    color: white;
+}
+.browser-new-tab-btn {
+    background-color: #c0c0c0;
+    border: 1px outset #dfdfdf;
+    padding: 1px 5px; /* Adjusted padding */
+    margin-left: 3px;
+    font-size: 11px; /* Adjusted font size */
+    font-weight: bold;
+    cursor: pointer;
+    height: 18px; /* Align better with tab height */
+    align-self: center; 
+    line-height: 14px; /* Center text vertically */
+}
+.browser-new-tab-btn:active {
+    border-style: inset;
+}
 
 /* Webview Area */
-browser-webview { /* Custom element */
+browser-webview { 
     flex-grow: 1;
-    background-color: white;
-    border: 1px solid #000; /* Classic border */
-    margin: 2px;
-    display: flex;
+    background-color: white; /* Default content background */
+    border: 2px inset #808080; /* Classic sunken content area */
+    margin: 2px; /* Small margin around the content */
+    display: flex; /* Kept for placeholder content, actual webview handles its own layout */
     align-items: center;
     justify-content: center;
     font-style: italic;
     color: #666;
-    overflow: auto; /* Ensure scrollbars appear if content overflows */
+    overflow: auto; 
 }

@@ -12,7 +12,7 @@ export class BrowserApp {
         this.webviewEl = this.windowEl.querySelector(`#${this.webviewId}`);
 
         this.defaultUrl = "about:blank";
-        this.homeUrl = netscape ? "about:blank" : "https://www.google.com";
+        this.homeUrl = netscape ? "about:blank" : "https://www.google.com"; // Netscape often had about:blank or a portal as home
 
         this.throbberAnimatedSrc = netscape ? "./netscape.gif" : "";
         this.throbberStaticSrc = netscape ? "./netscape-frame.gif" : "";
@@ -28,7 +28,7 @@ export class BrowserApp {
                 print: this.windowEl.querySelector('.browser-nav-button-print')
             },
             addressBar: this.windowEl.querySelector('.browser-address-bar'),
-            goButton: this.windowEl.querySelector('.browser-address-toolbar [data-action="go"]'), // More specific
+            goButton: this.windowEl.querySelector('.browser-address-toolbar [data-action="go"]'), // Will be null after HTML changes
             tabBar: this.windowEl.querySelector('.browser-tab-bar'),
             newTabButton: this.windowEl.querySelector('.browser-new-tab-btn'),
             throbber: this.windowEl.querySelector('.browser-throbber-netscape'),
@@ -53,9 +53,10 @@ export class BrowserApp {
             home: "Home",
             search: "Search",
             print: "Print",
-            stop: "Stop" // Stop usually replaces Reload text/icon
+            stop: "Stop" 
         };
 
+        // Changed Address label to "Go to:" and removed Go button
         return `
             <div class="browser-container">
                 <div class="browser-toolbar">
@@ -80,11 +81,11 @@ export class BrowserApp {
                         <span class="icon-area"></span>
                         <span>${buttonLabels.home}</span>
                     </button>
-                    <button class="browser-nav-button-search" data-action="search" title="Search">
+                    <button class="browser-nav-button-search" data-action="search" title="Search (Not Implemented)">
                         <span class="icon-area"></span>
                         <span>${buttonLabels.search}</span>
                     </button>
-                    <button class="browser-nav-button-print" data-action="print" title="Print">
+                    <button class="browser-nav-button-print" data-action="print" title="Print (Not Implemented)">
                         <span class="icon-area"></span>
                         <span>${buttonLabels.print}</span>
                     </button>
@@ -92,21 +93,20 @@ export class BrowserApp {
                   <img src="" alt="Status" class="browser-throbber-netscape" style="display: none;">
                 </div>
                 <div class="browser-address-toolbar">
-                    <label for="address-${webviewId}">Address:</label>
+                    <label for="address-${webviewId}" class="browser-address-label">Go to:</label>
                     <input type="text" id="address-${webviewId}" class="browser-address-bar" value="">
-                    <button data-action="go">Go</button>
+                    <!-- Go button removed to match Netscape target -->
                 </div>
                 <div class="browser-tab-bar">
                     <button class="browser-new-tab-btn" title="New Tab">+</button>
                 </div>
-                <browser-webview id="${webviewId}" style="flex-grow: 1; background: #fff; border: 1px solid grey; min-height: 100px;">
+                <browser-webview id="${webviewId}" style="flex-grow: 1; min-height: 100px;">
                 </browser-webview>
             </div>
         `;
     }
 
     _setupEventListeners() {
-        // ... (event listeners remain the same, ensure search and print have stubs) ...
         this.ui.navButtons.back.addEventListener('click', () => this.goBack());
         this.ui.navButtons.forward.addEventListener('click', () => this.goForward());
         this.ui.navButtons.stop.addEventListener('click', () => this.stopLoading());
@@ -119,7 +119,12 @@ export class BrowserApp {
         this.ui.addressBar.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.navigateToCurrentAddress();
         });
-        this.ui.goButton.addEventListener('click', () => this.navigateToCurrentAddress());
+        
+        // Go button is removed from HTML, so ui.goButton might be null
+        if (this.ui.goButton) {
+            this.ui.goButton.addEventListener('click', () => this.navigateToCurrentAddress());
+        }
+        
         this.ui.newTabButton.addEventListener('click', () => this.addTab(this.defaultUrl, true));
 
         this.ui.tabBar.addEventListener('click', (e) => {
@@ -144,12 +149,12 @@ export class BrowserApp {
 
     _handleDidStartLoading(detail) {
         if (detail.tabId === this._currentAppActiveTabId) {
-            if (this.ui.navButtons.stop) this.ui.navButtons.stop.style.display = 'flex'; // Use flex
+            if (this.ui.navButtons.stop) this.ui.navButtons.stop.style.display = 'flex'; 
             if (this.ui.navButtons.reload) this.ui.navButtons.reload.style.display = 'none';
 
             if (this.ui.throbber && this.netscape && this.throbberAnimatedSrc) {
                 this.ui.throbber.src = this.throbberAnimatedSrc;
-                this.ui.throbber.style.display = 'inline-block'; // Or 'block' if it fits better
+                this.ui.throbber.style.display = 'inline-block'; 
             }
         }
         const tabToUpdate = this.webviewEl.tabs.find(t => t.id === detail.tabId);
@@ -161,7 +166,7 @@ export class BrowserApp {
     _handleDidStopLoading(detail) {
         if (detail.tabId === this._currentAppActiveTabId) {
             if (this.ui.navButtons.stop) this.ui.navButtons.stop.style.display = 'none';
-            if (this.ui.navButtons.reload) this.ui.navButtons.reload.style.display = 'flex'; // Use flex
+            if (this.ui.navButtons.reload) this.ui.navButtons.reload.style.display = 'flex';
 
             if (this.ui.throbber && this.netscape) {
                 if (this.throbberStaticSrc) {
@@ -199,26 +204,23 @@ export class BrowserApp {
             const isBlankOrError = !activeTab.url || activeTab.url === 'about:blank' || activeTab.url === 'about:error';
 
             if (this.ui.navButtons.reload) {
-                // Visibility handled by did-start/stop-loading
                 this.ui.navButtons.reload.classList.toggle('disabled', isBlankOrError || isLoading);
             }
             if (this.ui.navButtons.stop) {
-                // Visibility handled by did-start/stop-loading
                 this.ui.navButtons.stop.classList.toggle('disabled', !isLoading);
             }
             
         } else { 
             allNavButtons.forEach(btn => btn && btn.classList.add('disabled'));
             if (this.ui.navButtons.stop) this.ui.navButtons.stop.style.display = 'none';
-            if (this.ui.navButtons.reload) this.ui.navButtons.reload.style.display = 'flex'; // Show reload, but disabled
+            if (this.ui.navButtons.reload) this.ui.navButtons.reload.style.display = 'flex'; 
         }
 
         if (this.ui.navButtons.home) this.ui.navButtons.home.classList.remove('disabled');
-        if (this.ui.navButtons.search) this.ui.navButtons.search.classList.remove('disabled');
+        if (this.ui.navButtons.search) this.ui.navButtons.search.classList.remove('disabled'); // Search and Print are always enabled for now
         if (this.ui.navButtons.print) this.ui.navButtons.print.classList.remove('disabled');
     }
 
-    // --- Event Handlers for BrowserWebview Events (largely unchanged) ---
     _handleWebviewReady(detail) {
         console.log(`[BrowserApp ${this.webviewId}] Webview ready:`, detail);
         this._currentAppActiveTabId = detail.activeTabId;
@@ -228,9 +230,9 @@ export class BrowserApp {
         if (activeTab) {
             this.ui.addressBar.value = activeTab.url;
             const windowTitleBar = this.windowEl.querySelector('.window-title');
-            const baseTitle = this.netscape ? (this.appDef.title || 'Netscape Navigator') 
-                                           : (this.appDef.title || 'Internet Explorer');
-            if(windowTitleBar) windowTitleBar.textContent = `${activeTab.title || 'Untitled'} - ${baseTitle}`;
+            const baseTitle = this.netscape ? (this.appDef.title || 'Netscape') // Simplified title
+                                           : (this.appDef.title || 'Internet Browser');
+            if(windowTitleBar) windowTitleBar.textContent = `${activeTab.title || 'Blank Page'} - ${baseTitle}`;
 
             if (activeTab.url === 'about:blank' || activeTab.url === '' || activeTab.url === 'about:error') {
                 if (activeTab.url !== this.defaultUrl && activeTab.url !== this.homeUrl) {
@@ -254,7 +256,6 @@ export class BrowserApp {
         if (this.webviewEl.tabs.length === 0) {
             this.addTab(this.defaultUrl, true);
         }
-        // _updateNavButtonStates will be called by setActiveTab if active tab changes
     }
 
     _handleActiveTabChanged(detail) {
@@ -266,12 +267,12 @@ export class BrowserApp {
         
         const windowTitleBar = this.windowEl.querySelector('.window-title');
         if(windowTitleBar) {
-            const baseTitle = this.netscape ? (this.appDef.title || 'Netscape Navigator') 
-                                           : (this.appDef.title || 'Internet Explorer');
+            const baseTitle = this.netscape ? (this.appDef.title || 'Netscape') 
+                                           : (this.appDef.title || 'Internet Browser');
             if (detail.title) {
                 windowTitleBar.textContent = `${detail.title} - ${baseTitle}`;
             } else {
-                windowTitleBar.textContent = baseTitle;
+                 windowTitleBar.textContent = `${detail.url === "about:blank" ? "Blank Page" : "Untitled"} - ${baseTitle}`;
             }
         }
     }
@@ -292,15 +293,14 @@ export class BrowserApp {
             this._updateNavButtonStates(); 
             const windowTitleBar = this.windowEl.querySelector('.window-title');
             if(windowTitleBar) {
-              const baseTitle = this.netscape ? (this.appDef.title || 'Netscape Navigator') 
-                                             : (this.appDef.title || 'Internet Explorer');
-                windowTitleBar.textContent = `${detail.title || 'Untitled'} - ${baseTitle}`;
+              const baseTitle = this.netscape ? (this.appDef.title || 'Netscape') 
+                                             : (this.appDef.title || 'Internet Browser');
+                windowTitleBar.textContent = `${detail.title || (detail.url === "about:blank" ? "Blank Page" : "Untitled")} - ${baseTitle}`;
             }
         }
         this._renderTabs();
     }
 
-    // --- Tab Management API (largely unchanged) ---
     async addTab(url = this.defaultUrl, makeActive = true) {
         console.log(`[BrowserApp ${this.webviewId}] Requesting new tab for URL: ${url}`);
         const newTabId = await this.webviewEl.createTab(this._prepareUrl(url));
@@ -333,12 +333,13 @@ export class BrowserApp {
                 tabEl.classList.add('active');
             }
 
-            let titleText = tabData.title || (tabData.loading ? 'Loading...' : 'New Tab');
+            let titleText = tabData.title || (tabData.loading ? 'Loading...' : (tabData.url === "about:blank" ? "Blank Page" : "New Tab"));
             if (tabData.loading && !titleText.toLowerCase().includes('loading')) {
                  titleText = `Loading ${tabData.url && !tabData.url.startsWith("about:") ? new URL(tabData.url).hostname : '...'}`;
             } else if (tabData.loading && !tabData.title) {
                 titleText = 'Loading...';
             }
+
 
             const titleSpan = document.createElement('span');
             titleSpan.className = 'tab-title-text';
@@ -359,7 +360,6 @@ export class BrowserApp {
         });
     }
     
-    // --- Navigation API (largely unchanged) ---
     navigateToCurrentAddress() {
         const url = this.ui.addressBar.value.trim();
         this.navigateTo(url);
