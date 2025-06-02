@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Windows 98½</title>
-    <link rel=icon href="https://win98icons.alexmeub.com/icons/png/internet_connection_wiz-0.png">
+    <link rel=icon href="./internet_connection_wiz-0.png">
     <style>
         body {
             background-color: #008080; /* Classic Teal */
@@ -41,7 +41,7 @@
             margin: 10px;
             text-align: center;
             color: white;
-            cursor: pointer;
+            cursor: default;
             padding: 5px;
             /* Ensure icons don't get a default browser outline if script handles focus */
         }
@@ -49,23 +49,22 @@
             outline: none;
         }
 
+        /*
         .desktop-icon:hover {
-            background-color: rgba(0, 0, 128, 0.5); /* Dark blue transparent */
+            background-color: rgba(0, 0, 128, 0.5); 
             outline: 1px dotted white;
         }
+        */
         .desktop-icon img {
             width: 32px;
             height: 32px;
             display: block;
             margin: 0 auto 5px auto;
         }
-        .desktop-icon.selected {
-            background-color: rgba(0, 0, 128, 0.7); /* Darker selection */
-            outline: 1px dotted white;
-        }
         .desktop-icon.selected span {
-            background-color: #000080; /* Opaque background for text */
+            background-color: rgba(0, 0, 128, 0.7); /* Darker selection */
             color: white; /* Ensure text is visible */
+            outline: 1px dotted white;
             padding: 1px 2px;
         }
 
@@ -552,33 +551,33 @@
 <body>
     <div class="desktop" id="desktop" tabindex="0"> <!-- MODIFIED -->
         <div class="desktop-icon" data-app-id="networkExplorer">
-            <img src="https://win98icons.alexmeub.com/icons/png/network_normal_two_pcs-0.png" alt="Network Explorer"> <!-- Find a suitable icon -->
+            <img src="./network_normal_two_pcs-0.png" alt="Network Explorer"> <!-- Find a suitable icon -->
             <span>Network Explorer</span>
         </div>
 
         <div class="desktop-icon" data-app-id="notepad">
-            <img src="https://win98icons.alexmeub.com/icons/png/notepad-0.png" alt="Notepad">
+            <img src="./notepad-0.png" alt="Notepad">
             <span>Notepad</span>
         </div>
         <div class="desktop-icon" data-app-id="recycleBin">
-            <img src="https://win98icons.alexmeub.com/icons/png/recycle_bin_empty-0.png" alt="Recycle Bin">
+            <img src="./recycle_bin_empty-0.png" alt="Recycle Bin">
             <span>Recycle Bin</span>
         </div>
         <div class="desktop-icon" data-app-id="calculator">
-            <img src="https://win98icons.alexmeub.com/icons/png/calculator-0.png" alt="Calculator">
+            <img src="./calculator-0.png" alt="Calculator">
             <span>Calculator</span>
         </div>
 
         <div class="desktop-icon" data-app-id="internetBrowser">
             <img 
-              src="https://win98icons.alexmeub.com/icons/png/search_web-0.png" 
+              src="./search_web-0.png" 
               alt="Internet Browser">
             <span>Internet Browser</span>
         </div>
 
         <div class="desktop-icon" data-app-id="internetExplorer">
             <img 
-              src="https://win98icons.alexmeub.com/icons/png/msie2-0.png" 
+              src="./msie2-0.png" 
               alt="Internet Explorer">
             <span>Internet Explorer</span>
         </div>
@@ -597,39 +596,39 @@
         </div>
         <div class="start-menu-items-container"> 
             <div class="start-menu-item" data-app-id="networkExplorer">
-                <img src="https://win98icons.alexmeub.com/icons/png/network_normal_two_pcs-0.png" class="start-menu-icon" alt=""> Network Explorer
+                <img src="./network_normal_two_pcs-0.png" class="start-menu-icon" alt=""> Network Explorer
             </div>
             <div class="start-menu-item" data-app-id="notepad">
-                <img src="https://win98icons.alexmeub.com/icons/png/notepad-0.png" class="start-menu-icon" alt=""> Notepad
+                <img src="./notepad-0.png" class="start-menu-icon" alt=""> Notepad
             </div>
             <div class="start-menu-item" data-app-id="calculator">
-                <img src="https://win98icons.alexmeub.com/icons/png/calculator-0.png" class="start-menu-icon" alt=""> Calculator
+                <img src="./calculator-0.png" class="start-menu-icon" alt=""> Calculator
             </div>
             <div class="start-menu-item" data-app-id="internetBrowser">
-                <img src="https://win98icons.alexmeub.com/icons/png/search_web-0.png" class="start-menu-icon" alt=""> Internet Browser
+                <img src="./search_web-0.png" class="start-menu-icon" alt=""> Internet Browser
             </div>
             <div class="start-menu-item" data-app-id="internetExplorer">
-                <img src="https://win98icons.alexmeub.com/icons/png/msie2-0.png" class="start-menu-icon" alt=""> Internet Explorer <!-- Corrected text -->
+                <img src="./msie2-0.png" class="start-menu-icon" alt=""> Internet Explorer <!-- Corrected text -->
             </div>
             <div class="start-menu-item" data-app-id="netscapeNavigator">
                 <img src="./n2-2.png" class="start-menu-icon" alt=""> Netscape Navigator <!-- Corrected text -->
             </div>
             <div class="start-menu-separator"></div>
             <div class="start-menu-item disabled">
-                <img src="https://win98icons.alexmeub.com/icons/png/settings_gear-0.png" class="start-menu-icon" alt=""> Settings
+                <img src="./settings_gear-0.png" class="start-menu-icon" alt=""> Settings
             </div>
             <div class="start-menu-item disabled">
-                <img src="https://win98icons.alexmeub.com/icons/png/help_book_cool-0.png" class="start-menu-icon" alt=""> Help
+                <img src="./help_book_cool-0.png" class="start-menu-icon" alt=""> Help
             </div>
             <div class="start-menu-separator"></div>
             <div class="start-menu-item" id="shutdownButtonTrigger">
-                <img src="https://win98icons.alexmeub.com/icons/png/shut_down_cool-0.png" class="start-menu-icon" alt=""> Shut Down...
+                <img src="./shut_down_cool-0.png" class="start-menu-icon" alt=""> Shut Down...
             </div>
         </div>
     </div>
     <div class="taskbar">
         <button class="start-button" id="startButton" tabindex="0"> <!-- MODIFIED -->
-            <img src="https://win98icons.alexmeub.com/icons/png/windows-0.png" alt="Start">
+            <img src="./windows-0.png" alt="Start">
             Start
         </button>
         <div class="taskbar-windows" id="taskbarWindows">
@@ -664,6 +663,7 @@
         </div>
     </template>
     <script type=module src=./app.js></script>
+    <script src=./icon-selection-effect.js></script>
     <script src=./desktop-icons.js></script>
     <script src=./desktop-context-menu.js></script>
     <script src=./snap-to-grid.js></script>

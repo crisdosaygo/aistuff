@@ -9,19 +9,19 @@ import { calculatorAppDefinition } from './calculator.js'; // ADD THIS
       notepad: notepadAppDefinition,       // UPDATE THIS
       recycleBin: { // This one was not requested to be moved, so it stays
           title: "Recycle Bin",
-          icon: "https://win98icons.alexmeub.com/icons/png/recycle_bin_empty-0.png",
-          iconFull: "https://win98icons.alexmeub.com/icons/png/recycle_bin_full_cool-0.png",
-          content: () => `<div style="padding:10px; text-align:center; flex-grow:1; display:flex; flex-direction:column; justify-content:center; align-items:center; background:white;"><img src="https://win98icons.alexmeub.com/icons/png/recycle_bin_empty_cool-0.png" style="width:48px; height:48px; display:block; margin-bottom:10px;"><p>Recycle Bin is empty.</p></div>`
+          icon: "./recycle_bin_empty-0.png",
+          iconFull: "./recycle_bin_full_cool-0.png",
+          content: () => `<div style="padding:10px; text-align:center; flex-grow:1; display:flex; flex-direction:column; justify-content:center; align-items:center; background:white;"><img src="./recycle_bin_empty_cool-0.png" style="width:48px; height:48px; display:block; margin-bottom:10px;"><p>Recycle Bin is empty.</p></div>`
       },
       calculator: calculatorAppDefinition, // UPDATE THIS
       shutdownDialog: {
           title: "Shut Down Windows",
-          icon: "https://win98icons.alexmeub.com/icons/png/shut_down_cool-0.png",
+          icon: "./shut_down_cool-0.png",
           isDialog: true,
           content: () => `
               <div style="text-align: center; padding: 20px 20px 10px 20px; background: #c0c0c0; height:100%; display:flex; flex-direction:column; justify-content:space-around;">
                   <div>
-                      <img src="https://win98icons.alexmeub.com/icons/png/computer_shut_down_cool-2.png" alt="Shut down" style="width: 32px; height: 32px; margin-bottom: 15px; float:left; margin-right:15px;">
+                      <img src="./computer_shut_down_cool-2.png" alt="Shut down" style="width: 32px; height: 32px; margin-bottom: 15px; float:left; margin-right:15px;">
                       <p style="text-align:left; margin-top:0;">Are you sure you want to:</p>
                       <div style="margin-bottom: 20px; text-align:left;">
                           <label style="display:block; margin-bottom:5px;"><input type="radio" name="shutdownAction" value="shutdown" checked> Shut down the computer?</label>
@@ -42,7 +42,7 @@ import { calculatorAppDefinition } from './calculator.js'; // ADD THIS
       internetBrowser: { // This one is generic, let's ensure it can be IE-like
           netscape: true, // Default to IE like
           title: "Internet Browser",
-          icon: "https://win98icons.alexmeub.com/icons/png/search_web-0.png",
+          icon: "./search_web-0.png",
           defaultWidth: 700,
           defaultHeight: 500,
           generateContent: (windowInstanceId, webviewId) => BrowserApp.generateInitialHTML(webviewId),
@@ -53,7 +53,7 @@ import { calculatorAppDefinition } from './calculator.js'; // ADD THIS
       internetExplorer: {
           netscape: false,
           title: "Internet Explorer",
-          icon: "https://win98icons.alexmeub.com/icons/png/msie2-0.png",
+          icon: "./msie2-0.png",
           defaultWidth: 700,
           defaultHeight: 500,
           generateContent: (windowInstanceId, webviewId) => BrowserApp.generateInitialHTML(webviewId),

@@ -33,7 +33,7 @@ function saveSites(sites) {
 function generateSiteItemHTML(site, index) {
     const domain = site.url ? new URL(site.url).hostname : 'unknown.com';
     const faviconUrl = site.customIcon || FAVICON_PROXY_URL(domain);
-    const genericIcon = "https://win98icons.alexmeub.com/icons/png/html-0.png"; // Fallback
+    const genericIcon = "./html-0.png"; // Fallback
 
     return `
         <div class="network-site-item" data-url="${site.url}" data-index="${index}" title="${site.url}">
@@ -70,7 +70,7 @@ function renderSitesList(containerElement, sites, clickHandler, deleteHandler) {
 
 export const networkExplorerAppDefinition = {
     title: "Network Explorer",
-    icon: "https://win98icons.alexmeub.com/icons/png/network_normal_two_pcs-0.png", // Placeholder, find a better one
+    icon: "./network_normal_two_pcs-0.png", // Placeholder, find a better one
     defaultWidth: 400,
     defaultHeight: 350,
     generateContent: () => `
