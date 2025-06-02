@@ -371,14 +371,14 @@
         .resize-handle {
             position: absolute;
         }
-        .resize-handle-n { top: -3px; left: 5px; right: 5px; height: 6px; cursor: n-resize; }
-        .resize-handle-ne { top: -3px; right: -3px; width: 6px; height: 6px; cursor: ne-resize; }
-        .resize-handle-e { top: 5px; bottom: 5px; right: -3px; width: 6px; cursor: e-resize; }
-        .resize-handle-se { bottom: -3px; right: -3px; width: 6px; height: 6px; cursor: se-resize; }
-        .resize-handle-s { bottom: -3px; left: 5px; right: 5px; height: 6px; cursor: s-resize; }
-        .resize-handle-sw { bottom: -3px; left: -3px; width: 6px; height: 6px; cursor: sw-resize; }
-        .resize-handle-w { top: 5px; bottom: 5px; left: -3px; width: 6px; cursor: w-resize; }
-        .resize-handle-nw { top: -3px; left: -3px; width: 6px; height: 6px; cursor: nw-resize; }
+        .resize-handle-n { top: -3px; left: 5px; right: 5px; height: 16px; cursor: n-resize; }
+        .resize-handle-ne { top: -3px; right: -3px; width: 16px; height: 16px; cursor: ne-resize; }
+        .resize-handle-e { top: 5px; bottom: 5px; right: -3px; width: 16px; cursor: e-resize; }
+        .resize-handle-se { bottom: -3px; right: -3px; width: 16px; height: 16px; cursor: se-resize; }
+        .resize-handle-s { bottom: -3px; left: 5px; right: 5px; height: 16px; cursor: s-resize; }
+        .resize-handle-sw { bottom: -3px; left: -3px; width: 16px; height: 16px; cursor: sw-resize; }
+        .resize-handle-w { top: 5px; bottom: 5px; left: -3px; width: 16px; cursor: w-resize; }
+        .resize-handle-nw { top: -3px; left: -3px; width: 16px; height: 16px; cursor: nw-resize; }
 
         .window.maximized .resize-handle {
             display: none;
@@ -390,6 +390,17 @@
             -webkit-user-select: none; // Safari
             -moz-user-select: none;    // Firefox
             -ms-user-select: none;     // IE10+/Edge
+        }
+
+        @media screen and (max-width: 600px) {
+          .resize-handle-n { top: -3px; left: 5px; right: 5px; height: 32px; cursor: n-resize; }
+          .resize-handle-ne { top: -3px; right: -3px; width: 32px; height: 32px; cursor: ne-resize; }
+          .resize-handle-e { top: 5px; bottom: 5px; right: -3px; width: 32px; cursor: e-resize; }
+          .resize-handle-se { bottom: -3px; right: -3px; width: 32px; height: 32px; cursor: se-resize; }
+          .resize-handle-s { bottom: -3px; left: 5px; right: 5px; height: 32px; cursor: s-resize; }
+          .resize-handle-sw { bottom: -3px; left: -3px; width: 32px; height: 32px; cursor: sw-resize; }
+          .resize-handle-w { top: 5px; bottom: 5px; left: -3px; width: 32px; cursor: w-resize; }
+          .resize-handle-nw { top: -3px; left: -3px; width: 32px; height: 32px; cursor: nw-resize; }
         }
     </style>
     <link rel=stylesheet href=desktop-icons.css>

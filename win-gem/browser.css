@@ -1,11 +1,11 @@
-/* browser.css - IE Style with OG Icons */
+/* browser.css - IE Style with OG Icons, Tabs, and Status Bar Refinements */
 
 .browser-container-ie {
     display: flex;
     flex-direction: column;
     height: 100%;
     background-color: #c0c0c0; 
-    font-family: "Tahoma", "Geneva", sans-serif; 
+    font-family: "MS Sans Serif", "Tahoma", sans-serif; /* More authentic Win9x font */
     font-size: 11px; 
 }
 
@@ -13,7 +13,9 @@
     background-color: #c0c0c0;
     padding-left: 4px; 
     position: relative;
-    border-bottom: 1px solid #808080; 
+    /* border-bottom: 1px solid #808080; -- Moved to individual toolbars or tab bar */
+    display: flex;
+    flex-direction: column; /* Stack toolbars vertically */
 }
 
 .browser-toolbars-wrapper-ie::before { 
@@ -28,20 +30,26 @@
     border-right: 1px solid #808080;
 }
 
+/* Menu Bar */
 .browser-menu-bar-ie {
     display: flex;
     padding: 2px 1px; 
     border-bottom: 1px solid #808080; 
     box-shadow: 0 1px 0 #ffffff inset; 
+    flex-shrink: 0;
 }
 .browser-menu-bar-ie button {
     background: none;
     border: 1px solid transparent;
     padding: 2px 6px;
     margin: 0 1px;
+    font-family: "MS Sans Serif", "Tahoma", sans-serif; /* Ensure font consistency */
     font-size: 11px;
-    color: black;
+    color: #808080; /* Grayed out for disabled */
     cursor: default; 
+}
+.browser-menu-bar-ie button u { /* Style for underline */
+    text-decoration: underline;
 }
 .browser-menu-bar-ie button:hover:not(:disabled) { 
     background-color: #0a246a; 
@@ -49,6 +57,7 @@
     border-color: #0a246a;
 }
 
+/* Main Button Toolbar */
 .browser-main-toolbar-ie {
     display: flex;
     align-items: center;
@@ -57,6 +66,7 @@
     border-bottom: 1px solid #808080; 
     box-shadow: 0 1px 0 #ffffff; 
     min-height: 38px; 
+    flex-shrink: 0;
 }
 .browser-nav-buttons-ie {
     display: flex;
@@ -90,38 +100,29 @@
     cursor: default;
 }
 
-/* === OG ICON STYLES ADAPTED === */
 .browser-nav-buttons-ie button .icon-area {
     width: 20px; 
     height: 20px;
     background-repeat: no-repeat;
     margin-bottom: 1px;
-    background-image: url('./browser-toolbar-icons-gray.png'); /* Default to gray */
+    background-image: url('./browser-toolbar-icons-gray.png'); 
 }
-
-/* Individual Button Icon Positions from OG Sprite */
 .browser-nav-button-back .icon-area    { background-position: 0 0; }
 .browser-nav-button-forward .icon-area { background-position: -20px 0; }
-.browser-nav-button-refresh .icon-area { background-position: -40px 0; } /* Mapped Reload to Refresh */
-.browser-nav-button-stop .icon-area    { background-position: -60px 0; }
+.browser-nav-button-refresh .icon-area { background-position: -60px 0; } 
+.browser-nav-button-stop .icon-area    { background-position: -40px 0; }
 .browser-nav-button-home .icon-area    { background-position: -80px 0; }
 .browser-nav-button-search .icon-area  { background-position: -100px 0; }
-/* Approximations for Favorites and History using existing sprite icons */
-.browser-nav-button-favorites .icon-area { background-position: -100px 0; } /* Using Search icon */
-.browser-nav-button-history .icon-area   { background-position: -120px 0; } /* Using Print icon */
+.browser-nav-button-favorites .icon-area { background-position: -100px 0; } 
+.browser-nav-button-history .icon-area   { background-position: -120px 0; } 
 
-/* Hover/Active States for OG Icons (use color strip) */
 .browser-nav-buttons-ie button:hover:not(:disabled) .icon-area,
 .browser-nav-buttons-ie button:active:not(:disabled) .icon-area {
     background-image: url('./browser-toolbar-icons-color.png');
 }
-
-/* Disabled state for OG icons - ensure it uses gray and is clear */
 .browser-nav-buttons-ie button:disabled .icon-area {
     background-image: url('./browser-toolbar-icons-gray.png') !important;
-    /* filter: opacity(0.5); // Alternative, but direct gray sprite is better */
 }
-/* === END OG ICON STYLES ADAPTED === */
 
 .toolbar-separator {
     width: 1px;
@@ -131,22 +132,21 @@
     margin: 0 3px;
 }
 
-/* OG Netscape Throbber Style */
 .browser-throbber-netscape {
-    width: 38px;  /* Adjust to your Netscape throbber "N" image size */
-    height: 38px; /* Adjust */
-    margin-left: auto; /* Pushes to the right */
+    width: 38px;  
+    height: 38px; 
+    margin-left: auto; 
     margin-right: 5px;
-    /* border: 1px solid #808080; Optional, if you had this before */
 }
 
-
-/* Address Bar Toolbar - Styling remains as per your IE version */
+/* Address Bar Toolbar */
 .browser-address-toolbar-ie {
     display: flex;
     align-items: center;
     padding: 3px 2px 2px 2px;
+    border-bottom: 1px solid #808080; /* Separator below address bar */
     box-shadow: 0 1px 0 #ffffff; 
+    flex-shrink: 0;
 }
 .browser-address-bar-label {
     margin-right: 4px;
@@ -170,14 +170,24 @@
 .browser-address-bar-links {
     background-color: #c0c0c0;
     border: 1px outset #dfdfdf; 
-    padding: 1px 8px;
+    padding: 1px 6px; /* Adjusted padding for Go button with icon */
     font-size: 11px;
     height: 21px;
     cursor: pointer;
+    display: flex; /* For icon and text alignment */
+    align-items: center;
+}
+.browser-address-bar-go .icon-area { /* Go button icon */
+    width: 20px; /* Smaller icon for Go button */
+    height: 16px;
+    background-image: url('./browser-toolbar-icons-color.png'); /* Using color sprite */
+    background-position: -20px center; /* Using Forward arrow icon for Go */
+    background-repeat: no-repeat;
+    margin-right: 3px;
 }
 .browser-address-bar-go { margin-right: 4px; }
 .browser-address-bar-go:active,
-.browser-address-bar-links:active {
+.browser-address-bar-links:active:not(:disabled) {
     border-style: inset;
 }
 .browser-address-bar-links {
@@ -189,7 +199,93 @@
     cursor: default;
 }
 
-/* Webview Area - Styling remains as per your IE version */
+/* Tab Bar - IE Style */
+.browser-tab-bar-ie {
+    display: flex;
+    align-items: flex-end; /* Align tabs to the bottom of the bar */
+    background-color: #c0c0c0;
+    padding: 2px 2px 0 2px; /* Padding around tabs, no bottom padding */
+    border-bottom: 1px solid #808080; /* Separator below tabs */
+    box-shadow: 0 1px 0 #ffffff; /* Top highlight */
+    flex-shrink: 0;
+    min-height: 24px; /* Ensure enough height for tabs */
+    overflow-x: auto; /* Allow horizontal scrolling if many tabs */
+    overflow-y: hidden;
+}
+.browser-tab-ie {
+    display: flex;
+    align-items: center;
+    background-color: #b0b0b0; /* Slightly darker for inactive tabs */
+    border: 1px outset #dfdfdf;
+    border-bottom: none; /* Key for tab appearance */
+    padding: 2px 5px 2px 3px; /* Top/bottom, right, left for content */
+    margin-right: 1px; /* Slight separation or overlap */
+    margin-top: 2px; /* Push tabs down slightly from top of bar */
+    font-size: 10px;
+    color: black;
+    cursor: default; /* For clicking tab itself */
+    position: relative;
+    max-width: 150px; /* Limit tab width */
+    white-space: nowrap;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+}
+.browser-tab-ie.active {
+    background-color: #d4d0c8; /* Lighter for active tab, closer to window content bg */
+    z-index: 1; /* Bring active tab to front */
+    padding-bottom: 3px; /* Make it extend down slightly more */
+    margin-bottom: -1px; /* Overlap the tab bar's bottom border */
+    font-weight: normal; /* IE tabs often weren't bold */
+}
+.tab-favicon-ie {
+    width: 16px;
+    height: 16px;
+    margin-right: 4px;
+    flex-shrink: 0;
+}
+.tab-favicon-ie img {
+    width: 100%;
+    height: 100%;
+}
+.tab-title-text-ie {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-grow: 1;
+}
+.tab-close-btn-ie {
+    margin-left: 5px;
+    padding: 0 3px;
+    font-size: 12px; /* Slightly larger for 'x' */
+    line-height: 1;
+    color: #404040;
+    cursor: pointer;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+.tab-close-btn-ie:hover {
+    background-color: #ff8080;
+    color: white;
+}
+.browser-new-tab-btn-ie {
+    background-color: #c0c0c0;
+    border: 1px outset #dfdfdf;
+    padding: 1px 5px;
+    margin-left: 3px; /* Space from last tab */
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    height: 18px; 
+    align-self: center; /* Vertically center in the tab bar */
+    line-height: 14px;
+    flex-shrink: 0;
+}
+.browser-new-tab-btn-ie:active {
+    border-style: inset;
+}
+
+
+/* Webview Area */
 browser-webview { 
     flex-grow: 1;
     background-color: white;
@@ -200,7 +296,7 @@ browser-webview {
     overflow: auto;
 }
 
-/* Status Bar - Styling remains as per your IE version */
+/* Status Bar */
 .browser-status-bar-ie {
     display: flex;
     height: 22px;
@@ -213,34 +309,43 @@ browser-webview {
     border: 1px solid #808080; 
     border-right-color: #ffffff;
     border-bottom-color: #ffffff;
-    padding: 2px 5px;
-    margin: 1px 1px 1px 1px; 
-    line-height: 14px; 
+    padding: 0 5px; /* Adjusted padding for vertical centering */
+    margin: 1px; 
+    line-height: 18px; /* Align text vertically within 20px effective height */
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     font-size: 10px;
-}
-.status-bar-text {
-    flex-grow: 1; 
-    min-width: 100px;
-}
-.status-bar-icon-1, .status-bar-icon-zone {
-    width: 22px; 
-    padding: 1px;
-    display: flex;
+    display: flex; /* For aligning icon and text */
     align-items: center;
-    justify-content: center;
 }
-.status-bar-icon-1 img, .status-bar-icon-zone img {
+.status-bar-main { /* First long panel */
+    flex-grow: 2; 
+    min-width: 150px;
+}
+.status-bar-icon-main {
     width: 16px;
     height: 16px;
+    margin-right: 4px;
+    display: inline-block; /* Default for img, but explicit */
 }
-.status-bar-panel:nth-child(3), .status-bar-panel:nth-child(4) {
-    width: 15px; 
-    padding: 2px;
+.status-bar-text-main {
+    flex-grow: 1;
 }
-
-.browser-tab-bar, .browser-new-tab-btn {
-    display: none !important;
+.status-bar-short { /* Two middle short square panels */
+    width: 25px; 
+    padding: 0; /* Remove padding if they are just visual separators */
+    justify-content: center; /* Center content if any */
+}
+.status-bar-zone { /* Last half-long panel */
+    flex-grow: 1;
+    min-width: 100px;
+}
+.status-bar-icon-zone {
+    width: 16px;
+    height: 16px;
+    margin-right: 4px;
+}
+.status-bar-zone-text {
+    flex-grow: 1;
 }
