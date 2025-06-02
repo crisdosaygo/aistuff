@@ -1,0 +1,113 @@
+/* ===== BROWSER UI STYLES - Toolbar Button Enhancements ===== */
+.browser-nav-buttons button { /* Common style for all nav buttons */
+    width: 24px;  /* Adjust to your icon width */
+    height: 22px; /* Adjust to your icon height */
+    border: 1px outset #dfdfdf; /* Standard button border */
+    background-repeat: no-repeat;
+    padding: 0;
+    margin: 1px 2px; /* Small margin around buttons */
+    font-size: 0; /* Hide any text if button isn't empty */
+    cursor: pointer;
+    vertical-align: middle; /* Align with other elements if any */
+}
+
+.browser-nav-buttons button:active {
+    border-style: inset;
+}
+
+/* Individual Button Backgrounds (from grayscale strip by default) */
+.browser-nav-button-back {
+    background-image: url('./browser-toolbar-icons-gray.png');
+    background-position: 0 0; /* Back icon */
+}
+.browser-nav-button-forward {
+    background-image: url('./browser-toolbar-icons-gray.png');
+    background-position: -24px 0; /* Forward icon (assuming 24px width) */
+}
+.browser-nav-button-reload {
+    background-image: url('./browser-toolbar-icons-gray.png');
+    background-position: -48px 0; /* Reload icon */
+}
+.browser-nav-button-stop { /* Stop might use the same position as Reload or its own */
+    background-image: url('./browser-toolbar-icons-gray.png');
+    background-position: -72px 0; /* Stop icon (example position) */
+    display: none; /* Initially hidden, shown when loading */
+}
+.browser-nav-button-home {
+    background-image: url('./browser-toolbar-icons-gray.png');
+    background-position: -96px 0; /* Home icon */
+}
+.browser-nav-button-search {
+    background-image: url('./browser-toolbar-icons-gray.png');
+    background-position: -120px 0; /* Search icon */
+}
+.browser-nav-button-print {
+    background-image: url('./browser-toolbar-icons-gray.png');
+    background-position: -144px 0; /* Print icon */
+}
+
+/* Hover and Active States (use color strip) */
+.browser-nav-button-back:hover,
+.browser-nav-button-back:active { /* Combine for active if visual is same */
+    background-image: url('./browser-toolbar-icons-color.png');
+}
+.browser-nav-button-forward:hover,
+.browser-nav-button-forward:active {
+    background-image: url('./browser-toolbar-icons-color.png');
+}
+.browser-nav-button-reload:hover,
+.browser-nav-button-reload:active {
+    background-image: url('./browser-toolbar-icons-color.png');
+}
+.browser-nav-button-stop:hover,
+.browser-nav-button-stop:active {
+    background-image: url('./browser-toolbar-icons-color.png');
+}
+.browser-nav-button-home:hover,
+.browser-nav-button-home:active {
+    background-image: url('./browser-toolbar-icons-color.png');
+}
+.browser-nav-button-search:hover,
+.browser-nav-button-search:active {
+    background-image: url('./browser-toolbar-icons-color.png');
+}
+.browser-nav-button-print:hover,
+.browser-nav-button-print:active {
+    background-image: url('./browser-toolbar-icons-color.png');
+}
+
+
+/* Disabled state (uses grayscale strip, could add opacity) */
+.browser-nav-buttons button.disabled {
+    background-image: url('./browser-toolbar-icons-gray.png') !important; /* Ensure grayscale */
+    /* filter: grayscale(100%) opacity(0.5); */ /* Alternative for disabled look */
+    /* Or have a third dithered/ghosted strip for disabled state */
+    cursor: default;
+    border-color: #adadad; /* flatter border for disabled */
+}
+.browser-nav-buttons button.disabled:hover {
+    /* Keep disabled appearance on hover */
+    background-image: url('./browser-toolbar-icons-gray.png') !important;
+}
+.browser-nav-buttons button.disabled:active {
+    border-style: outset; /* Disabled buttons don't usually go inset */
+}
+
+
+/* Netscape Throbber - this is an <img> tag, not a button background */
+.browser-throbber-netscape {
+    width: 38px;  /* Adjust to your Netscape throbber "N" image size */
+    height: 38px; /* Adjust */
+    margin-left: 10px; /* Space it out */
+    vertical-align: middle;
+}
+
+/* Hide original text if any still exists in buttons */
+.browser-nav-buttons button span.visually-hidden {
+    position: absolute;
+    left: -9999px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
