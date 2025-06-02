@@ -342,7 +342,7 @@ export class BrowserApp {
 
             const titleSpan = document.createElement('span');
             titleSpan.className = 'tab-title-text';
-            titleSpan.textContent = titleText.substring(0, 20) + (titleText.length > 20 ? '‚Ä¶' : ''); 
+            titleSpan.textContent = titleText.substring(0, 20) + (titleText.length > 20 ? '…' : ''); 
             
             if (tabData.loading) {
                 titleSpan.style.fontStyle = "italic";
@@ -351,7 +351,7 @@ export class BrowserApp {
 
             const closeBtn = document.createElement('span');
             closeBtn.className = 'tab-close-btn';
-            closeBtn.innerHTML = '‚úï'; 
+            closeBtn.innerHTML = 'r'; 
             closeBtn.title = 'Close Tab';
             tabEl.appendChild(closeBtn);
 
