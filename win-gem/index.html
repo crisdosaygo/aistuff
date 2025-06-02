@@ -52,7 +52,7 @@
         /*
         .desktop-icon:hover {
             background-color: rgba(0, 0, 128, 0.5); 
-            outline: 1px dotted white;
+            border: 1px dotted white;
         }
         */
         .desktop-icon img {
@@ -61,10 +61,15 @@
             display: block;
             margin: 0 auto 5px auto;
         }
+        .desktop-icon span {
+          display: inline-block;
+          max-width: 75px;
+          width: min-content;
+        }
         .desktop-icon.selected span {
             background-color: rgba(0, 0, 128, 0.7); /* Darker selection */
             color: white; /* Ensure text is visible */
-            outline: 1px dotted white;
+            border: 1px dotted white;
             padding: 1px 2px;
         }
 
@@ -561,7 +566,7 @@
         </div>
         <div class="desktop-icon" data-app-id="recycleBin">
             <img src="./recycle_bin_empty-0.png" alt="Recycle Bin">
-            <span>Recycle Bin</span>
+            <span>Recycle&nbsp;Bin</span>
         </div>
         <div class="desktop-icon" data-app-id="calculator">
             <img src="./calculator-0.png" alt="Calculator">
