@@ -2,6 +2,14 @@ Next steps
   - start menu should close when clicked outside of? yes.
   - everything should work on mobile just fine (right now dragging icons is very nice)
     - manual long press (as i think blocking user select will mean no context menu naturally)
+  - fix the network
+  - make the network explorer more Windows-like
+    - use Windows 98 style icons (Isaiah Oudna)
+    - make it look like a “network thing”
+  - integrate BrowserBox locally
+  - open up Cloud Tabs access to everyone
 
 Rest
 - do landing webpage (pixels, aquamarine, 'hi', small company)
+~
+
