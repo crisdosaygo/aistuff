@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  deselectAllDesktopIcons();
             }
         }
-    });
+    }, {capture: true});
 
     // --- Desktop Icon Selection ---
     function deselectAllDesktopIcons() {
@@ -233,7 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let appInstanceSpecificData = null;
         if (appId === 'networkExplorer') {
-            appInstanceSpecificData = createWindow; // Pass the createWindow function itself
+            appInstanceSpecificData = createWindow;
         }
 
         const windowInstanceId = `window-${appId}-${windowIdCounter++}`;
@@ -243,10 +243,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         windowEl.querySelector('.window-titlebar-icon').src = appDef.icon;
         windowEl.querySelector('.window-titlebar-icon').alt = appDef.title;
-        windowEl.querySelector('.window-title').textContent = appDef.netscape ? 'Netscape Navigator' : appDef.title;
+        // Use appDef.title for all windows, browser.js will set its own specific title later
+        windowEl.querySelector('.window-title').textContent = appDef.title;
 
         let webviewId = null;
-        if (appId === 'internetBrowser' || (appDef.generateContent && appDef.title === "Internet Browser")) {
+        // Check if app is one of the browser types
+        const isBrowserApp = appId === 'internetBrowser' || appId === 'internetExplorer' || appId === 'netscapeNavigator';
+        if (isBrowserApp) {
             webviewId = `webview-${windowInstanceId}`;
         }
 
@@ -256,20 +259,38 @@ document.addEventListener('DOMContentLoaded', () => {
             windowEl.querySelector('.window-content').innerHTML = typeof appDef.content === 'function' ? appDef.content() : appDef.content;
         }
 
-        let defaultWidth = appDef.defaultWidth || (appDef.isDialog ? 380 : 450);
-        let defaultHeight = appDef.defaultHeight || (appDef.isDialog ? 220 : 300);
+        // MODIFICATION: Cap initial window size to desktop dimensions
+        const desktopPadding = 0; // If desktop has padding, account for it
+        const maxAllowedWidth = desktop.clientWidth - (2 * desktopPadding) - 10; // -10 for a small margin
+        const maxAllowedHeight = desktop.clientHeight - (2 * desktopPadding) - 10;
+
+        let defaultWidth = appDef.defaultWidth || (appDef.isDialog ? 380 : 600); // Slightly larger default for non-dialogs
+        let defaultHeight = appDef.defaultHeight || (appDef.isDialog ? 220 : 450);
+
+        defaultWidth = Math.min(defaultWidth, maxAllowedWidth);
+        defaultHeight = Math.min(defaultHeight, maxAllowedHeight);
+        // Ensure minWidth/minHeight are respected if they are larger than capped values (though unlikely)
+        const minW = parseInt(window.getComputedStyle(windowEl).minWidth) || 150;
+        const minH = parseInt(window.getComputedStyle(windowEl).minHeight) || 100;
+        defaultWidth = Math.max(defaultWidth, minW);
+        defaultHeight = Math.max(defaultHeight, minH);
+
 
         windowEl.style.width = `${defaultWidth}px`;
         windowEl.style.height = `${defaultHeight}px`;
 
         if (appDef.isDialog) {
-            windowEl.style.minWidth = appDef.minWidth || '300px';
+            windowEl.style.minWidth = appDef.minWidth || '300px'; // Can be overridden by appDef
             windowEl.style.minHeight = appDef.minHeight || '180px';
+            // Center dialogs, ensuring they fit
             windowEl.style.left = `${Math.max(0, (desktop.offsetWidth - defaultWidth) / 2)}px`;
             windowEl.style.top = `${Math.max(0, (desktop.offsetHeight - defaultHeight) / 3)}px`;
         } else {
-            windowEl.style.left = `${Math.floor(Math.random() * Math.max(0, (desktop.offsetWidth - defaultWidth - 40))) + 20}px`;
-            windowEl.style.top = `${Math.floor(Math.random() * Math.max(0, (desktop.offsetHeight - defaultHeight - 40))) + 20}px`;
+            // Random placement, ensuring it fits after potential capping
+            const randomOffsetX = Math.max(0, desktop.offsetWidth - defaultWidth - 40);
+            const randomOffsetY = Math.max(0, desktop.offsetHeight - defaultHeight - 40);
+            windowEl.style.left = `${Math.floor(Math.random() * randomOffsetX) + 20}px`;
+            windowEl.style.top = `${Math.floor(Math.random() * randomOffsetY) + 20}px`;
         }
 
         highestZIndex++;
@@ -286,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
             element: windowEl,
             taskbarButton: null,
             appId: appId,
-            originalRect: {
+            originalRect: { // Store the calculated initial size and position
                 left: windowEl.style.left,
                 top: windowEl.style.top,
                 width: windowEl.style.width,
@@ -311,33 +332,30 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             windowEl.querySelector('.window-minimize-btn').style.display = 'none';
             windowEl.querySelector('.window-maximize-btn').style.display = 'none';
-            makeDraggable(windowEl);
+            makeDraggable(windowEl); // Dialogs can still be dragged
         }
 
         windowEl.querySelector('.window-close-btn').addEventListener('click', () => closeWindow(windowEl));
-        windowEl.addEventListener('pointerdown', () => focusWindow(windowEl), true);
+        windowEl.addEventListener('pointerdown', () => focusWindow(windowEl), true); // Use capture for focus
 
         focusWindow(windowEl);
-        
-        // Ensure the newly created window is on screen
+
+        // This call was already here, and it's good for ensuring position after creation.
+        // The size capping happens before this.
         if (!newWindowData.isMinimized && !newWindowData.isMaximized) {
             keepSingleWindowOnScreen(windowEl, newWindowData);
         }
 
-        if (dataForApp && dataForApp.navigateToUrl &&
-            (appId === 'internetBrowser' || appId === 'internetExplorer' || appId === 'netscapeNavigator')) {
-
-            // Need to wait for the browser app instance to be ready
+        if (dataForApp && dataForApp.navigateToUrl && isBrowserApp) {
             const checkBrowserReadyAndNavigate = () => {
                 const winData = openWindows[windowInstanceId];
                 if (winData && winData.appInstance && typeof winData.appInstance.navigateTo === 'function') {
                     winData.appInstance.navigateTo(dataForApp.navigateToUrl);
                 } else if (winData && newWindowData.element && document.body.contains(newWindowData.element)) {
-                    // If instance not ready yet, try again shortly
                     setTimeout(checkBrowserReadyAndNavigate, 200);
                 }
             };
-            setTimeout(checkBrowserReadyAndNavigate, 100); //
+            setTimeout(checkBrowserReadyAndNavigate, 100);
         }
         return windowEl;
     }
