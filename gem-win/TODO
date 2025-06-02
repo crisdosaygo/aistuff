@@ -1,5 +1,7 @@
 Next steps
-  - theme color should adjust with background color on desktop property change
+  - theme color should:
+    - adjust with background color on desktop property change
+    - text color (desktop icon) should adjust to brightness/contrast of theme / desktop color.
   - improve the network neighborhood
     - window top bar should be khaki
     - styles should be a little more retro window like (especially menu)
