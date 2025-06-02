@@ -2,7 +2,7 @@
 
 export const calculatorAppDefinition = {
     title: "Calculator",
-    icon: "https://win98icons.alexmeub.com/icons/png/calculator-0.png",
+    icon: "./calculator-0.png",
     defaultWidth: 375, 
     defaultHeight: 280, 
     content: () => {

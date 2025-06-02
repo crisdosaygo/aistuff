@@ -2,7 +2,7 @@
 
 export const notepadAppDefinition = {
     title: "Untitled - Notepad",
-    icon: "https://win98icons.alexmeub.com/icons/png/notepad-0.png",
+    icon: "./notepad-0.png",
     defaultWidth: 500,
     defaultHeight: 400,
     content: () => `
