@@ -1,5 +1,6 @@
 Next steps
-  - fix the network neighborhood
+  - theme color shoudl adjust with background color
+  - fix the network neighborhood (window top bar should be khaki)
   - make the network neighborhood more Windows-like
     - use Windows 98 style icons (Isaiah Oudna)
     - make it look like a “network thing”
@@ -7,6 +8,18 @@ Next steps
   - [mobile] manual long press (as i think blocking user select will mean no context menu naturally)
   - integrate BrowserBox locally
   - open up Cloud Tabs access to everyone
+
+BrowserBox
+  - write a CONOPS PDF (short + clear, with diagram)
+  - create a “Government & Military” landing page
+    - explain key terms like: STIG, RMF, hardened containers, CONOPS
+    - highlight things like: secure ephemeral sessions, cloud/tab isolation, dev-free deploy, easy audits
+  - implement Docker image signing (cosign)
+  - create a simple SSDF (NIST SP 800-218) checklist for BrowserBox
+  - possibly support older OS (Windows Server 2008 / 2012)
+    - investigate if headless mode works under those OSes
+  - consider publishing public `cosign.pub` key
+  - add basic security claims to landing copy (SSDF, EO 14028-aligned, signed containers, hardened CI/CD, no-persistence security)
 
 Rest
 - do landing webpage (pixels, aquamarine, 'hi', small company)
