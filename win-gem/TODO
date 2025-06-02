@@ -1,5 +1,6 @@
 Next steps
   - start menu should close when clicked outside of? yes.
+    - issue is marquee selection, we need to only stop immediate propagation IFF it was actually a marquee bigger than a tiny region (ie 5x5) or it actually selected something. 
   - everything should work on mobile just fine (right now dragging icons is very nice)
     - manual long press (as i think blocking user select will mean no context menu naturally)
   - fix the network

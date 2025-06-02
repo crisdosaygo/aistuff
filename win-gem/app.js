@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  deselectAllDesktopIcons();
             }
         }
-    });
+    }, {capture: true});
 
     // --- Desktop Icon Selection ---
     function deselectAllDesktopIcons() {

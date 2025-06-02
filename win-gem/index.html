@@ -261,7 +261,7 @@
             min-height: 150px;
             display: flex;
             flex-direction: column;
-            overflow: hidden; 
+            /*overflow: hidden; */
         }
         .window:focus, .window:focus-within { /* Indicate active window subtly */
              /* border-color: #666; */ /* Example: darker border for focused window */
@@ -370,37 +370,40 @@
 
         .resize-handle {
             position: absolute;
+            /* background-color: rgba(255, 0, 0, 0.2); /* For debugging visibility */
         }
-        .resize-handle-n { top: -3px; left: 5px; right: 5px; height: 16px; cursor: n-resize; }
-        .resize-handle-ne { top: -3px; right: -3px; width: 16px; height: 16px; cursor: ne-resize; }
-        .resize-handle-e { top: 5px; bottom: 5px; right: -3px; width: 16px; cursor: e-resize; }
-        .resize-handle-se { bottom: -3px; right: -3px; width: 16px; height: 16px; cursor: se-resize; }
-        .resize-handle-s { bottom: -3px; left: 5px; right: 5px; height: 16px; cursor: s-resize; }
-        .resize-handle-sw { bottom: -3px; left: -3px; width: 16px; height: 16px; cursor: sw-resize; }
-        .resize-handle-w { top: 5px; bottom: 5px; left: -3px; width: 16px; cursor: w-resize; }
-        .resize-handle-nw { top: -3px; left: -3px; width: 16px; height: 16px; cursor: nw-resize; }
+
+        /* Desktop Resize Handles (16px clickable area, 4px overlap) */
+        .resize-handle-n  { z-index: 1000000; top: -12px; left: 12px; right: 12px; height: 16px; cursor: n-resize; }
+        .resize-handle-ne { z-index: 1000000; top: -12px; right: -12px; width: 16px; height: 16px; cursor: ne-resize; }
+        .resize-handle-e  { z-index: 1000000; top: 12px; bottom: 12px; right: -12px; width: 16px; cursor: e-resize; }
+        .resize-handle-se { z-index: 1000000; bottom: -12px; right: -12px; width: 16px; height: 16px; cursor: se-resize; }
+        .resize-handle-s  { z-index: 1000000; bottom: -12px; left: 12px; right: 12px; height: 16px; cursor: s-resize; }
+        .resize-handle-sw { z-index: 1000000; bottom: -12px; left: -12px; width: 16px; height: 16px; cursor: sw-resize; }
+        .resize-handle-w  { z-index: 1000000; top: 12px; bottom: 12px; left: -12px; width: 16px; cursor: w-resize; }
+        .resize-handle-nw { z-index: 1000000; top: -12px; left: -12px; width: 16px; height: 16px; cursor: nw-resize; }
+
 
         .window.maximized .resize-handle {
             display: none;
         }
 
-        /* ===== BROWSER UI STYLES ===== */
+        @media screen and (max-width: 600px) {
+          /* Mobile Resize Handles (32px clickable area, 4px overlap) */
+          .resize-handle-n  { top: -28px; left: 28px; right: 28px; height: 32px; cursor: n-resize; }
+          .resize-handle-ne { top: -28px; right: -28px; width: 32px; height: 32px; cursor: ne-resize; }
+          .resize-handle-e  { top: 28px; bottom: 28px; right: -28px; width: 32px; cursor: e-resize; }
+          .resize-handle-se { bottom: -28px; right: -28px; width: 32px; height: 32px; cursor: se-resize; }
+          .resize-handle-s  { bottom: -28px; left: 28px; right: 28px; height: 32px; cursor: s-resize; }
+          .resize-handle-sw { bottom: -28px; left: -28px; width: 32px; height: 32px; cursor: sw-resize; }
+          .resize-handle-w  { top: 28px; bottom: 28px; left: -28px; width: 32px; cursor: w-resize; }
+          .resize-handle-nw { top: -28px; left: -28px; width: 32px; height: 32px; cursor: nw-resize; }
+        }
         .no-select {
             user-select: none;
             -webkit-user-select: none; // Safari
             -moz-user-select: none;    // Firefox
             -ms-user-select: none;     // IE10+/Edge
-        }
-
-        @media screen and (max-width: 600px) {
-          .resize-handle-n { top: -3px; left: 5px; right: 5px; height: 32px; cursor: n-resize; }
-          .resize-handle-ne { top: -3px; right: -3px; width: 32px; height: 32px; cursor: ne-resize; }
-          .resize-handle-e { top: 5px; bottom: 5px; right: -3px; width: 32px; cursor: e-resize; }
-          .resize-handle-se { bottom: -3px; right: -3px; width: 32px; height: 32px; cursor: se-resize; }
-          .resize-handle-s { bottom: -3px; left: 5px; right: 5px; height: 32px; cursor: s-resize; }
-          .resize-handle-sw { bottom: -3px; left: -3px; width: 32px; height: 32px; cursor: sw-resize; }
-          .resize-handle-w { top: 5px; bottom: 5px; left: -3px; width: 32px; cursor: w-resize; }
-          .resize-handle-nw { top: -3px; left: -3px; width: 32px; height: 32px; cursor: nw-resize; }
         }
     </style>
     <link rel=stylesheet href=desktop-icons.css>
