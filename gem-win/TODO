@@ -1,10 +1,10 @@
 Next steps
-  - [mobile] the icons for the special fonts (webdings?) that give us window controls and the 'x' in browser tab no show.
-  - [mobile] manual long press (as i think blocking user select will mean no context menu naturally)
   - fix the network neighborhood
   - make the network neighborhood more Windows-like
     - use Windows 98 style icons (Isaiah Oudna)
     - make it look like a “network thing”
+  - [mobile] the icons for the special fonts (webdings?) that give us window controls and the 'x' in browser tab no show.
+  - [mobile] manual long press (as i think blocking user select will mean no context menu naturally)
   - integrate BrowserBox locally
   - open up Cloud Tabs access to everyone
 
