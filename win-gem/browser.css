@@ -1,113 +1,328 @@
-/* ===== BROWSER UI STYLES - Toolbar Button Enhancements ===== */
-.browser-nav-buttons button { /* Common style for all nav buttons */
-    width: 24px;  /* Adjust to your icon width */
-    height: 22px; /* Adjust to your icon height */
-    border: 1px outset #dfdfdf; /* Standard button border */
-    background-repeat: no-repeat;
-    padding: 0;
-    margin: 1px 2px; /* Small margin around buttons */
-    font-size: 0; /* Hide any text if button isn't empty */
+/* browser.css */
+
+/* ===== BROWSER UI STYLES (Moved from index.html) ===== */
+.browser-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: #c0c0c0; /* Classic gray for the browser window background */
+}
+
+/* Main toolbar container - Netscape Style */
+.browser-toolbar {
+    padding: 2px; /* Small padding around the toolbar */
+    border-bottom: 1px solid #808080; /* Separator line */
+    display: flex;
+    align-items: center; /* Vertically align items in the toolbar */
+    justify-content: space-between; /* Pushes throbber to the right */
+    flex-shrink: 0;
+    background-color: #c0c0c0; /* Classic gray */
+}
+
+/* Container for the icon buttons */
+.browser-nav-buttons {
+    display: flex;
+    align-items: center; /* Align buttons themselves */
+}
+
+/* Common style for all nav buttons - Netscape Style */
+.browser-nav-buttons button {
+    display: flex;
+    flex-direction: column; /* Stack icon and text vertically */
+    align-items: center;   /* Center icon and text */
+    justify-content: center; /* Center content vertically */
+    width: auto; /* Auto width based on content */
+    min-width: 50px; /* Minimum width for a decent look, adjust as needed */
+    height: 48px; /* Approx height for 20px icon + text + padding */
+    border: 1px solid transparent; /* Edge-to-edge, border shown on hover/active */
+    background-color: transparent;
+    padding: 2px 4px; /* Padding inside the button */
+    margin: 0;      /* No margin for edge-to-edge */
+    font-size: 10px; /* Font size for labels */
+    color: black;
     cursor: pointer;
-    vertical-align: middle; /* Align with other elements if any */
+    text-align: center;
+    background-repeat: no-repeat;
+}
+
+.browser-nav-buttons button:hover {
+    border-color: #808080; /* Simple border on hover */
+    background-color: #d4d0c8; /* Slightly lighter gray on hover */
 }
 
 .browser-nav-buttons button:active {
-    border-style: inset;
+    border: 1px solid #808080; /* Or use inset if preferred */
+    background-color: #b0b0b0; /* Darker on active */
+    /* For a more classic inset look on active:
+    border-top: 1px solid #000;
+    border-left: 1px solid #000;
+    border-right: 1px solid #fff;
+    border-bottom: 1px solid #fff;
+    */
 }
 
-/* Individual Button Backgrounds (from grayscale strip by default) */
-.browser-nav-button-back {
+/* Span to hold the icon via background */
+.browser-nav-buttons button .icon-area {
+    width: 20px;  /* Icon width */
+    height: 20px; /* Icon height */
+    margin-bottom: 2px; /* Space between icon and text */
+    background-repeat: no-repeat;
+}
+
+/* Individual Button Icons (from grayscale strip by default) */
+/* Ensure your icon strip image paths are correct */
+.browser-nav-button-back .icon-area {
     background-image: url('./browser-toolbar-icons-gray.png');
     background-position: 0 0; /* Back icon */
 }
-.browser-nav-button-forward {
+.browser-nav-button-forward .icon-area {
     background-image: url('./browser-toolbar-icons-gray.png');
-    background-position: -24px 0; /* Forward icon (assuming 24px width) */
+    background-position: -20px 0; /* Forward icon (20px width) */
 }
-.browser-nav-button-reload {
+.browser-nav-button-reload .icon-area {
     background-image: url('./browser-toolbar-icons-gray.png');
-    background-position: -48px 0; /* Reload icon */
+    background-position: -40px 0; /* Reload icon */
 }
-.browser-nav-button-stop { /* Stop might use the same position as Reload or its own */
+.browser-nav-button-stop .icon-area {
     background-image: url('./browser-toolbar-icons-gray.png');
-    background-position: -72px 0; /* Stop icon (example position) */
-    display: none; /* Initially hidden, shown when loading */
+    background-position: -60px 0; /* Stop icon (example position) */
 }
-.browser-nav-button-home {
+.browser-nav-button-home .icon-area {
     background-image: url('./browser-toolbar-icons-gray.png');
-    background-position: -96px 0; /* Home icon */
+    background-position: -80px 0; /* Home icon */
 }
-.browser-nav-button-search {
+.browser-nav-button-search .icon-area {
     background-image: url('./browser-toolbar-icons-gray.png');
-    background-position: -120px 0; /* Search icon */
+    background-position: -100px 0; /* Search icon */
 }
-.browser-nav-button-print {
+.browser-nav-button-print .icon-area {
     background-image: url('./browser-toolbar-icons-gray.png');
-    background-position: -144px 0; /* Print icon */
+    background-position: -120px 0; /* Print icon */
 }
 
-/* Hover and Active States (use color strip) */
-.browser-nav-button-back:hover,
-.browser-nav-button-back:active { /* Combine for active if visual is same */
+/* Hover/Active States for Icons (use color strip) */
+.browser-nav-button-back:hover .icon-area,
+.browser-nav-button-back:active .icon-area {
     background-image: url('./browser-toolbar-icons-color.png');
 }
-.browser-nav-button-forward:hover,
-.browser-nav-button-forward:active {
+.browser-nav-button-forward:hover .icon-area,
+.browser-nav-button-forward:active .icon-area {
     background-image: url('./browser-toolbar-icons-color.png');
 }
-.browser-nav-button-reload:hover,
-.browser-nav-button-reload:active {
+.browser-nav-button-reload:hover .icon-area,
+.browser-nav-button-reload:active .icon-area {
     background-image: url('./browser-toolbar-icons-color.png');
 }
-.browser-nav-button-stop:hover,
-.browser-nav-button-stop:active {
+.browser-nav-button-stop:hover .icon-area,
+.browser-nav-button-stop:active .icon-area {
     background-image: url('./browser-toolbar-icons-color.png');
 }
-.browser-nav-button-home:hover,
-.browser-nav-button-home:active {
+.browser-nav-button-home:hover .icon-area,
+.browser-nav-button-home:active .icon-area {
     background-image: url('./browser-toolbar-icons-color.png');
 }
-.browser-nav-button-search:hover,
-.browser-nav-button-search:active {
+.browser-nav-button-search:hover .icon-area,
+.browser-nav-button-search:active .icon-area {
     background-image: url('./browser-toolbar-icons-color.png');
 }
-.browser-nav-button-print:hover,
-.browser-nav-button-print:active {
+.browser-nav-button-print:hover .icon-area,
+.browser-nav-button-print:active .icon-area {
     background-image: url('./browser-toolbar-icons-color.png');
 }
 
-
-/* Disabled state (uses grayscale strip, could add opacity) */
-.browser-nav-buttons button.disabled {
-    background-image: url('./browser-toolbar-icons-gray.png') !important; /* Ensure grayscale */
-    /* filter: grayscale(100%) opacity(0.5); */ /* Alternative for disabled look */
-    /* Or have a third dithered/ghosted strip for disabled state */
-    cursor: default;
-    border-color: #adadad; /* flatter border for disabled */
-}
-.browser-nav-buttons button.disabled:hover {
-    /* Keep disabled appearance on hover */
+/* Disabled state for buttons */
+.browser-nav-buttons button.disabled .icon-area {
     background-image: url('./browser-toolbar-icons-gray.png') !important;
+    /* filter: opacity(0.5); */ /* More pronounced disabled effect */
+}
+.browser-nav-buttons button.disabled {
+    color: #808080; /* Gray out text */
+    cursor: default;
+}
+.browser-nav-buttons button.disabled:hover,
+.browser-nav-buttons button.disabled:active {
+    border-color: transparent;
+    background-color: transparent;
 }
 .browser-nav-buttons button.disabled:active {
-    border-style: outset; /* Disabled buttons don't usually go inset */
+    /* Prevent active state visual change for disabled buttons */
 }
 
 
-/* Netscape Throbber - this is an <img> tag, not a button background */
+/* Netscape Throbber <img> tag */
 .browser-throbber-netscape {
     width: 38px;  /* Adjust to your Netscape throbber "N" image size */
     height: 38px; /* Adjust */
-    margin-left: 10px; /* Space it out */
-    vertical-align: middle;
+    margin-right: 5px; /* Some spacing from the edge */
+    /* vertical-align: middle; -- flex align-items on parent handles this */
 }
 
-/* Hide original text if any still exists in buttons */
-.browser-nav-buttons button span.visually-hidden {
-    position: absolute;
-    left: -9999px;
-    top: auto;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
+
+/* Address Toolbar */
+.browser-address-toolbar {
+    padding: 3px 5px; /* Consistent padding */
+    border-bottom: 1px solid #808080;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    background-color: #c0c0c0; /* Classic gray */
 }
+.browser-address-toolbar label {
+    margin-right: 5px;
+    /* font-weight: bold; -- Netscape didn't always bold this */
+    font-size: 11px;
+}
+.browser-address-bar { /* Input field */
+    flex-grow: 1;
+    margin-right: 3px;
+    padding: 2px 3px;
+    border: 1px inset #808080;
+    font-size: 12px;
+    height: 21px; /* Classic height */
+    box-sizing: border-box;
+    background-color: #ffffff; /* White background for input */
+}
+.browser-address-bar:focus {
+    /* outline: 1px dotted blue; -- Default focus is usually fine */
+    /* outline-offset: -1px; */
+}
+.browser-address-toolbar button[data-action="go"] { /* Go button */
+    background-color: #c0c0c0;
+    border: 1px outset #dfdfdf;
+    padding: 1px 8px;
+    font-size: 11px;
+    min-width: auto; /* Allow Go button to be smaller */
+    cursor: pointer;
+}
+.browser-address-toolbar button[data-action="go"]:active {
+    border-style: inset;
+}
+.browser-address-toolbar button[data-action="go"]:focus {
+    outline: 1px dotted black;
+    outline-offset: -2px;
+}
+
+
+/* Tab Bar */
+.browser-tab-bar {
+    display: flex;
+    background-color: #c0c0c0;
+    padding: 2px 2px 0 2px;
+    border-bottom: 1px solid #808080; /* Separator line */
+    flex-shrink: 0;
+    align-items: flex-end;
+}
+.browser-tab {
+    background-color: #a0a0a0; /* Slightly darker for inactive tabs */
+    border: 1px outset #dfdfdf;
+    border-bottom: none;
+    padding: 4px 8px;
+    margin-right: -1px; /* Overlap borders */
+    font-size: 11px;
+    cursor: pointer;
+    position: relative;
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    color: black;
+}
+.browser-tab:focus {
+    outline: none; /* Script handles visual focus if needed */
+}
+.browser-tab.active {
+    background-color: #e0e0e0; /* Lighter for active tab */
+    z-index: 1;
+    padding-bottom: 5px; /* Make it feel slightly raised */
+    margin-bottom: -1px; /* Align with bottom border of tab bar */
+    font-weight: bold;
+}
+.browser-tab .tab-title-text {
+    /* Styles for text within tab if needed */
+}
+.browser-tab .tab-close-btn {
+    margin-left: 8px;
+    font-size: 10px;
+    color: #404040;
+    cursor: pointer;
+    padding: 0 2px;
+    border-radius: 2px;
+    font-family: "Marlett", "Webdings"; /* For a more classic 'x' if you use 'r' */
+}
+.browser-tab .tab-close-btn:hover {
+    background-color: #ff6060;
+    color: white;
+}
+.browser-new-tab-btn {
+    background-color: #c0c0c0;
+    border: 1px outset #dfdfdf;
+    padding: 2px 6px;
+    margin-left: 3px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    height: 20px; /* Align with other elements in tab bar */
+    align-self: center; /* Vertical alignment */
+}
+.browser-new-tab-btn:active {
+    border-style: inset;
+}
+.browser-new-tab-btn:focus {
+    outline: 1px dotted black;
+    outline-offset: -2px;
+}
+
+/* Webview Area */
+browser-webview { /* Custom element */
+    flex-grow: 1;
+    background-color: white;
+    border: 1px solid #000; /* Or use inset border for classic feel */
+    /* border: 2px inset #808080; */
+    margin: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-style: italic;
+    color: #666;
+    overflow: auto; /* Ensure scrollbars appear if content overflows */
+}
+
+/*
+   The following styles were in your index.html under "BROWSER UI STYLES"
+   but were more generic or duplicated. They are either covered above or
+   were for a different button style.
+*/
+
+/*
+.browser-toolbar button, .browser-address-toolbar button {
+    background-color: #c0c0c0;
+    border: 1px outset #dfdfdf;
+    padding: 3px 6px;
+    margin-right: 3px;
+    font-size: 11px;
+    min-width: 50px;
+}
+.browser-toolbar button:active, .browser-address-toolbar button:active {
+    border-style: inset;
+}
+.browser-toolbar button:disabled {
+    color: #808080;
+    border-color: #808080;
+    cursor: default;
+}
+.browser-toolbar button:focus, .browser-address-toolbar button:focus {
+    outline: 1px dotted black;
+    outline-offset: -2px;
+}
+*/
+
+/*
+.browser-throbber {
+    width: 28px;
+    height: 28px;
+    margin-left: auto;
+    margin-right: 5px;
+}
+*/
