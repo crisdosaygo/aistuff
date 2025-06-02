@@ -1,9 +1,8 @@
 Next steps
-  - theme color shoudl adjust with background color
-  - fix the network neighborhood (window top bar should be khaki)
-  - make the network neighborhood more Windows-like
-    - use Windows 98 style icons (Isaiah Oudna)
-    - make it look like a “network thing”
+  - theme color should adjust with background color on desktop property change
+  - improve the network neighborhood
+    - window top bar should be khaki
+    - styles should be a little more retro window like (especially menu)
   - [mobile] the icons for the special fonts (webdings?) that give us window controls and the 'x' in browser tab no show.
   - [mobile] manual long press (as i think blocking user select will mean no context menu naturally)
   - integrate BrowserBox locally
