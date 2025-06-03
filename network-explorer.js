@@ -165,13 +165,14 @@ function renderTreeRecursive(nodes, level = 0, selectedNodeId, eventHandlers, is
 export const networkExplorerAppDefinition = {
     title: "Network Neighborhood", // Updated title
     icon: "./network_normal_two_pcs-0.png", // Use the "Entire Network" icon for the app itself
+    activeTitleBarColor: "#808000",
     defaultWidth: 350,
     defaultHeight: 450,
     generateContent: () => `
         <div class="network-bookmarks-app">
             <div class="menu-bar">
                 <div class="menu-item" data-menu="file"><u>F</u>ile</div>
-                <div class="menu-item active-menu" data-menu="edit"><u>E</u>dit</div>
+                <div class="menu-item" data-menu="edit"><u>E</u>dit</div>
                 <div class="menu-item" data-menu="view"><u>V</u>iew</div>
                 <div class="menu-item" data-menu="help"><u>H</u>elp</div>
                 <div class="dropdown-menu edit-menu">
@@ -223,7 +224,7 @@ export const networkExplorerAppDefinition = {
             .tree-view-container li { /* padding: 1px 0; */ cursor: default; position: relative; display: flex; align-items: flex-start; }
             .tree-item-content { display: flex; align-items: center; padding: 1px 2px; flex-grow: 1; }
             li:not(.root-node-li) .tree-item-content:hover { background-color: #e0e0e0; } /* Lighter hover */
-            li.selected > .tree-item-content { background-color: #000080; color: white; }
+            li.selected > .tree-item-content { border: thin dotted; }
             
             .tree-toggler { width: 8px; height: 8px; border: thin solid; text-align: center; font-family: monospace; cursor: pointer; display: inline-flex; align-items:center; justify-content:center; margin-right: 2px; }
             .tree-toggler-placeholder { display: none; }
