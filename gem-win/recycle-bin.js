@@ -380,9 +380,7 @@
       switch (actionName) {
           case "emptyRecycleBin":
               if (getRecycledItems().filter(item => !item.isPermanentlyDeleted).length > 0) {
-                  if (confirm("Are you sure you want to empty the Recycle Bin? Items will be marked as permanently deleted.")) {
-                      empty();
-                  }
+                empty();
               }
               break;
           case "restoreSelectedItem":
