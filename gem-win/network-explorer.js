@@ -206,7 +206,7 @@ export const networkExplorerAppDefinition = {
         </div>
         <style>
             .network-bookmarks-app { display: flex; flex-direction: column; height: 100%; background: #fff; }
-            .menu-bar { display: flex; background-color: #DFD8C8; padding: 2px 4px; border-bottom: 1px solid #808080; flex-shrink: 0; position: relative; }
+            .menu-bar { display: flex; background-color: #c0c0c0; padding: 2px 4px; border-bottom: 1px solid #808080; flex-shrink: 0; position: relative; }
             .menu-item { padding: 2px 8px; cursor: default; user-select: none; }
             .menu-item.active-menu:hover { background-color: #000080; color: white; }
             .menu-item:not(.active-menu) { color: #808080; }

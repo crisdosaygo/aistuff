@@ -1,12 +1,7 @@
 Next steps
-  - icons should always be positioned to remove final bugs with flow layout.
-  - theme color should:
-    - adjust with background color on desktop property change
-    - text color (desktop icon) should adjust to brightness/contrast of theme / desktop color.
   - improve the network neighborhood
     - window top bar should be khaki
     - styles should be a little more retro window like (especially menu)
-    - + or - for node should be inside square box like win 9x/nt.
   - [mobile] the icons for the special fonts (webdings?) that give us window controls and the 'x' in browser tab no show.
   - [mobile] manual long press (as i think blocking user select will mean no context menu naturally)
   - integrate BrowserBox locally
