@@ -5,18 +5,14 @@
   import { myComputerAppDefinition } from './my-computer.js';
   import { notepadAppDefinition } from './notepad.js';
   import { calculatorAppDefinition } from './calculator.js';
+  import { recycleBinAppDefinition } from './recycle-bin.js'; // <--- IMPORT IT
 
   // windows awesome
   const APP_DEFINITIONS = {
       networkExplorer: networkExplorerAppDefinition,
       myComputer: myComputerAppDefinition,
       notepad: notepadAppDefinition,
-      recycleBin: {
-          title: "Recycle Bin",
-          icon: "./recycle_bin_empty-0.png",
-          iconFull: "./recycle_bin_full_cool-0.png",
-          content: () => `<div style="padding:10px; text-align:center; flex-grow:1; display:flex; flex-direction:column; justify-content:center; align-items:center; background:white;"><img src="./recycle_bin_empty_cool-0.png" style="width:48px; height:48px; display:block; margin-bottom:10px;"><p>Recycle Bin is empty.</p></div>`
-      },
+      recycleBin: recycleBinAppDefinition, // <--- USE THE IMPORTED DEFINITION
       calculator: calculatorAppDefinition,
       shutdownDialog: {
           title: "Shut Down Windows",
@@ -75,6 +71,7 @@
           }
       },
   };
+  window.APP_DEFINITIONS = APP_DEFINITIONS;
 
   function debounce(func, wait) {
       let timeout;
@@ -230,6 +227,12 @@
               if (appDef.activeTitleBarTextColor) {
                   windowEl.dataset.customActiveTitlebarTextColor = appDef.activeTitleBarTextColor;
               }
+          }
+
+          if (appDef.generateContent) {
+              windowEl.querySelector('.window-content').innerHTML = appDef.generateContent(windowInstanceId, webviewId /* if applicable */);
+          } else {
+              windowEl.querySelector('.window-content').innerHTML = typeof appDef.content === 'function' ? appDef.content() : appDef.content;
           }
 
           let webviewId = null;
