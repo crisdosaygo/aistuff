@@ -5,13 +5,14 @@
   import { myComputerAppDefinition } from './my-computer.js';
   import { notepadAppDefinition } from './notepad.js';
   import { calculatorAppDefinition } from './calculator.js';
-  import { recycleBinAppDefinition } from './recycle-bin.js';
+  import { recycleBinAppDefinition } from './recycle-bin.js'; // <--- IMPORT IT
 
+  // windows awesome
   const APP_DEFINITIONS = {
       networkExplorer: networkExplorerAppDefinition,
       myComputer: myComputerAppDefinition,
       notepad: notepadAppDefinition,
-      recycleBin: recycleBinAppDefinition,
+      recycleBin: recycleBinAppDefinition, // <--- USE THE IMPORTED DEFINITION
       calculator: calculatorAppDefinition,
       shutdownDialog: {
           title: "Shut Down Windows",
@@ -89,7 +90,7 @@
       if (!hexColor) return 0;
       hexColor = hexColor.replace('#', '');
       if (hexColor.length === 3) hexColor = hexColor.split('').map(char => char + char).join('');
-      if (hexColor.length !== 6) return 0; // Should be 6 hex digits
+      if (hexColor.length !== 6) return 0;
       const r = parseInt(hexColor.substring(0, 2), 16);
       const g = parseInt(hexColor.substring(2, 4), 16);
       const b = parseInt(hexColor.substring(4, 6), 16);
@@ -97,13 +98,24 @@
   }
 
   function updateThemeForDesktopBackground(desktopBgColor) {
+      // This function is now also called by desktop-context-menu.js
       const rootStyle = document.documentElement.style;
       rootStyle.setProperty('--desktop-bg-color', desktopBgColor);
+
       const luminance = getLuminance(desktopBgColor);
       let newIconTextColor = (luminance > 128) ? 'black' : 'white';
+      // let newActiveTitlebarColor = (luminance > 128) ? '#0000A0' : '#000080'; // Example: Adjust active title bar too
+
       rootStyle.setProperty('--desktop-icon-text-color', newIconTextColor);
+      // rootStyle.setProperty('--theme-color-active-titlebar', newActiveTitlebarColor);
+
+      // Update selection color for desktop icons based on new icon text color
+      // If icon text is black, selection border should be black. If white, then white.
+      // The background of selection is already theme-color-active-titlebar
+      // rootStyle.setProperty('--desktop-icon-selection-border-color', newIconTextColor);
+      // The CSS for .desktop-icon.selected span already uses var(--desktop-icon-text-color) for its border
   }
-  window.updateThemeForDesktopBackground = updateThemeForDesktopBackground;
+  window.updateThemeForDesktopBackground = updateThemeForDesktopBackground; // Expose globally
 
   // --- START: NEW FUNCTION TO UPDATE START MENU ITEMS ---
   function updateStartMenuItemsState() {
@@ -149,7 +161,6 @@
   window.Win9xSystem.updateStartMenuItemsState = updateStartMenuItemsState;
   // --- END: NEW FUNCTION TO UPDATE START MENU ITEMS ---
 
-
   document.addEventListener('DOMContentLoaded', () => {
       const clockElement = document.getElementById('clock');
       const startButton = document.getElementById('startButton');
@@ -164,7 +175,6 @@
 
       window.openWindows = openWindows;
       window.focusWindow = focusWindow;
-      window.createWindow = createWindow; // Expose createWindow globally if other modules need it
 
       function keepAllWindowsOnScreen() {
           if (!desktop) return;
@@ -193,13 +203,12 @@
       const debouncedKeepOnScreen = debounce(keepAllWindowsOnScreen, 250);
       if (typeof ResizeObserver !== 'undefined') {
           const resizeObserver = new ResizeObserver(debouncedKeepOnScreen);
-          if(desktop) resizeObserver.observe(desktop);
+          resizeObserver.observe(desktop);
       } else {
           window.addEventListener('resize', debouncedKeepOnScreen);
       }
 
       function updateClock() {
-          if (!clockElement) return;
           const now = new Date();
           const hours = now.getHours();
           const minutes = now.getMinutes().toString().padStart(2, '0');
@@ -212,7 +221,6 @@
 
       startButton.addEventListener('click', (event) => {
           event.stopPropagation();
-          updateStartMenuItemsState(); // Update Start Menu items just before showing
           const isVisible = startMenu.style.display === 'flex';
           startMenu.style.display = isVisible ? 'none' : 'flex';
           startButton.style.borderStyle = isVisible ? 'outset' : 'inset';
@@ -230,25 +238,8 @@
       function createWindow(appId, dataForApp) {
           startMenu.style.display = 'none';
           startButton.style.borderStyle = 'outset';
-
-          // --- START: CHECK IF APP IS RECYCLED ---
-          const recycleBinApi = window.APP_DEFINITIONS?.recycleBin?.api;
-          if (recycleBinApi && typeof recycleBinApi.getRecycledItemIds === 'function') {
-              const recycledAppIds = recycleBinApi.getRecycledItemIds();
-              if (recycledAppIds.includes(appId) && appId !== 'recycleBin') {
-                  // Optionally, show a message or prevent opening
-                  // console.warn(`App ${appId} is in Recycle Bin and cannot be opened from Start Menu.`);
-                  // alert(`The application "${APP_DEFINITIONS[appId]?.title || appId}" has been moved to the Recycle Bin.`);
-                  // For now, we just won't open it if the start menu item was clicked (it should be hidden/disabled)
-                  // This check is more for direct calls to createWindow if any.
-                  return;
-              }
-          }
-          // --- END: CHECK IF APP IS RECYCLED ---
-
           const appDef = APP_DEFINITIONS[appId];
           if (!appDef) { console.error("App definition not found for:", appId); return; }
-
 
           if (!appDef.isDialog) {
               const existingInstance = Object.values(openWindows).find(ow => ow.appId === appId && ow.element && document.body.contains(ow.element));
@@ -274,6 +265,7 @@
           windowEl.querySelector('.window-title').textContent = appDef.title;
 
           if (appDef.activeTitleBarColor) {
+              // Store it on the element for focusWindow to re-apply
               windowEl.dataset.customActiveTitlebarColor = appDef.activeTitleBarColor;
               if (appDef.activeTitleBarTextColor) {
                   windowEl.dataset.customActiveTitlebarTextColor = appDef.activeTitleBarTextColor;
@@ -285,7 +277,7 @@
           if (isBrowserApp) webviewId = `webview-${windowInstanceId}`;
 
           if (appDef.generateContent) {
-              windowEl.querySelector('.window-content').innerHTML = appDef.generateContent(windowInstanceId, webviewId);
+              windowEl.querySelector('.window-content').innerHTML = appDef.generateContent(windowInstanceId, webviewId /* if applicable */);
           } else {
               windowEl.querySelector('.window-content').innerHTML = typeof appDef.content === 'function' ? appDef.content() : appDef.content;
           }
@@ -400,6 +392,7 @@
               });
           });
 
+          // Detach previous global listener if it exists to prevent multiple firings
           if (globalThis.updateDragMoveGlobalListener) {
               document.removeEventListener('pointermove', globalThis.updateDragMoveGlobalListener);
               document.removeEventListener('pointerup', globalThis.updateDragEndGlobalListener);
@@ -456,21 +449,27 @@
           const titleTextEl = windowEl.querySelector('.window-title');
 
           windowEl.classList.remove('inactive');
+          // Apply custom active title bar color if stored on the element
           if (windowEl.dataset.customActiveTitlebarColor) {
               titleBarEl.style.backgroundColor = windowEl.dataset.customActiveTitlebarColor;
               if (windowEl.dataset.customActiveTitlebarTextColor) {
                   titleTextEl.style.color = windowEl.dataset.customActiveTitlebarTextColor;
+                  // Potentially adjust icon opacity or color too if needed for contrast
                   titleBarEl.querySelector('.window-titlebar-icon').style.opacity = '1';
               }
           } else {
-              titleBarEl.style.backgroundColor = '';
-              titleTextEl.style.color = '';
+              // Revert to default theme color from CSS variable
+              titleBarEl.style.backgroundColor = ''; // Clears inline style, CSS var takes over
+              titleTextEl.style.color = ''; // Clears inline style
               titleBarEl.querySelector('.window-titlebar-icon').style.opacity = '';
           }
+
 
           Object.values(openWindows).forEach(ow => {
               if (ow.element && ow.element !== windowEl) {
                   ow.element.classList.add('inactive');
+                  // When other windows become inactive, ensure their custom color is removed
+                  // so the .inactive CSS rule applies correctly.
                   const otherTitleBar = ow.element.querySelector('.window-titlebar');
                   const otherTitleText = ow.element.querySelector('.window-title');
                   if (otherTitleBar) otherTitleBar.style.backgroundColor = '';
@@ -497,12 +496,6 @@
               if (openWindows[instanceId].appInstance && typeof openWindows[instanceId].appInstance.destroy === 'function') {
                   openWindows[instanceId].appInstance.destroy();
               }
-              // --- START: Call onAppDestroy from app definition ---
-              const appDef = APP_DEFINITIONS[openWindows[instanceId].appId];
-              if (appDef && typeof appDef.onAppDestroy === 'function') {
-                  appDef.onAppDestroy(instanceId);
-              }
-              // --- END: Call onAppDestroy from app definition ---
               delete openWindows[instanceId];
           }
           windowEl.remove();
@@ -515,7 +508,7 @@
               });
               if (topWin) focusWindow(topWin);
           } else {
-             if(desktop) desktop.focus();
+              desktop.focus();
           }
       }
 
@@ -555,7 +548,7 @@
               let newX = e.clientX - offsetX, newY = e.clientY - offsetY;
               const desktopRect = desktop.getBoundingClientRect(), winRect = element.getBoundingClientRect();
               const titleBarHeight = titleBar.offsetHeight;
-              newX = Math.max(-winRect.width + titleBarHeight + 20, Math.min(newX, desktopRect.width - (titleBarHeight + 20)));
+              newX = Math.max(-winRect.width + titleBarHeight + 20, Math.min(newX, desktopRect.width - (titleBarHeight + 20))); // Allow slight offscreen drag
               newY = Math.max(0, Math.min(newY, desktopRect.height - titleBarHeight));
               element.style.left = `${newX}px`; element.style.top = `${newY}px`;
           });
@@ -590,7 +583,7 @@
                   let topWin = null, maxZ = -1;
                   remainingWindows.forEach(rw => { const z = parseInt(rw.element.style.zIndex) || 0; if (z > maxZ) { maxZ = z; topWin = rw.element; } });
                   if (topWin) focusWindow(topWin);
-              } else { if(desktop) desktop.focus(); }
+              } else { desktop.focus(); }
           } else {
               windowEl.style.display = 'flex';
               if (!windowData.isMaximized && windowData.originalRectBeforeMinimize) {
@@ -608,49 +601,38 @@
           const titleBar = windowEl.querySelector('.window-titlebar');
           const appDef = APP_DEFINITIONS[windowData.appId];
 
-          if (windowData.isMaximized) {
+          if (windowData.isMaximized) { // Restore
               if (windowData.originalRect) Object.assign(windowEl.style, windowData.originalRect);
-              else {
+              else { /* Fallback if originalRect somehow missing */
                   const tempW = (appDef && appDef.defaultWidth) || 450, tempH = (appDef && appDef.defaultHeight) || 300;
                   windowEl.style.left = `${(desktop.clientWidth - tempW) / 2}px`; windowEl.style.top = `${(desktop.clientHeight - tempH) / 3}px`;
                   windowEl.style.width = `${tempW}px`; windowEl.style.height = `${tempH}px`;
               }
               windowData.isMaximized = false; windowEl.classList.remove('maximized');
-              maximizeBtn.textContent = '1';
+              maximizeBtn.textContent = '1'; // Marlett: Maximize
               maximizeBtn.title = 'Maximize'; titleBar.style.cursor = 'grab';
-          } else {
+          } else { // Maximizing
               windowData.originalRect = { left: windowEl.style.left, top: windowEl.style.top, width: windowEl.style.width || `${windowEl.offsetWidth}px`, height: windowEl.style.height || `${windowEl.offsetHeight}px` };
               Object.assign(windowEl.style, { left: '0px', top: '0px', width: `${desktop.clientWidth}px`, height: `${desktop.clientHeight}px` });
               windowData.isMaximized = true; windowEl.classList.add('maximized');
-              maximizeBtn.textContent = '2';
+              maximizeBtn.textContent = '2'; // Marlett: Restore
               maximizeBtn.title = 'Restore'; titleBar.style.cursor = 'default';
           }
           focusWindow(windowEl);
           if (!windowData.isMinimized && !windowData.isMaximized) keepSingleWindowOnScreen(windowEl, windowData);
-          else if (windowData.isMaximized) {
+          else if (windowData.isMaximized) { // Ensure maximized dimensions are correct
               Object.assign(windowEl.style, { left: '0px', top: '0px', width: `${desktop.clientWidth}px`, height: `${desktop.clientHeight}px` });
           }
       }
 
       document.querySelectorAll('.desktop-icon').forEach(item => {
           item.addEventListener('dblclick', (e) => {
-              const appId = item.dataset.appId;
-              // --- START: CHECK IF APP IS RECYCLED BEFORE DBLCLICK LAUNCH ---
-              const recycleBinApi = window.APP_DEFINITIONS?.recycleBin?.api;
-              if (recycleBinApi && typeof recycleBinApi.getRecycledItemIds === 'function') {
-                  const recycledAppIds = recycleBinApi.getRecycledItemIds();
-                  if (recycledAppIds.includes(appId) && appId !== 'recycleBin') {
-                      // alert(`"${APP_DEFINITIONS[appId]?.title || appId}" is in the Recycle Bin. Restore it first to open.`);
-                      return; // Prevent opening
-                  }
-              }
-              // --- END: CHECK IF APP IS RECYCLED BEFORE DBLCLICK LAUNCH ---
-              if (appId) createWindow(appId);
+              const appId = item.dataset.appId; if (appId) createWindow(appId);
           });
       });
       document.querySelectorAll('.start-menu-item').forEach(item => {
            item.addEventListener('click', (e) => {
-              if (item.classList.contains('disabled')) return; // Check if disabled by updateStartMenuItemsState
+              if (item.classList.contains('disabled')) return;
               const appId = item.dataset.appId;
               if (item.id === 'shutdownButtonTrigger') createWindow("shutdownDialog");
               else if (appId) createWindow(appId);
@@ -658,6 +640,8 @@
           });
       });
 
+      // Initial theme update based on loaded desktop color (if any)
+      // This will be called again by desktop-context-menu.js after it loads preferences
       const initialBgColor = window.getComputedStyle(document.documentElement).getPropertyValue('--desktop-bg-color').trim();
       if (initialBgColor) {
           updateThemeForDesktopBackground(initialBgColor);
@@ -669,7 +653,6 @@
         window.Win9xSystem.updateStartMenuItemsState();
       }
       // --- END: INITIAL START MENU STATE UPDATE ---
-
   });
 
   window.addEventListener('message', ({isTrusted, data}) => {
@@ -678,7 +661,7 @@
     const leftOffset = window.screen.availWidth - window.visualViewport.width;
     switch(data.type) {
       case "pointermove": {
-        if (globalThis.updateDragMoveGlobalListener && data.pointermove) {
+        if (globalThis.updateDragMoveGlobalListener && data.pointermove) { // Check if resizer is active
             const {pointermove} = data;
             pointermove.screenX -= window.screenX + leftOffset;
             pointermove.screenY -= window.screenY + topOffset;

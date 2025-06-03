@@ -200,6 +200,11 @@
           if (window.Win9xDesktopUtils && typeof window.Win9xDesktopUtils.refreshIconStateAndListeners === 'function') {
             window.Win9xDesktopUtils.refreshIconStateAndListeners();
           }
+          // --- START: NEW - UPDATE START MENU STATE ---
+          if (window.Win9xSystem && typeof window.Win9xSystem.updateStartMenuItemsState === 'function') {
+              window.Win9xSystem.updateStartMenuItemsState();
+          }
+          // --- END: NEW - UPDATE START MENU STATE ---
       } catch (e) {
           console.error("RecycleBin: Error saving recycled items:", e);
       }

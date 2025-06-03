@@ -117,6 +117,49 @@
   }
   window.updateThemeForDesktopBackground = updateThemeForDesktopBackground; // Expose globally
 
+  // --- START: NEW FUNCTION TO UPDATE START MENU ITEMS ---
+  function updateStartMenuItemsState() {
+    const startMenu = document.getElementById('startMenu');
+    if (!startMenu) return;
+
+    const recycleBinApi = window.APP_DEFINITIONS?.recycleBin?.api;
+    if (!recycleBinApi || typeof recycleBinApi.getRecycledItemIds !== 'function') {
+        // console.warn("Recycle Bin API for item IDs not found, cannot update Start Menu.");
+        return;
+    }
+    const recycledAppIds = recycleBinApi.getRecycledItemIds();
+
+    const startMenuItems = startMenu.querySelectorAll('.start-menu-item[data-app-id]');
+    startMenuItems.forEach(item => {
+        const appId = item.dataset.appId;
+        if (appId === 'recycleBin' || appId === 'shutdownDialog') { // These should always be launchable
+            item.style.display = ''; // Ensure visible
+            item.classList.remove('disabled'); // Ensure enabled
+            item.style.opacity = '1';
+            item.style.pointerEvents = 'auto';
+            return;
+        }
+
+        if (recycledAppIds.includes(appId)) {
+            // Option 1: Hide the item
+            item.style.display = 'none';
+
+            // Option 2: Disable the item (more like Win95 "uninstall")
+            // item.classList.add('disabled');
+            // item.style.opacity = '0.5'; // Visually indicate disabled
+            // item.style.pointerEvents = 'none'; // Prevent click
+        } else {
+            item.style.display = ''; // Ensure visible
+            item.classList.remove('disabled');
+            item.style.opacity = '1';
+            item.style.pointerEvents = 'auto';
+        }
+    });
+  }
+  // Expose it globally so recycle-bin.js can call it
+  window.Win9xSystem = window.Win9xSystem || {};
+  window.Win9xSystem.updateStartMenuItemsState = updateStartMenuItemsState;
+  // --- END: NEW FUNCTION TO UPDATE START MENU ITEMS ---
 
   document.addEventListener('DOMContentLoaded', () => {
       const clockElement = document.getElementById('clock');
@@ -604,6 +647,12 @@
           updateThemeForDesktopBackground(initialBgColor);
       }
 
+      // --- START: INITIAL START MENU STATE UPDATE ---
+      // Ensure Start Menu items reflect recycled state on load
+      if (window.Win9xSystem && typeof window.Win9xSystem.updateStartMenuItemsState === 'function') {
+        window.Win9xSystem.updateStartMenuItemsState();
+      }
+      // --- END: INITIAL START MENU STATE UPDATE ---
   });
 
   window.addEventListener('message', ({isTrusted, data}) => {

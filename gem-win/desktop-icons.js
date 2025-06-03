@@ -293,7 +293,7 @@
 
       iconsToDrag.forEach(icon => {
           draggedItemsInitialStates.set(icon, { x: icon.offsetLeft, y: icon.offsetTop, zIndex: icon.style.zIndex || '' });
-          icon.style.zIndex = '10000';
+          icon.style.zIndex = '100';
           icon.classList.add('is-positioned', 'dragging'); // Add 'dragging' class
           icon.style.position = 'absolute';
           icon.style.margin = '0';
