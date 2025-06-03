@@ -3,7 +3,6 @@
 
   const RECYCLE_BIN_ITEMS_KEY = 'recycleBinItems_win9x';
 
-  // Keep a G_activeMenu object scoped to this module if needed for menu interactions
   const G_recycleBinActiveMenu = { button: null, dropdown: null, outsideClickListener: null };
 
   const recycleBinAppDefinition = {
@@ -15,7 +14,7 @@
       defaultHeight: 400,
       menuBar: [
           {
-              name: "File", // This menu itself is enabled
+              name: "File",
               items: [
                   { name: "Restore", action: "restoreSelectedItem", disabled: true, shortcut: "" },
                   { separator: true },
@@ -26,8 +25,8 @@
           },
           {
               name: "Edit",
-              disabled: true, // Disable the entire Edit menu button
-              items: [ /* items don't matter as much if top-level is disabled, but define for completeness */
+              disabled: true, 
+              items: [
                   { name: "Undo", action: "undo", disabled: true, shortcut: "Ctrl+Z" },
                   { separator: true },
                   { name: "Cut", action: "cut", disabled: true, shortcut: "Ctrl+X" },
@@ -40,7 +39,7 @@
           },
           {
               name: "View",
-              disabled: true, // Disable the entire View menu button
+              disabled: true, 
               items: [
                   { name: "Toolbar", action: "toggleToolbar", checked: true, disabled: true },
                   { name: "Status Bar", action: "toggleStatusBar", checked: true, disabled: true },
@@ -59,7 +58,7 @@
           },
           {
               name: "Help",
-              disabled: true, // Disable the entire Help menu button
+              disabled: true, 
               items: [
                   { name: "Help Topics", action: "helpTopics", disabled: true },
                   { separator: true },
@@ -159,7 +158,7 @@
       api: {
           addItem,
           getDesktopIconElement,
-          getRecycledItemIds, // Crucial: this returns ALL IDs for desktop icon hiding
+          getRecycledItemIds,
           updateIconState: updateRecycleBinIconState,
           restoreItem,
           emptyRecycleBin: empty
@@ -189,7 +188,6 @@
       }
   }
 
-  // Returns IDs of ALL items ever put in bin (and not restored), for desktop icon hiding
   function getRecycledItemIds() {
       return getRecycledItems().map(item => item.id);
   }
@@ -197,7 +195,7 @@
   function saveRecycledItems(items) {
       try {
           localStorage.setItem(RECYCLE_BIN_ITEMS_KEY, JSON.stringify(items));
-          updateRecycleBinIconState(); // Updates desktop icon based on non-permanently-deleted items
+          updateRecycleBinIconState();
       } catch (e) {
           console.error("RecycleBin: Error saving recycled items:", e);
       }
@@ -207,28 +205,27 @@
       const items = getRecycledItems();
       const existingItemIndex = items.findIndex(i => i.id === itemData.id);
 
-      if (existingItemIndex === -1) { // Item not in bin at all
+      if (existingItemIndex === -1) {
           items.push({
               id: itemData.id,
               name: itemData.name,
               iconSrc: itemData.iconSrc,
               originalAppId: itemData.originalAppId,
               dateDeleted: new Date().toISOString(),
-              size: itemData.size || Math.floor(Math.random() * 1000) + 50, // Placeholder size
-              isPermanentlyDeleted: false // New items are not permanently deleted
+              size: itemData.size || Math.floor(Math.random() * 1000) + 50,
+              isPermanentlyDeleted: false
           });
-      } else { // Item exists, might have been restored and re-deleted
+      } else {
           items[existingItemIndex].isPermanentlyDeleted = false;
-          items[existingItemIndex].permanentlyDeletedDate = null; // Clear this
-          items[existingItemIndex].dateDeleted = new Date().toISOString(); // Update deletion date
-          // Keep original name, iconSrc, originalAppId, size if already set
+          items[existingItemIndex].permanentlyDeletedDate = null;
+          items[existingItemIndex].dateDeleted = new Date().toISOString();
           items[existingItemIndex].name = itemData.name || items[existingItemIndex].name;
           items[existingItemIndex].iconSrc = itemData.iconSrc || items[existingItemIndex].iconSrc;
       }
       saveRecycledItems(items);
   }
 
-  function empty() { // "Empty Recycle Bin" action
+  function empty() {
       const items = getRecycledItems();
       let changed = false;
       items.forEach(item => {
@@ -256,13 +253,23 @@
       const itemToRestore = items.find(item => item.id === itemIdToRestore);
 
       if (itemToRestore) {
-          items = items.filter(item => item.id !== itemIdToRestore); // Completely remove from the list
+          items = items.filter(item => item.id !== itemIdToRestore);
           saveRecycledItems(items);
 
-          if (window.Win9xDesktopUtils && typeof window.Win9xDesktopUtils.getDesktopIconByAppId === 'function') {
+          if (window.Win9xDesktopUtils && 
+              typeof window.Win9xDesktopUtils.getDesktopIconByAppId === 'function' &&
+              typeof window.Win9xDesktopUtils.activateDesktopIcon === 'function') {
+              
               const desktopIconEl = window.Win9xDesktopUtils.getDesktopIconByAppId(itemToRestore.originalAppId);
               if (desktopIconEl) {
                   desktopIconEl.style.display = '';
+                  window.Win9xDesktopUtils.activateDesktopIcon(desktopIconEl); // Re-attach listeners
+                  
+                  // Select the restored icon
+                  if (window.Win9xDesktopUtils.clearSelection) window.Win9xDesktopUtils.clearSelection();
+                  if (window.Win9xDesktopUtils.selectIcon) {
+                      window.Win9xDesktopUtils.selectIcon(desktopIconEl);
+                  }
               }
           }
 
@@ -322,7 +329,7 @@
           if (menuButton) {
               if (menu.disabled) {
                   menuButton.style.color = '#808080';
-                  menuButton.style.pointerEvents = 'none';
+                  menuButton.style.pointerEvents = 'none'; 
               } else {
                   menuButton.style.color = 'black';
                   menuButton.style.pointerEvents = 'auto';
@@ -335,11 +342,10 @@
           });
       });
   }
-  // Helper to escape attribute values for querySelector
+
   function escapeAttribute(value) {
       return value.replace(/([!"#$%&'()*+,./:;<=>?@[\\\]^`{|}~])/g, '\\$1');
   }
-
 
   function attachRecycleBinEventListeners(windowEl, instanceId) {
       const listContainer = windowEl.querySelector('.recycle-bin-list');
@@ -380,7 +386,7 @@
       switch (actionName) {
           case "emptyRecycleBin":
               if (getRecycledItems().filter(item => !item.isPermanentlyDeleted).length > 0) {
-                empty();
+                  empty();
               }
               break;
           case "restoreSelectedItem":
@@ -431,11 +437,11 @@
           menuButton.style.cursor = 'default';
           menuButton.style.fontSize = '11px';
           menuButton.style.lineHeight = '15px'; 
-          menuButton.dataset.menuName = menu.name; // Use the actual name for the dataset
+          menuButton.dataset.menuName = menu.name;
 
           if (menu.disabled) { 
               menuButton.style.color = '#808080';
-              // menuButton.style.pointerEvents = 'none'; // Already handled by updateLocalMenuState
+              // For truly disabled, don't add listeners
           } else {
               menuButton.style.color = 'black';
               menuButton.addEventListener('pointerdown', (e) => {
@@ -537,7 +543,8 @@
 
       const buttonRect = buttonEl.getBoundingClientRect();
       const windowRect = windowEl.getBoundingClientRect();
-      const menuBarRect = buttonEl.closest('.window-menu-bar').getBoundingClientRect();
+      const menuBarEl = buttonEl.closest('.window-menu-bar'); // Get the menu bar element
+      const menuBarRect = menuBarEl ? menuBarEl.getBoundingClientRect() : buttonRect; // Fallback to buttonRect if menuBarEl not found
 
       dropdown.style.left = `${buttonRect.left - windowRect.left}px`;
       dropdown.style.top = `${menuBarRect.bottom - windowRect.top}px`; 

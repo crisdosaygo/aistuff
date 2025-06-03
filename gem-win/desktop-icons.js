@@ -612,5 +612,4 @@
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initDesktopInteractions);
   else initDesktopInteractions();
-
 })(window);
