@@ -1,536 +1,526 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Windows 98½</title>
-    <link rel=icon href="./internet_connection_wiz-0.png">
-    <style>
-        body {
-            background-color: #008080; /* Classic Teal */
-            font-family: "MS Sans Serif", "Tahoma", Arial, sans-serif;
-            font-size: 12px;
-            margin: 0;
-            overflow: hidden;
-            user-select: none;
-        }
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Windows 98¬Ω</title>
+      <link rel=icon href="./internet_connection_wiz-0.png">
+      <style>
+          :root {
+              --desktop-bg-color: #008080; /* Initial desktop background */
+              --theme-color-active-titlebar: #000080; /* Default active title bar */
+              --theme-color-inactive-titlebar: #808080; /* Default inactive title bar */
+              --desktop-icon-text-color: white; /* Default desktop icon text */
+              --network-explorer-menu-bar-bg: #F0E68C; /* Khaki for Network Explorer menu */
+          }
 
-        .desktop {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 30px; /* Space for taskbar */
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            flex-wrap: wrap;
-            align-content: flex-start; /* Align icons to the left */
-        }
-        /* Add :focus style for desktop for visual feedback when it has keyboard focus */
-        .desktop:focus {
-            /* Example: subtle border to show it's the active container */
-            /* outline: 1px dashed rgba(255, 255, 255, 0.3); */
-            /* outline-offset: -1px; */
-            /* Script handles .keyboard-focused on items, this is for the container itself */
-        }
+          body {
+              background-color: var(--desktop-bg-color);
+              font-family: "MS Sans Serif", "Tahoma", Arial, sans-serif;
+              font-size: 12px;
+              margin: 0;
+              overflow: hidden;
+              user-select: none;
+          }
 
-
-        .desktop-icon {
-            width: 75px;
-            margin: 10px;
-            text-align: center;
-            color: white;
-            cursor: default;
-            padding: 5px;
-            /* Ensure icons don't get a default browser outline if script handles focus */
-        }
-        .desktop-icon:focus { 
-            outline: none;
-        }
-
-        /*
-        .desktop-icon:hover {
-            background-color: rgba(0, 0, 128, 0.5); 
-            border: 1px dotted white;
-        }
-        */
-        .desktop-icon img {
-            width: 32px;
-            height: 32px;
-            display: block;
-            margin: 0 auto 5px auto;
-        }
-        .desktop-icon span {
-          display: inline-block;
-          max-width: 75px;
-          width: min-content;
-        }
-        .desktop-icon.selected span {
-            background-color: rgba(0, 0, 128, 0.7); /* Darker selection */
-            color: white; /* Ensure text is visible */
-            border: 1px dotted white;
-            padding: 1px 2px;
-        }
+          .desktop {
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 30px; /* Space for taskbar */
+              padding: 10px;
+              /* display: flex; flex-direction: column; flex-wrap: wrap; align-content: flex-start; */ /* Removed for absolute positioning */
+          }
+          .desktop:focus {
+              /* outline: 1px dashed rgba(255, 255, 255, 0.3); */
+          }
 
 
-        .taskbar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 30px;
-            background-color: #c0c0c0; /* Classic Gray */
-            border-top: 2px solid #ffffff;
-            display: flex;
-            align-items: center;
-            padding: 0 5px;
-            z-index: 10000; /* Always on top */
-        }
+          .desktop-icon {
+              width: 75px;
+              /* margin: 10px; /* Removed, absolute positioning handles spacing */
+              text-align: center;
+              color: var(--desktop-icon-text-color);
+              cursor: default;
+              padding: 5px;
+          }
+          .desktop-icon:focus {
+              outline: none;
+          }
 
-        .start-button {
-            background-color: #c0c0c0;
-            border: 2px outset #dfdfdf;
-            padding: 2px 10px;
-            margin-right: 5px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-        }
-        .start-button:active {
-            border-style: inset;
-        }
-        .start-button img {
-            width: 16px;
-            height: 16px;
-            margin-right: 5px;
-        }
-        .start-button:focus { /* Style for when start button itself has focus */
-            outline: 1px dotted black;
-            outline-offset: -2px;
-        }
+          .desktop-icon img {
+              width: 32px;
+              height: 32px;
+              display: block;
+              margin: 0 auto 5px auto;
+          }
+          .desktop-icon span {
+            display: inline-block;
+            max-width: 75px;
+            width: min-content;
+          }
+          .desktop-icon.selected span {
+              background-color: rgba(0, 0, 128, 0.7);
+              color: white; /* Ensure text is visible, might need var if bg is light */
+              border: 1px dotted white; /* Might need var if bg is light */
+              padding: 1px 2px;
+          }
 
 
-        .start-menu {
-            position: absolute;
-            bottom: 30px; /* Above taskbar */
-            left: 0;
-            /* width: 200px; /* Slightly wider for icons (now auto) */
-            background-color: #c0c0c0;
-            border: 2px outset #dfdfdf;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
-            /* padding: 2px; (now handled by items-container) */
-            display: none; /* Hidden by default */
-            z-index: 9999;
-            flex-direction: row; /* Changed for sidebar layout */
-            width: auto; 
-        }
-        .start-menu:focus { /* Style for when start menu container has focus */
-            /* outline: 1px dotted blue; */ /* Example */
-            outline: none; /* Script manages item focus visuals */
-        }
+          .taskbar {
+              position: fixed;
+              bottom: 0;
+              left: 0;
+              right: 0;
+              height: 30px;
+              background-color: #c0c0c0; /* Classic Gray */
+              border-top: 2px solid #ffffff;
+              display: flex;
+              align-items: center;
+              padding: 0 5px;
+              z-index: 10000;
+          }
 
-        .start-menu-item {
-            padding: 5px 10px 5px 5px; /* Adjusted padding */
-            cursor: pointer;
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-        .start-menu-item:hover {
-            background-color: #000080; /* Dark Blue */
-            color: white;
-        }
-        .start-menu-item:focus { /* Remove default outline if script handles visual focus */
-            outline: none;
-        }
-        .start-menu-icon {
-            width: 20px; /* Slightly larger for start menu */
-            height: 20px;
-            margin-right: 8px;
-            vertical-align: middle;
-        }
-        .start-menu-separator {
-            height: 1px;
-            background-color: #808080;
-            margin: 2px 0;
-            border-bottom: 1px solid #ffffff;
-        }
-        .start-menu-item.disabled {
-            color: #808080;
-            cursor: default;
-        }
-        .start-menu-item.disabled:hover {
-            background-color: #c0c0c0;
-            color: #808080;
-        }
+          .start-button {
+              background-color: #c0c0c0;
+              border: 2px outset #dfdfdf;
+              padding: 2px 10px;
+              margin-right: 5px;
+              font-weight: bold;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+          }
+          .start-button:active {
+              border-style: inset;
+          }
+          .start-button img {
+              width: 16px;
+              height: 16px;
+              margin-right: 5px;
+          }
+          .start-button:focus {
+              outline: 1px dotted black;
+              outline-offset: -2px;
+          }
 
 
-        .start-menu-sidebar {
-            background-color: #000080; /* Dark Blue */
-            color: white;
-            padding: 10px 5px;
-            writing-mode: vertical-lr; /* Rotate text */
-            text-orientation: mixed;
-            transform: rotate(180deg); /* Correct orientation after vertical-rl */
-            font-weight: bold;
-            font-size: 16px; /* Adjust as needed */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-right: 2px outset #dfdfdf; /* 3D effect */
-            min-width: 25px; /* Ensure it has some width */
-        }
-        .start-menu-sidebar .and-half {
-          display: inline-block;
-          transform:rotate(90deg);
-        }
-        .start-menu-sidebar-text {
-            white-space: nowrap; /* Prevent text from wrapping */
-        }
+          .start-menu {
+              position: absolute;
+              bottom: 30px;
+              left: 0;
+              background-color: #c0c0c0;
+              border: 2px outset #dfdfdf;
+              box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+              display: none;
+              z-index: 9999;
+              flex-direction: row;
+              width: auto;
+          }
+          .start-menu:focus {
+              outline: none;
+          }
 
-        .start-menu-items-container {
-            background-color: #c0c0c0; /* Original start menu background */
-            padding: 2px; /* Original start menu padding */
-            width: 180px; /* Original width of items area, adjust if needed */
-            display: flex;
-            flex-direction: column;
-        }
-
-        .taskbar-windows {
-            display: flex;
-            flex-grow: 1;
-            margin: 0 5px;
-            overflow: hidden;
-        }
-        .taskbar-button {
-            background-color: #c0c0c0;
-            border: 2px outset #dfdfdf;
-            padding: 1px 5px; /* Adjusted padding */
-            margin-right: 3px;
-            font-size: 11px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 150px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            height: 22px; /* Consistent height */
-            box-sizing: border-box;
-        }
-        .taskbar-button:focus { /* Style for focused taskbar buttons */
-            outline: 1px dotted black;
-            outline-offset: -2px;
-        }
-        .taskbar-button.active {
-            border-style: inset;
-            font-weight: bold;
-        }
-        .taskbar-button img {
-            width: 16px;
-            height: 16px;
-            margin-right: 4px;
-            vertical-align: middle;
-        }
-        .taskbar-button.minimized {
-            opacity: 0.9; /* Slightly different look for minimized */
-        }
+          .start-menu-item {
+              padding: 5px 10px 5px 5px;
+              cursor: pointer;
+              position: relative;
+              display: flex;
+              align-items: center;
+          }
+          .start-menu-item:hover {
+              background-color: #000080;
+              color: white;
+          }
+          .start-menu-item:focus {
+              outline: none;
+          }
+          .start-menu-icon {
+              width: 20px;
+              height: 20px;
+              margin-right: 8px;
+              vertical-align: middle;
+          }
+          .start-menu-separator {
+              height: 1px;
+              background-color: #808080;
+              margin: 2px 0;
+              border-bottom: 1px solid #ffffff;
+          }
+          .start-menu-item.disabled {
+              color: #808080;
+              cursor: default;
+          }
+          .start-menu-item.disabled:hover {
+              background-color: #c0c0c0;
+              color: #808080;
+          }
 
 
-        .clock {
-            border: 1px inset #808080;
-            padding: 3px 8px;
-            margin-left: auto; /* Pushes to the right */
-            font-size: 11px;
-            min-width: 60px;
-            text-align: center;
-            height: 20px; /* Consistent height */
-            line-height: 12px; 
-            box-sizing: border-box;
-        }
+          .start-menu-sidebar {
+              background-color: #000080; /* Could be var(--theme-color-active-titlebar) if desired */
+              color: white;
+              padding: 10px 5px;
+              writing-mode: vertical-lr;
+              text-orientation: mixed;
+              transform: rotate(180deg);
+              font-weight: bold;
+              font-size: 16px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              border-right: 2px outset #dfdfdf;
+              min-width: 25px;
+          }
+          .start-menu-sidebar .and-half {
+            display: inline-block;
+            transform:rotate(90deg);
+          }
+          .start-menu-sidebar-text {
+              white-space: nowrap;
+          }
 
-        /* Window Styling */
-        .window {
-            position: absolute;
-            background-color: #c0c0c0;
-            border: 2px outset #dfdfdf;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
-            min-width: 200px;
-            min-height: 150px;
-            display: flex;
-            flex-direction: column;
-            /*overflow: hidden; */
-        }
-        .window:focus, .window:focus-within { /* Indicate active window subtly */
-             /* border-color: #666; */ /* Example: darker border for focused window */
-             /* The .inactive class handles visual distinction well, so direct focus style might be redundant */
-        }
+          .start-menu-items-container {
+              background-color: #c0c0c0;
+              padding: 2px;
+              width: 180px;
+              display: flex;
+              flex-direction: column;
+          }
 
-
-        .window-titlebar {
-            background-color: #000080; /* Dark Blue */
-            color: white;
-            padding: 3px 5px;
-            font-weight: bold;
-            cursor: grab;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 20px; 
-            box-sizing: border-box;
-        }
-        .window-titlebar:active {
-            cursor: grabbing;
-        }
-        .window-titlebar-icon {
-            margin-right: 5px;
-            vertical-align: middle; 
-            width: 16px;
-            height: 16px;
-        }
-        .window-title {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            flex-grow: 1; 
-        }
-        .window.inactive .window-titlebar {
-            background-color: #808080; 
-        }
-        .window.inactive .window-titlebar-icon {
-            opacity: 0.7; 
-        }
-        .window.inactive .window-title {
-            color: #D3D3D3; 
-        }
-
-
-        .window-controls button {
-            background-color: #c0c0c0;
-            border: 1px outset #dfdfdf;
-            color: black;
-            font-family: "Marlett", "Webdings"; 
-            font-size: 10px; 
-            width: 16px;
-            height: 14px;
-            line-height: 10px; 
-            padding: 0;
-            margin-left: 2px;
-            cursor: pointer;
-        }
-        .window-controls button:active {
-            border-style: inset;
-        }
-        .window-controls button:focus { /* Style for focused window control buttons */
-            outline: 1px dotted black;
-            outline-offset: -1px;
-        }
-        .window-controls {
-          min-width: fit-content;
-        }
+          .taskbar-windows {
+              display: flex;
+              flex-grow: 1;
+              margin: 0 5px;
+              overflow: hidden;
+          }
+          .taskbar-button {
+              background-color: #c0c0c0;
+              border: 2px outset #dfdfdf;
+              padding: 1px 5px;
+              margin-right: 3px;
+              font-size: 11px;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              max-width: 150px;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              height: 22px;
+              box-sizing: border-box;
+          }
+          .taskbar-button:focus {
+              outline: 1px dotted black;
+              outline-offset: -2px;
+          }
+          .taskbar-button.active {
+              border-style: inset;
+              font-weight: bold;
+          }
+          .taskbar-button img {
+              width: 16px;
+              height: 16px;
+              margin-right: 4px;
+              vertical-align: middle;
+          }
+          .taskbar-button.minimized {
+              opacity: 0.9;
+          }
 
 
-        .window-content {
-            padding: 0; 
-            background-color: #ffffff; 
-            flex-grow: 1;
-            margin: 3px;
-            border: 1px inset #808080;
-            overflow: auto; 
-            display: flex; 
-            flex-direction: column; 
-        }
-        .window-content:focus { /* Style for when content area itself gets focus */
-             /* outline: 1px solid blue; */ /* Example, if needed */
-        }
+          .clock {
+              border: 1px inset #808080;
+              padding: 3px 8px;
+              margin-left: auto;
+              font-size: 11px;
+              min-width: 60px;
+              text-align: center;
+              height: 20px;
+              line-height: 12px;
+              box-sizing: border-box;
+          }
+
+          /* Window Styling */
+          .window {
+              position: absolute;
+              background-color: #c0c0c0;
+              border: 2px outset #dfdfdf;
+              box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+              min-width: 200px;
+              min-height: 150px;
+              display: flex;
+              flex-direction: column;
+          }
+          .window:focus, .window:focus-within {
+          }
 
 
-        .window.maximized .window-titlebar {
-            cursor: default; 
-        }
+          .window-titlebar {
+              background-color: var(--theme-color-active-titlebar);
+              color: white;
+              padding: 3px 5px;
+              font-weight: bold;
+              cursor: grab;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              height: 20px;
+              box-sizing: border-box;
+          }
+          .window-titlebar:active {
+              cursor: grabbing;
+          }
+          .window-titlebar-icon {
+              margin-right: 5px;
+              vertical-align: middle;
+              width: 16px;
+              height: 16px;
+          }
+          .window-title {
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              flex-grow: 1;
+          }
+          .window.inactive .window-titlebar {
+              background-color: var(--theme-color-inactive-titlebar);
+          }
+          .window.inactive .window-titlebar-icon {
+              opacity: 0.7;
+          }
+          .window.inactive .window-title {
+              color: #D3D3D3;
+          }
 
-        .win95-button {
-            background-color: #c0c0c0;
-            border: 2px outset #dfdfdf;
-            padding: 5px 15px;
-            margin: 0 5px;
-            min-width: 70px;
-            cursor: pointer;
-        }
-        .win95-button:active {
-            border-style: inset;
-        }
-        .win95-button:focus { /* Style for focused dialog buttons */
-            outline: 1px dotted black;
-            outline-offset: -2px;
-        }
+
+          .window-controls button {
+              background-color: #c0c0c0;
+              border: 1px outset #dfdfdf;
+              color: black;
+              font-family: "Tahoma", Arial, sans-serif; /* Changed from Marlett/Webdings */
+              font-size: 12px; /* Adjusted for Unicode chars */
+              width: 18px;    /* Adjusted for Unicode chars */
+              height: 16px;   /* Adjusted for Unicode chars */
+              line-height: 16px; /* Adjusted for Unicode chars */
+              padding: 0;
+              margin-left: 2px;
+              cursor: pointer;
+              display: inline-flex; /* For better centering */
+              align-items: center;
+              justify-content: center;
+          }
+          .window-controls button:active {
+              border-style: inset;
+          }
+          .window-controls button:focus {
+              outline: 1px dotted black;
+              outline-offset: -1px;
+          }
+          .window-controls {
+            min-width: fit-content;
+          }
 
 
-        .resize-handle {
-            position: absolute;
-            /* background-color: rgba(255, 0, 0, 0.2); /* For debugging visibility */
-        }
-
-        /* Desktop Resize Handles (16px clickable area, 4px overlap) */
-        .resize-handle-n  { z-index: 1000000; top: -12px; left: 12px; right: 12px; height: 16px; cursor: n-resize; }
-        .resize-handle-ne { z-index: 1000000; top: -12px; right: -12px; width: 16px; height: 16px; cursor: ne-resize; }
-        .resize-handle-e  { z-index: 1000000; top: 12px; bottom: 12px; right: -12px; width: 16px; cursor: e-resize; }
-        .resize-handle-se { z-index: 1000000; bottom: -12px; right: -12px; width: 16px; height: 16px; cursor: se-resize; }
-        .resize-handle-s  { z-index: 1000000; bottom: -12px; left: 12px; right: 12px; height: 16px; cursor: s-resize; }
-        .resize-handle-sw { z-index: 1000000; bottom: -12px; left: -12px; width: 16px; height: 16px; cursor: sw-resize; }
-        .resize-handle-w  { z-index: 1000000; top: 12px; bottom: 12px; left: -12px; width: 16px; cursor: w-resize; }
-        .resize-handle-nw { z-index: 1000000; top: -12px; left: -12px; width: 16px; height: 16px; cursor: nw-resize; }
+          .window-content {
+              padding: 0;
+              background-color: #ffffff;
+              flex-grow: 1;
+              margin: 3px;
+              border: 1px inset #808080;
+              overflow: auto;
+              display: flex;
+              flex-direction: column;
+          }
+          .window-content:focus {
+          }
 
 
-        .window.maximized .resize-handle {
-            display: none;
-        }
+          .window.maximized .window-titlebar {
+              cursor: default;
+          }
 
-        @media screen and (max-width: 600px) {
-          /* Mobile Resize Handles (32px clickable area, 4px overlap) */
-          .resize-handle-n  { top: -28px; left: 28px; right: 28px; height: 32px; cursor: n-resize; }
-          .resize-handle-ne { top: -28px; right: -28px; width: 32px; height: 32px; cursor: ne-resize; }
-          .resize-handle-e  { top: 28px; bottom: 28px; right: -28px; width: 32px; cursor: e-resize; }
-          .resize-handle-se { bottom: -28px; right: -28px; width: 32px; height: 32px; cursor: se-resize; }
-          .resize-handle-s  { bottom: -28px; left: 28px; right: 28px; height: 32px; cursor: s-resize; }
-          .resize-handle-sw { bottom: -28px; left: -28px; width: 32px; height: 32px; cursor: sw-resize; }
-          .resize-handle-w  { top: 28px; bottom: 28px; left: -28px; width: 32px; cursor: w-resize; }
-          .resize-handle-nw { top: -28px; left: -28px; width: 32px; height: 32px; cursor: nw-resize; }
-        }
-        .no-select {
-            user-select: none;
-            -webkit-user-select: none; // Safari
-            -moz-user-select: none;    // Firefox
-            -ms-user-select: none;     // IE10+/Edge
-        }
-    </style>
-    <link rel=stylesheet href=desktop-icons.css>
-    <link rel="stylesheet" href="desktop-context-menu.css">
-    <link rel="stylesheet" href="browser.css">
-    <style>
+          .win95-button {
+              background-color: #c0c0c0;
+              border: 2px outset #dfdfdf;
+              padding: 5px 15px;
+              margin: 0 5px;
+              min-width: 70px;
+              cursor: pointer;
+          }
+          .win95-button:active {
+              border-style: inset;
+          }
+          .win95-button:focus {
+              outline: 1px dotted black;
+              outline-offset: -2px;
+          }
 
-    </style>
-</head>
-<body>
-    <div class="desktop" id="desktop" tabindex="0"> <!-- MODIFIED -->
-        <div class="desktop-icon" data-app-id="networkExplorer">
-            <img src="./network_normal_two_pcs-0.png" alt="Network Neighborhood"> <!-- Find a suitable icon -->
-            <span>Network Neighborhood</span>
-        </div>
 
-        <div class="desktop-icon" data-app-id="notepad">
-            <img src="./notepad-0.png" alt="Notepad">
-            <span>Notepad</span>
-        </div>
-        <div class="desktop-icon" data-app-id="recycleBin">
-            <img src="./recycle_bin_empty-0.png" alt="Recycle Bin">
-            <span>Recycle&nbsp;Bin</span>
-        </div>
-        <div class="desktop-icon" data-app-id="calculator">
-            <img src="./calculator-0.png" alt="Calculator">
-            <span>Calculator</span>
-        </div>
+          .resize-handle {
+              position: absolute;
+          }
 
-        <div class="desktop-icon" data-app-id="internetBrowser">
-            <img 
-              src="./search_web-0.png" 
-              alt="Internet Browser">
-            <span>Internet Browser</span>
-        </div>
+          .resize-handle-n  { z-index: 1000000; top: -12px; left: 12px; right: 12px; height: 16px; cursor: n-resize; }
+          .resize-handle-ne { z-index: 1000000; top: -12px; right: -12px; width: 16px; height: 16px; cursor: ne-resize; }
+          .resize-handle-e  { z-index: 1000000; top: 12px; bottom: 12px; right: -12px; width: 16px; cursor: e-resize; }
+          .resize-handle-se { z-index: 1000000; bottom: -12px; right: -12px; width: 16px; height: 16px; cursor: se-resize; }
+          .resize-handle-s  { z-index: 1000000; bottom: -12px; left: 12px; right: 12px; height: 16px; cursor: s-resize; }
+          .resize-handle-sw { z-index: 1000000; bottom: -12px; left: -12px; width: 16px; height: 16px; cursor: sw-resize; }
+          .resize-handle-w  { z-index: 1000000; top: 12px; bottom: 12px; left: -12px; width: 16px; cursor: w-resize; }
+          .resize-handle-nw { z-index: 1000000; top: -12px; left: -12px; width: 16px; height: 16px; cursor: nw-resize; }
 
-        <div class="desktop-icon" data-app-id="internetExplorer">
-            <img 
-              src="./msie2-0.png" 
-              alt="Internet Explorer">
-            <span>Internet Explorer</span>
-        </div>
 
-        <div class="desktop-icon" data-app-id="netscapeNavigator">
-            <img 
-              src="./n2-2.png" 
-              alt="Netscape Navigator">
-            <span>Netscape Navigator</span>
-        </div>
-    </div>
+          .window.maximized .resize-handle {
+              display: none;
+          }
 
-    <div class="start-menu" id="startMenu" tabindex="-1"> <!-- MODIFIED -->
-        <div class="start-menu-sidebar">
-            <span class="start-menu-sidebar-text">Windows 98<span class="and-half">½</span></span> <!-- Used   for non-breaking space -->
-        </div>
-        <div class="start-menu-items-container"> 
-            <div class="start-menu-item" data-app-id="networkExplorer">
-                <img src="./network_normal_two_pcs-0.png" class="start-menu-icon" alt=""> Network Neighborhood
-            </div>
-            <div class="start-menu-item" data-app-id="notepad">
-                <img src="./notepad-0.png" class="start-menu-icon" alt=""> Notepad
-            </div>
-            <div class="start-menu-item" data-app-id="calculator">
-                <img src="./calculator-0.png" class="start-menu-icon" alt=""> Calculator
-            </div>
-            <div class="start-menu-item" data-app-id="internetBrowser">
-                <img src="./search_web-0.png" class="start-menu-icon" alt=""> Internet Browser
-            </div>
-            <div class="start-menu-item" data-app-id="internetExplorer">
-                <img src="./msie2-0.png" class="start-menu-icon" alt=""> Internet Explorer <!-- Corrected text -->
-            </div>
-            <div class="start-menu-item" data-app-id="netscapeNavigator">
-                <img src="./n2-2.png" class="start-menu-icon" alt=""> Netscape Navigator <!-- Corrected text -->
-            </div>
-            <div class="start-menu-separator"></div>
-            <div class="start-menu-item disabled">
-                <img src="./settings_gear-0.png" class="start-menu-icon" alt=""> Settings
-            </div>
-            <div class="start-menu-item disabled">
-                <img src="./help_book_cool-0.png" class="start-menu-icon" alt=""> Help
-            </div>
-            <div class="start-menu-separator"></div>
-            <div class="start-menu-item" id="shutdownButtonTrigger">
-                <img src="./shut_down_cool-0.png" class="start-menu-icon" alt=""> Shut Down...
-            </div>
-        </div>
-    </div>
-    <div class="taskbar">
-        <button class="start-button" id="startButton" tabindex="0"> <!-- MODIFIED -->
-            <img src="./windows-0.png" alt="Start">
-            Start
-        </button>
-        <div class="taskbar-windows" id="taskbarWindows">
-            <!-- Taskbar buttons for open windows go here -->
-        </div>
-        <div class="clock" id="clock"></div>
-    </div>
+          @media screen and (max-width: 600px) {
+            .resize-handle-n  { top: -28px; left: 28px; right: 28px; height: 32px; cursor: n-resize; }
+            .resize-handle-ne { top: -28px; right: -28px; width: 32px; height: 32px; cursor: ne-resize; }
+            .resize-handle-e  { top: 28px; bottom: 28px; right: -28px; width: 32px; cursor: e-resize; }
+            .resize-handle-se { bottom: -28px; right: -28px; width: 32px; height: 32px; cursor: se-resize; }
+            .resize-handle-s  { bottom: -28px; left: 28px; right: 28px; height: 32px; cursor: s-resize; }
+            .resize-handle-sw { bottom: -28px; left: -28px; width: 32px; height: 32px; cursor: sw-resize; }
+            .resize-handle-w  { top: 28px; bottom: 28px; left: -28px; width: 32px; cursor: w-resize; }
+            .resize-handle-nw { top: -28px; left: -28px; width: 32px; height: 32px; cursor: nw-resize; }
+          }
+          .no-select {
+              user-select: none;
+              -webkit-user-select: none;
+              -moz-user-select: none;
+              -ms-user-select: none;
+          }
+      </style>
+      <link rel=stylesheet href=desktop-icons.css>
+      <link rel="stylesheet" href="desktop-context-menu.css">
+      <link rel="stylesheet" href="browser.css">
+      <style>
+          /* Additional styles for marquee selection box if not in desktop-icons.css */
+          .marquee-select-box {
+              position: absolute;
+              border: 1px dotted #000080; /* Or white, depending on desktop color */
+              background-color: rgba(0, 0, 128, 0.2);
+              z-index: 1000; /* Ensure it's above icons but below windows */
+          }
+      </style>
+  </head>
+  <body>
+      <div class="desktop" id="desktop" tabindex="0">
+          <div class="desktop-icon" data-app-id="networkExplorer">
+              <img src="./network_normal_two_pcs-0.png" alt="Network Neighborhood">
+              <span>Network Neighborhood</span>
+          </div>
 
-    <template id="windowTemplate">
-        <div class="window" tabindex="-1"> <!-- MODIFIED -->
-            <div class="window-titlebar">
-                <img class="window-titlebar-icon" src="" alt="" width="16" height="16">
-                <span class="window-title">Window</span>
-                <div class="window-controls">
-                    <button class="window-minimize-btn" title="Minimize" tabindex="-1">0</button> 
-                    <button class="window-maximize-btn" title="Maximize" tabindex="-1">1</button>
-                    <button class="window-close-btn" title="Close" tabindex="-1">r</button>
-                </div>
-            </div>
-            <div class="window-content">
-                <!-- Content will be injected here -->
-            </div>
-            <!-- !!! RESIZE HANDLES !!! -->
-            <div class="resize-handle resize-handle-n"></div>
-            <div class="resize-handle resize-handle-ne"></div>
-            <div class="resize-handle resize-handle-e"></div>
-            <div class="resize-handle resize-handle-se"></div>
-            <div class="resize-handle resize-handle-s"></div>
-            <div class="resize-handle resize-handle-sw"></div>
-            <div class="resize-handle resize-handle-w"></div>
-            <div class="resize-handle resize-handle-nw"></div>
-        </div>
-    </template>
-    <script type=module src=./app.js></script>
-    <script src=./icon-selection-effect.js></script>
-    <script src=./desktop-icons.js></script>
-    <script src=./desktop-context-menu.js></script>
-    <script src=./snap-to-grid.js></script>
-</body>
-</html>
+          <div class="desktop-icon" data-app-id="notepad">
+              <img src="./notepad-0.png" alt="Notepad">
+              <span>Notepad</span>
+          </div>
+          <div class="desktop-icon" data-app-id="recycleBin">
+              <img src="./recycle_bin_empty-0.png" alt="Recycle Bin">
+              <span>Recycle&nbsp;Bin</span>
+          </div>
+          <div class="desktop-icon" data-app-id="calculator">
+              <img src="./calculator-0.png" alt="Calculator">
+              <span>Calculator</span>
+          </div>
+
+          <div class="desktop-icon" data-app-id="internetBrowser">
+              <img
+                src="./search_web-0.png"
+                alt="Internet Browser">
+              <span>Internet Browser</span>
+          </div>
+
+          <div class="desktop-icon" data-app-id="internetExplorer">
+              <img
+                src="./msie2-0.png"
+                alt="Internet Explorer">
+              <span>Internet Explorer</span>
+          </div>
+
+          <div class="desktop-icon" data-app-id="netscapeNavigator">
+              <img
+                src="./n2-2.png"
+                alt="Netscape Navigator">
+              <span>Netscape Navigator</span>
+          </div>
+      </div>
+
+      <div class="start-menu" id="startMenu" tabindex="-1">
+          <div class="start-menu-sidebar">
+              <span class="start-menu-sidebar-text">Windows¬†98<span class="and-half">¬Ω</span></span>
+          </div>
+          <div class="start-menu-items-container">
+              <div class="start-menu-item" data-app-id="networkExplorer">
+                  <img src="./network_normal_two_pcs-0.png" class="start-menu-icon" alt=""> Network Neighborhood
+              </div>
+              <div class="start-menu-item" data-app-id="notepad">
+                  <img src="./notepad-0.png" class="start-menu-icon" alt=""> Notepad
+              </div>
+              <div class="start-menu-item" data-app-id="calculator">
+                  <img src="./calculator-0.png" class="start-menu-icon" alt=""> Calculator
+              </div>
+              <div class="start-menu-item" data-app-id="internetBrowser">
+                  <img src="./search_web-0.png" class="start-menu-icon" alt=""> Internet Browser
+              </div>
+              <div class="start-menu-item" data-app-id="internetExplorer">
+                  <img src="./msie2-0.png" class="start-menu-icon" alt=""> Internet Explorer
+              </div>
+              <div class="start-menu-item" data-app-id="netscapeNavigator">
+                  <img src="./n2-2.png" class="start-menu-icon" alt=""> Netscape Navigator
+              </div>
+              <div class="start-menu-separator"></div>
+              <div class="start-menu-item disabled">
+                  <img src="./settings_gear-0.png" class="start-menu-icon" alt=""> Settings
+              </div>
+              <div class="start-menu-item disabled">
+                  <img src="./help_book_cool-0.png" class="start-menu-icon" alt=""> Help
+              </div>
+              <div class="start-menu-separator"></div>
+              <div class="start-menu-item" id="shutdownButtonTrigger">
+                  <img src="./shut_down_cool-0.png" class="start-menu-icon" alt=""> Shut Down...
+              </div>
+          </div>
+      </div>
+      <div class="taskbar">
+          <button class="start-button" id="startButton" tabindex="0">
+              <img src="./windows-0.png" alt="Start">
+              Start
+          </button>
+          <div class="taskbar-windows" id="taskbarWindows">
+          </div>
+          <div class="clock" id="clock"></div>
+      </div>
+
+      <template id="windowTemplate">
+          <div class="window" tabindex="-1">
+              <div class="window-titlebar">
+                  <img class="window-titlebar-icon" src="" alt="" width="16" height="16">
+                  <span class="window-title">Window</span>
+                  <div class="window-controls">
+                      <button class="window-minimize-btn" title="Minimize" tabindex="-1">&ndash;</button> <!-- EN DASH -->
+                      <button class="window-maximize-btn" title="Maximize" tabindex="-1">&#x2610;</button> <!-- BALLOT BOX -->
+                      <button class="window-close-btn" title="Close" tabindex="-1">&times;</button> <!-- MULTIPLICATION SIGN -->
+                  </div>
+              </div>
+              <div class="window-content">
+              </div>
+              <div class="resize-handle resize-handle-n"></div>
+              <div class="resize-handle resize-handle-ne"></div>
+              <div class="resize-handle resize-handle-e"></div>
+              <div class="resize-handle resize-handle-se"></div>
+              <div class="resize-handle resize-handle-s"></div>
+              <div class="resize-handle resize-handle-sw"></div>
+              <div class="resize-handle resize-handle-w"></div>
+              <div class="resize-handle resize-handle-nw"></div>
+          </div>
+      </template>
+      <script type=module src=./app.js></script>
+      <script src=./icon-selection-effect.js></script>
+      <script src=./desktop-icons.js></script>
+      <script src=./desktop-context-menu.js></script>
+      <script src=./snap-to-grid.js></script>
+  </body>
+  </html>

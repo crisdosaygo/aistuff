@@ -225,8 +225,8 @@ export const networkExplorerAppDefinition = {
             li:not(.root-node-li) .tree-item-content:hover { background-color: #e0e0e0; } /* Lighter hover */
             li.selected > .tree-item-content { background-color: #000080; color: white; }
             
-            .tree-toggler { width: 16px; height: 16px; text-align: center; font-family: monospace; cursor: pointer; display: inline-flex; align-items:center; justify-content:center; margin-right: 2px; }
-            .tree-toggler-placeholder { width: 16px; height: 16px; display: inline-block; margin-right: 2px; }
+            .tree-toggler { width: 8px; height: 8px; border: thin solid; text-align: center; font-family: monospace; cursor: pointer; display: inline-flex; align-items:center; justify-content:center; margin-right: 2px; }
+            .tree-toggler-placeholder { display: none; }
             .tree-item-icon { width: 16px; height: 16px; margin-right: 4px; vertical-align: middle; }
             .tree-item-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 16px; }
 
