@@ -229,18 +229,12 @@
               }
           }
 
-          if (appDef.generateContent) {
-              windowEl.querySelector('.window-content').innerHTML = appDef.generateContent(windowInstanceId, webviewId /* if applicable */);
-          } else {
-              windowEl.querySelector('.window-content').innerHTML = typeof appDef.content === 'function' ? appDef.content() : appDef.content;
-          }
-
           let webviewId = null;
           const isBrowserApp = ['internetBrowser', 'internetExplorer', 'netscapeNavigator'].includes(appId);
           if (isBrowserApp) webviewId = `webview-${windowInstanceId}`;
 
           if (appDef.generateContent) {
-              windowEl.querySelector('.window-content').innerHTML = appDef.generateContent(windowInstanceId, webviewId);
+              windowEl.querySelector('.window-content').innerHTML = appDef.generateContent(windowInstanceId, webviewId /* if applicable */);
           } else {
               windowEl.querySelector('.window-content').innerHTML = typeof appDef.content === 'function' ? appDef.content() : appDef.content;
           }
