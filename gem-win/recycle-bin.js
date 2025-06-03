@@ -1,4 +1,3 @@
-// recycle-bin.js
   'use strict';
 
   const RECYCLE_BIN_ITEMS_KEY = 'recycleBinItems_win9x';
@@ -170,7 +169,7 @@
   function escapeHTML(str) {
       if (str === null || str === undefined) return '';
       return String(str).replace(/[&<>"']/g, function (match) {
-          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[match];
+          return { '&': '&apos;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[match];
       });
   }
 
@@ -183,7 +182,7 @@
           return Array.isArray(parsed) ? parsed : [];
       } catch (e) {
           console.error("RecycleBin: Error getting/parsing recycled items:", e, "Raw value was:", localStorage.getItem(RECYCLE_BIN_ITEMS_KEY));
-          localStorage.removeItem(RECYCLE_BIN_ITEMS_KEY);
+          localStorage.removeItem(RECYCLE_BIN_ITEMS_KEY); // Clear corrupted data
           return [];
       }
   }
@@ -195,13 +194,17 @@
   function saveRecycledItems(items) {
       try {
           localStorage.setItem(RECYCLE_BIN_ITEMS_KEY, JSON.stringify(items));
-          updateRecycleBinIconState();
+          updateRecycleBinIconState(); // Update desktop icon (full/empty)
+          // Also, tell desktop icons module to refresh its state because recycled items changed
+          if (window.Win9xDesktopUtils && typeof window.Win9xDesktopUtils.refreshIconStateAndListeners === 'function') {
+            window.Win9xDesktopUtils.refreshIconStateAndListeners();
+          }
       } catch (e) {
           console.error("RecycleBin: Error saving recycled items:", e);
       }
   }
 
-  function addItem(itemData) {
+  function addItem(itemData) { // Called when an item is "deleted" to the recycle bin
       const items = getRecycledItems();
       const existingItemIndex = items.findIndex(i => i.id === itemData.id);
 
@@ -210,22 +213,22 @@
               id: itemData.id,
               name: itemData.name,
               iconSrc: itemData.iconSrc,
-              originalAppId: itemData.originalAppId,
+              originalAppId: itemData.originalAppId, // This is key for restoring apps
               dateDeleted: new Date().toISOString(),
               size: itemData.size || Math.floor(Math.random() * 1000) + 50,
               isPermanentlyDeleted: false
           });
-      } else {
+      } else { // Item was already in bin (e.g. restored then re-deleted), update its state
           items[existingItemIndex].isPermanentlyDeleted = false;
           items[existingItemIndex].permanentlyDeletedDate = null;
-          items[existingItemIndex].dateDeleted = new Date().toISOString();
+          items[existingItemIndex].dateDeleted = new Date().toISOString(); // Update deletion date
           items[existingItemIndex].name = itemData.name || items[existingItemIndex].name;
           items[existingItemIndex].iconSrc = itemData.iconSrc || items[existingItemIndex].iconSrc;
       }
-      saveRecycledItems(items);
+      saveRecycledItems(items); // This will trigger desktop refresh via its internal call
   }
 
-  function empty() {
+  function empty() { // Empty Recycle Bin action
       const items = getRecycledItems();
       let changed = false;
       items.forEach(item => {
@@ -237,13 +240,14 @@
       });
 
       if (changed) {
-          saveRecycledItems(items);
+          saveRecycledItems(items); // This will trigger desktop refresh
       }
 
+      // Refresh UI of any open recycle bin windows
       Object.keys(recycleBinInstances).forEach(instanceId => {
           if (recycleBinInstances[instanceId]) {
               recycleBinInstances[instanceId].selectedItemId = null;
-              refreshWindowContent(instanceId);
+              refreshWindowContent(instanceId); // This updates the content of the Recycle Bin window
           }
       });
   }
@@ -253,30 +257,34 @@
       const itemToRestore = items.find(item => item.id === itemIdToRestore);
 
       if (itemToRestore) {
+          // Remove from recycled items list
           items = items.filter(item => item.id !== itemIdToRestore);
-          saveRecycledItems(items);
+          // Save changes. This call is crucial as it also triggers Win9xDesktopUtils.refreshIconStateAndListeners()
+          saveRecycledItems(items); 
 
+          // After saveRecycledItems has updated the desktop state (making the icon potentially visible again)
+          // we can try to select it.
           if (window.Win9xDesktopUtils && 
               typeof window.Win9xDesktopUtils.getDesktopIconByAppId === 'function' &&
-              typeof window.Win9xDesktopUtils.activateDesktopIcon === 'function') {
+              typeof window.Win9xDesktopUtils.selectIcon === 'function') {
               
-              const desktopIconEl = window.Win9xDesktopUtils.getDesktopIconByAppId(itemToRestore.originalAppId);
+              // originalAppId should be the desktop icon's data-app-id
+              const desktopIconEl = window.Win9xDesktopUtils.getDesktopIconByAppId(itemToRestore.originalAppId); 
               if (desktopIconEl) {
-                  desktopIconEl.style.display = '';
-                  window.Win9xDesktopUtils.activateDesktopIcon(desktopIconEl); // Re-attach listeners
-                  
-                  // Select the restored icon
+                  // The icon should now be visible and interactive due to refreshIconStateAndListeners
+                  // Now, select it.
                   if (window.Win9xDesktopUtils.clearSelection) window.Win9xDesktopUtils.clearSelection();
-                  if (window.Win9xDesktopUtils.selectIcon) {
-                      window.Win9xDesktopUtils.selectIcon(desktopIconEl);
-                  }
+                  window.Win9xDesktopUtils.selectIcon(desktopIconEl);
+                  // Optional: Scroll into view if needed
+                  // desktopIconEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
               }
           }
 
+          // Refresh the current Recycle Bin window UI
           if (windowInstanceIdToUpdate && recycleBinInstances[windowInstanceIdToUpdate]) {
               recycleBinInstances[windowInstanceIdToUpdate].selectedItemId = null;
               refreshWindowContent(windowInstanceIdToUpdate);
-          } else {
+          } else { // Or all open recycle bin windows if specific one not provided
               Object.keys(recycleBinInstances).forEach(id => {
                   if (recycleBinInstances[id]) {
                       recycleBinInstances[id].selectedItemId = null;
@@ -287,7 +295,7 @@
       }
   }
 
-  function updateRecycleBinIconState() {
+  function updateRecycleBinIconState() { // Updates the desktop icon for the Recycle Bin app itself (full/empty)
       const displayableItems = getRecycledItems().filter(item => !item.isPermanentlyDeleted);
       const recycleBinDesktopIconImg = getDesktopIconElement()?.querySelector('img');
       if (recycleBinDesktopIconImg) {
@@ -295,22 +303,24 @@
       }
   }
 
-  function getDesktopIconElement() {
+  function getDesktopIconElement() { // Gets the Recycle Bin's own desktop icon
       return document.querySelector(`.desktop-icon[data-app-id="${recycleBinAppDefinition.appId}"]`);
   }
 
-  function refreshWindowContent(instanceId) {
+  function refreshWindowContent(instanceId) { // Refreshes the content of an open Recycle Bin window
       const instance = recycleBinInstances[instanceId];
       if (instance && instance.windowEl) {
           const mainContentArea = instance.windowEl.querySelector('.recycle-bin-main-content');
           if (mainContentArea) {
               const newContentHTML = recycleBinAppDefinition.generateContent(instanceId);
+              // More robust update preserving scroll if possible (though for simple list, direct innerHTML is often fine)
               const tempDiv = document.createElement('div');
-              tempDiv.innerHTML = newContentHTML;
-              const newListAndStatus = tempDiv.querySelector('.recycle-bin-main-content').innerHTML;
-              mainContentArea.innerHTML = newListAndStatus;
-              attachRecycleBinEventListeners(instance.windowEl, instanceId);
-              updateLocalMenuState(instanceId);
+              tempDiv.innerHTML = newContentHTML; // Generate new content structure
+              const newListAndStatus = tempDiv.querySelector('.recycle-bin-main-content').innerHTML; // Extract only the relevant part
+              mainContentArea.innerHTML = newListAndStatus; // Replace
+              
+              attachRecycleBinEventListeners(instance.windowEl, instanceId); // Re-attach listeners to new list items
+              updateLocalMenuState(instanceId); // Update menu items like "Restore", "Empty"
           }
       }
   }
@@ -322,12 +332,12 @@
       const displayableItems = getRecycledItems().filter(item => !item.isPermanentlyDeleted);
       const canRestore = !!instance.selectedItemId && displayableItems.some(item => item.id === instance.selectedItemId);
       const canEmpty = displayableItems.length > 0;
-      const canSelectAll = displayableItems.length > 0;
+      const canSelectAll = displayableItems.length > 0; // Assuming select all refers to items in the bin view
 
       instance.appDef.menuBar.forEach(menu => {
           const menuButton = instance.menuBarElement.querySelector(`.menu-bar-button[data-menu-name="${escapeAttribute(menu.name)}"]`);
           if (menuButton) {
-              if (menu.disabled) {
+              if (menu.disabled) { // Top-level menu disabled state
                   menuButton.style.color = '#808080';
                   menuButton.style.pointerEvents = 'none'; 
               } else {
@@ -335,15 +345,22 @@
                   menuButton.style.pointerEvents = 'auto';
               }
           }
+          // Update individual menu item states
           menu.items.forEach(item => {
               if (item.action === "restoreSelectedItem") item.disabled = !canRestore;
               if (item.action === "emptyRecycleBin") item.disabled = !canEmpty;
               if (item.action === "selectAllItems") item.disabled = !canSelectAll;
+              // Other items like "Close" usually remain enabled.
           });
       });
+      // Note: The actual visual update of dropdown items happens when the dropdown is created/shown by toggleLocalMenuDropdown
+      // This function primarily updates the `disabled` property in the appDef structure.
+      // If a menu is currently open, it won't reflect these changes until closed and reopened.
+      // For dynamic updates of open menus, more complex logic would be needed in toggleLocalMenuDropdown.
   }
 
   function escapeAttribute(value) {
+      if (!value) return '';
       return value.replace(/([!"#$%&'()*+,./:;<=>?@[\\\]^`{|}~])/g, '\\$1');
   }
 
@@ -352,29 +369,42 @@
       if (listContainer) {
           listContainer.addEventListener('click', (event) => {
               const targetItemEl = event.target.closest('.recycled-item');
+              const instance = recycleBinInstances[instanceId];
+              if (!instance) return;
+
               if (targetItemEl) {
                   const itemId = targetItemEl.dataset.itemId;
-                  const instance = recycleBinInstances[instanceId];
                   
+                  // Clear previous selection visuals in the list
                   listContainer.querySelectorAll('.recycled-item.selected').forEach(sel => {
                       sel.classList.remove('selected');
-                      sel.style.backgroundColor = 'white';
-                      sel.style.color = 'black';
+                      sel.style.backgroundColor = 'white'; // Reset style
+                      sel.style.color = 'black';      // Reset style
                   });
 
                   const displayableItems = getRecycledItems().filter(i => !i.isPermanentlyDeleted);
-                  if (!displayableItems.find(i => i.id === itemId)) {
+                  if (!displayableItems.find(i => i.id === itemId)) { // Item might have been removed (e.g. bin emptied by another instance)
                       instance.selectedItemId = null;
-                  } else if (instance.selectedItemId === itemId && !event.ctrlKey) {
+                  } else if (instance.selectedItemId === itemId && !event.ctrlKey) { // Click on already selected item (without ctrl) deselects
                       instance.selectedItemId = null;
-                  } else {
+                      // Visual deselection already handled by clearing all .selected above and not re-adding
+                  } else { // New selection or toggle
                       instance.selectedItemId = itemId;
                       targetItemEl.classList.add('selected');
                       targetItemEl.style.backgroundColor = 'var(--theme-color-active-titlebar, #000080)';
                       targetItemEl.style.color = 'white';
                   }
-                  updateLocalMenuState(instanceId);
-                  refreshWindowContent(instanceId);
+                  updateLocalMenuState(instanceId); // Update File menu based on selection
+                  // Refresh entire content to update status bar text (objects selected)
+                  // This is a bit heavy but ensures consistency.
+                  refreshWindowContent(instanceId); 
+              } else {
+                // Clicked outside any item in the list area
+                if (instance.selectedItemId && !event.ctrlKey) { // Only deselect if not holding Ctrl
+                    instance.selectedItemId = null;
+                    updateLocalMenuState(instanceId);
+                    refreshWindowContent(instanceId);
+                }
               }
           });
       }
@@ -386,24 +416,36 @@
       switch (actionName) {
           case "emptyRecycleBin":
               if (getRecycledItems().filter(item => !item.isPermanentlyDeleted).length > 0) {
-                  empty();
+                  // Optional: Add a confirmation dialog here
+                  // if (confirm("Are you sure you want to empty the Recycle Bin?")) { ... }
+                  empty(); // This will refresh relevant UIs
               }
               break;
           case "restoreSelectedItem":
               if (instance.selectedItemId) {
-                  restoreItem(instance.selectedItemId, instanceId);
+                  restoreItem(instance.selectedItemId, instanceId); // This will refresh relevant UIs
               }
               break;
           case "closeWindow":
               windowEl.querySelector('.window-close-btn')?.click();
               break;
           case "selectAllItems":
-              console.log("Select All Items action triggered for Recycle Bin");
+              // This would select all items in the Recycle Bin's *list view*, not desktop icons.
+              // For simplicity, we'll just select the first item if nothing is selected.
+              // A full multi-select implementation in the list view is more involved.
+              console.log("Select All Items action triggered for Recycle Bin (view)");
               const displayItems = getRecycledItems().filter(i => !i.isPermanentlyDeleted);
               if (displayItems.length > 0 && !instance.selectedItemId && displayItems[0]) {
-                  instance.selectedItemId = displayItems[0].id;
-                  refreshWindowContent(instanceId); 
+                  instance.selectedItemId = displayItems[0].id; // Select the first item
+                  refreshWindowContent(instanceId); // Refresh to show selection and update menu
                   updateLocalMenuState(instanceId);
+              } else if (displayItems.length > 0 && instance.selectedItemId) {
+                  // If an item is already selected, "Select All" could mean something else
+                  // or be a NOP for this simplified version.
+                  // To deselect and select first:
+                  // instance.selectedItemId = displayItems[0].id;
+                  // refreshWindowContent(instanceId);
+                  // updateLocalMenuState(instanceId);
               }
               break;
           case "refreshView":
@@ -424,9 +466,9 @@
       menuBarContainer.style.borderBottom = '1px solid #808080';
       menuBarContainer.style.boxShadow = '0 1px 0 #ffffff';
       menuBarContainer.style.userSelect = 'none';
-      menuBarContainer.style.height = '21px';
+      menuBarContainer.style.height = '21px'; // Win95 menu bar height
       menuBarContainer.style.boxSizing = 'border-box';
-      menuBarContainer.style.flexShrink = '0';
+      menuBarContainer.style.flexShrink = '0'; // Prevent shrinking
 
       appDef.menuBar.forEach(menu => {
           const menuButton = document.createElement('div');
@@ -436,25 +478,29 @@
           menuButton.style.marginRight = '1px';
           menuButton.style.cursor = 'default';
           menuButton.style.fontSize = '11px';
-          menuButton.style.lineHeight = '15px'; 
+          menuButton.style.lineHeight = '15px'; // Center text vertically
           menuButton.dataset.menuName = menu.name;
 
           if (menu.disabled) { 
-              menuButton.style.color = '#808080';
-              // For truly disabled, don't add listeners
+              menuButton.style.color = '#808080'; // Disabled text color
+              // For truly disabled, don't add listeners, or add and check inside
           } else {
               menuButton.style.color = 'black';
               menuButton.addEventListener('pointerdown', (e) => {
-                  e.stopPropagation();
+                  e.stopPropagation(); // Prevent window drag/focus
+                  // If another menu is open, close it first
                   if (G_recycleBinActiveMenu.dropdown && G_recycleBinActiveMenu.button !== menuButton) {
-                      closeLocalActiveMenu(null, null, G_recycleBinActiveMenu);
+                      closeLocalActiveMenu(null, null, G_recycleBinActiveMenu); // Close whatever is active
                   }
-                  toggleLocalMenuDropdown(menuButton, menu.items, windowEl, windowInstanceId, G_recycleBinActiveMenu);
+                  // Then toggle this one
+                  toggleLocalMenuDropdown(menuButton, menu.items, windowEl, windowInstanceId, G_recycleBinActiveMenu, appDef);
               });
               menuButton.addEventListener('mouseenter', (e) => {
+                  // If a dropdown is already open (meaning a menu is active), and mouse enters another button,
+                  // close the current one and open the new one.
                   if (G_recycleBinActiveMenu.dropdown && G_recycleBinActiveMenu.button && G_recycleBinActiveMenu.button !== menuButton) {
                       closeLocalActiveMenu(G_recycleBinActiveMenu.button, G_recycleBinActiveMenu.dropdown, G_recycleBinActiveMenu);
-                      toggleLocalMenuDropdown(menuButton, menu.items, windowEl, windowInstanceId, G_recycleBinActiveMenu);
+                      toggleLocalMenuDropdown(menuButton, menu.items, windowEl, windowInstanceId, G_recycleBinActiveMenu, appDef);
                   }
               });
           }
@@ -463,11 +509,13 @@
       return menuBarContainer;
   }
 
-  function toggleLocalMenuDropdown(buttonEl, items, windowEl, windowInstanceId, activeMenuState) {
+  function toggleLocalMenuDropdown(buttonEl, items, windowEl, windowInstanceId, activeMenuState, appDef) {
+      // If this button's menu is already open, close it and return
       if (activeMenuState.dropdown && activeMenuState.button === buttonEl) {
           closeLocalActiveMenu(buttonEl, activeMenuState.dropdown, activeMenuState);
           return;
       }
+      // Close any other menu that might be open
       closeLocalActiveMenu(null, null, activeMenuState);
 
       buttonEl.style.backgroundColor = 'var(--theme-color-active-titlebar, #000080)';
@@ -475,39 +523,50 @@
 
       const dropdown = document.createElement('div');
       dropdown.className = 'menu-dropdown';
+      // Basic styling (Win95 look)
       dropdown.style.position = 'absolute';
-      dropdown.style.backgroundColor = '#c0c0c0';
-      dropdown.style.borderTop = '1px solid #dfdfdf';
+      dropdown.style.backgroundColor = '#c0c0c0'; // Standard grey
+      dropdown.style.borderTop = '1px solid #dfdfdf'; // Lighter top/left
       dropdown.style.borderLeft = '1px solid #dfdfdf';
-      dropdown.style.borderRight = '1px solid #808080';
-      dropdown.style.borderBottom = '1px solid #808080';
-      dropdown.style.boxShadow = '1px 1px 2px rgba(0,0,0,0.3)';
-      dropdown.style.padding = '1px';
-      dropdown.style.zIndex = '50000'; 
-      dropdown.style.minWidth = '150px';
+      dropdown.style.borderRight = '1px solid #000000'; // Darker right/bottom
+      dropdown.style.borderBottom = '1px solid #000000';
+      dropdown.style.boxShadow = '1px 1px 0px #808080, 2px 2px 0px #808080'; // More pronounced shadow for Win95
+      dropdown.style.padding = '1px'; // Padding around items
+      dropdown.style.zIndex = '50000'; // Ensure it's on top
+      dropdown.style.minWidth = '150px'; // Minimum width
       dropdown.style.fontSize = '11px';
 
-      items.forEach(item => {
+
+      // Before creating items, refresh their disabled states from the appDef
+      // This is needed because updateLocalMenuState only updates the appDef, not live DOM if menu is open.
+      // For this model, we assume the menu is built fresh each time.
+      const currentMenuDefinition = appDef.menuBar.find(m => m.name === buttonEl.dataset.menuName);
+      const currentItems = currentMenuDefinition ? currentMenuDefinition.items : items;
+
+
+      currentItems.forEach(item => {
           if (item.separator) {
               const sep = document.createElement('div');
-              sep.style.height = '1px'; sep.style.margin = '2px 1px';
-              sep.style.borderTop = '1px solid #808080'; sep.style.borderBottom = '1px solid #ffffff';
+              sep.style.height = '1px'; sep.style.margin = '2px 1px'; // Vertical margin, horizontal for border
+              sep.style.borderTop = '1px solid #808080'; // Dark line
+              sep.style.borderBottom = '1px solid #ffffff'; // Light line below for 3D effect
               dropdown.appendChild(sep);
           } else {
               const menuItemEl = document.createElement('div');
               menuItemEl.className = 'menu-dropdown-item';
+              // Use innerHTML to allow for potential icons or complex structures later, but escape name
               menuItemEl.innerHTML = `<span>${escapeHTML(item.name)}</span>`; 
-              menuItemEl.style.padding = '3px 20px 3px 25px';
-              menuItemEl.style.position = 'relative';
-              menuItemEl.style.whiteSpace = 'nowrap';
+              menuItemEl.style.padding = '3px 20px 3px 25px'; // Standard padding, room for checkmark/icon
+              menuItemEl.style.position = 'relative'; // For shortcut text positioning
+              menuItemEl.style.whiteSpace = 'nowrap'; // Prevent wrapping
 
               if (item.disabled) {
-                  menuItemEl.style.color = '#808080';
+                  menuItemEl.style.color = '#808080'; // Disabled text color
                   menuItemEl.style.cursor = 'default';
               } else {
-                  menuItemEl.style.cursor = 'default';
+                  menuItemEl.style.cursor = 'default'; // Standard cursor for menu items
                   menuItemEl.addEventListener('mouseenter', () => {
-                      if (!item.disabled) {
+                      if (!item.disabled) { // Check again in case state changed
                           menuItemEl.style.backgroundColor = 'var(--theme-color-active-titlebar, #000080)';
                           menuItemEl.style.color = 'white';
                           const shortcutSpan = menuItemEl.querySelector('.menu-shortcut');
@@ -516,24 +575,27 @@
                   });
                   menuItemEl.addEventListener('mouseleave', () => {
                        if (!item.disabled) {
-                          menuItemEl.style.backgroundColor = '';
-                          menuItemEl.style.color = 'black';
+                          menuItemEl.style.backgroundColor = ''; // Revert to default
+                          menuItemEl.style.color = 'black'; // Revert to default
                           const shortcutSpan = menuItemEl.querySelector('.menu-shortcut');
                           if(shortcutSpan) shortcutSpan.style.color = 'black';
                       }
                   });
                   menuItemEl.addEventListener('click', (e) => {
-                      e.stopPropagation();
-                      handleLocalMenuAction(item.action, windowEl, windowInstanceId);
-                      closeLocalActiveMenu(buttonEl, dropdown, activeMenuState);
+                      e.stopPropagation(); // Prevent click from bubbling to window or other elements
+                      if (!item.disabled) {
+                          handleLocalMenuAction(item.action, windowEl, windowInstanceId);
+                          closeLocalActiveMenu(buttonEl, dropdown, activeMenuState); // Close menu after action
+                      }
                   });
               }
+              // Add shortcut text if defined
               if (item.shortcut) {
                   const shortcutEl = document.createElement('span');
                   shortcutEl.className = 'menu-shortcut';
                   shortcutEl.textContent = item.shortcut;
                   shortcutEl.style.position = 'absolute';
-                  shortcutEl.style.right = '10px';
+                  shortcutEl.style.right = '10px'; // Position to the right
                   shortcutEl.style.color = item.disabled ? '#808080' : 'black'; 
                   menuItemEl.appendChild(shortcutEl);
               }
@@ -542,26 +604,43 @@
       });
 
       const buttonRect = buttonEl.getBoundingClientRect();
-      const windowRect = windowEl.getBoundingClientRect();
-      const menuBarEl = buttonEl.closest('.window-menu-bar'); // Get the menu bar element
-      const menuBarRect = menuBarEl ? menuBarEl.getBoundingClientRect() : buttonRect; // Fallback to buttonRect if menuBarEl not found
+      const windowRect = windowEl.getBoundingClientRect(); // Get window's own rect
+      const menuBarEl = buttonEl.closest('.window-menu-bar'); 
+      const menuBarRect = menuBarEl ? menuBarEl.getBoundingClientRect() : buttonRect; 
 
+      // Position dropdown relative to the window's content area
       dropdown.style.left = `${buttonRect.left - windowRect.left}px`;
-      dropdown.style.top = `${menuBarRect.bottom - windowRect.top}px`; 
+      dropdown.style.top = `${menuBarRect.bottom - windowRect.top}px`; // Below the menu bar part within the window
       
-      windowEl.appendChild(dropdown);
+      // Append to the window element itself to ensure it's clipped with the window
+      // and uses window's coordinate space correctly.
+      const contentArea = windowEl.querySelector('.window-content');
+      if (contentArea && contentArea.contains(menuBarEl)) {
+        // If menubar is inside content area (e.g. prepended)
+        windowEl.appendChild(dropdown); // Append to window for z-index and positioning context
+        dropdown.style.left = `${buttonRect.left - windowRect.left}px`;
+        dropdown.style.top = `${menuBarRect.bottom - windowRect.top}px`;
+      } else {
+        // If menubar is a direct child of windowEl or in a different structure
+        windowEl.appendChild(dropdown); // Fallback, might need adjustment based on exact DOM
+        dropdown.style.left = `${buttonEl.offsetLeft}px`;
+        dropdown.style.top = `${buttonEl.offsetTop + buttonEl.offsetHeight}px`;
+      }
+
 
       activeMenuState.button = buttonEl;
       activeMenuState.dropdown = dropdown;
 
+      // Listener to close the menu if clicked outside
       activeMenuState.outsideClickListener = (event) => {
           if (activeMenuState.dropdown && 
               !activeMenuState.dropdown.contains(event.target) && 
-              !buttonEl.contains(event.target) 
+              !buttonEl.contains(event.target) // Also check if click was on the button that opened it (handled by toggle)
              ) {
               closeLocalActiveMenu(activeMenuState.button, activeMenuState.dropdown, activeMenuState);
           }
       };
+      // Use setTimeout to ensure this listener is added after the current event phase
       setTimeout(() => document.addEventListener('pointerdown', activeMenuState.outsideClickListener, { capture: true, once: true }), 0);
   }
 
@@ -570,12 +649,13 @@
       const dropToClear = dropdownEl || activeMenuState?.dropdown;
 
       if (btnToClear) {
-          btnToClear.style.backgroundColor = '';
-          btnToClear.style.color = 'black';
+          btnToClear.style.backgroundColor = ''; // Revert style
+          btnToClear.style.color = 'black';    // Revert style
       }
       if (dropToClear) {
           dropToClear.remove();
       }
+      // Clean up global state object
       if (activeMenuState) {
           if (activeMenuState.outsideClickListener) {
               document.removeEventListener('pointerdown', activeMenuState.outsideClickListener, { capture: true });
@@ -586,6 +666,7 @@
       }
   }
 
+  // Initialize Recycle Bin's own desktop icon state on load
   function initializeRecycleBinState() {
       if (document.readyState === 'loading') {
           document.addEventListener('DOMContentLoaded', updateRecycleBinIconState);
