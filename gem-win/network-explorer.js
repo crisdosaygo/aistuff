@@ -172,7 +172,7 @@ export const networkExplorerAppDefinition = {
         <div class="network-bookmarks-app">
             <div class="menu-bar">
                 <div class="menu-item" data-menu="file"><u>F</u>ile</div>
-                <div class="menu-item active-menu" data-menu="edit"><u>E</u>dit</div>
+                <div class="menu-item" data-menu="edit"><u>E</u>dit</div>
                 <div class="menu-item" data-menu="view"><u>V</u>iew</div>
                 <div class="menu-item" data-menu="help"><u>H</u>elp</div>
                 <div class="dropdown-menu edit-menu">
