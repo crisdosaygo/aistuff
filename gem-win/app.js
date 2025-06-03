@@ -215,6 +215,7 @@
               appInstanceSpecificData = createWindow;
           }
 
+
           const windowInstanceId = `window-${appId}-${windowIdCounter++}`;
           const windowEl = windowTemplate.content.firstElementChild.cloneNode(true);
           windowEl.dataset.appId = appId;
@@ -222,6 +223,14 @@
           windowEl.querySelector('.window-titlebar-icon').src = appDef.icon;
           windowEl.querySelector('.window-titlebar-icon').alt = appDef.title;
           windowEl.querySelector('.window-title').textContent = appDef.title;
+
+          if (appDef.activeTitleBarColor) {
+              // Store it on the element for focusWindow to re-apply
+              windowEl.dataset.customActiveTitlebarColor = appDef.activeTitleBarColor;
+              if (appDef.activeTitleBarTextColor) {
+                  windowEl.dataset.customActiveTitlebarTextColor = appDef.activeTitleBarTextColor;
+              }
+          }
 
           let webviewId = null;
           const isBrowserApp = ['internetBrowser', 'internetExplorer', 'netscapeNavigator'].includes(appId);
@@ -389,7 +398,6 @@
           document.addEventListener('pointerup', globalThis.updateDragEndGlobalListener);
       }
 
-
       function focusWindow(windowEl) {
           if (!windowEl || !document.body.contains(windowEl)) return;
           const instanceId = windowEl.dataset.instanceId;
@@ -397,8 +405,40 @@
           if (!windowData) return;
           if (windowData.isMinimized) { toggleMinimizeWindow(windowEl); return; }
 
+          const titleBarEl = windowEl.querySelector('.window-titlebar');
+          const titleTextEl = windowEl.querySelector('.window-title');
+
           windowEl.classList.remove('inactive');
-          Object.values(openWindows).forEach(ow => { if (ow.element && ow.element !== windowEl) ow.element.classList.add('inactive'); });
+          // Apply custom active title bar color if stored on the element
+          if (windowEl.dataset.customActiveTitlebarColor) {
+              titleBarEl.style.backgroundColor = windowEl.dataset.customActiveTitlebarColor;
+              if (windowEl.dataset.customActiveTitlebarTextColor) {
+                  titleTextEl.style.color = windowEl.dataset.customActiveTitlebarTextColor;
+                  // Potentially adjust icon opacity or color too if needed for contrast
+                  titleBarEl.querySelector('.window-titlebar-icon').style.opacity = '1';
+              }
+          } else {
+              // Revert to default theme color from CSS variable
+              titleBarEl.style.backgroundColor = ''; // Clears inline style, CSS var takes over
+              titleTextEl.style.color = ''; // Clears inline style
+              titleBarEl.querySelector('.window-titlebar-icon').style.opacity = '';
+          }
+
+
+          Object.values(openWindows).forEach(ow => {
+              if (ow.element && ow.element !== windowEl) {
+                  ow.element.classList.add('inactive');
+                  // When other windows become inactive, ensure their custom color is removed
+                  // so the .inactive CSS rule applies correctly.
+                  const otherTitleBar = ow.element.querySelector('.window-titlebar');
+                  const otherTitleText = ow.element.querySelector('.window-title');
+                  if (otherTitleBar) otherTitleBar.style.backgroundColor = '';
+                  if (otherTitleText) otherTitleText.style.color = '';
+                   const otherIcon = otherTitleBar.querySelector('.window-titlebar-icon');
+                  if (otherIcon) otherIcon.style.opacity = '';
+              }
+          });
+
           if (windowEl.hasAttribute('tabindex') && document.activeElement !== windowEl) windowEl.focus({ preventScroll: true });
           highestZIndex++;
           windowEl.style.zIndex = highestZIndex;
