@@ -351,7 +351,7 @@
             outline-offset: -2px;
         }
 
-        .resize-handle { position: absolute; }
+        .resize-handle { position: absolute;     touch-action: none; /* Prevent default pan/zoom on resize handles */ }
         .resize-handle-n  { z-index: 1000000; top: -12px; left: 12px; right: 12px; height: 16px; cursor: n-resize; }
         .resize-handle-ne { z-index: 1000000; top: -12px; right: -12px; width: 16px; height: 16px; cursor: ne-resize; }
         .resize-handle-e  { z-index: 1000000; top: 12px; bottom: 12px; right: -12px; width: 16px; cursor: e-resize; }
