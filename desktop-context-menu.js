@@ -1,4 +1,4 @@
-  // desktop-context-menu.js
+// desktop-context-menu.js
   (function(window) {
       'use strict';
 
@@ -8,10 +8,16 @@
 
       let desktopElement;
       let contextMenuElement = null;
-      // allDesktopIcons is not strictly needed here anymore as arrangeIcons calls desktop-icons.js
       let displayPropertiesDialog = null;
       let currentBgColor = '#008080';
       let currentBgImage = '';
+
+      // Long-press detection variables
+      let longPressTimer = null;
+      const LONG_PRESS_DURATION = 500; // milliseconds
+      let pointerDownClientX = 0;
+      let pointerDownClientY = 0;
+      const MAX_MOVE_THRESHOLD = 10; // pixels to allow movement before cancelling long press
 
       function makeDialogDraggable(dialogElement, titleBarElement) {
           let offsetX, offsetY, isDragging = false;
@@ -53,13 +59,13 @@
           if (displayPropertiesDialog && desktopElement.contains(displayPropertiesDialog)) {
               const currentZ = parseInt(window.getComputedStyle(displayPropertiesDialog).zIndex) || 15000;
               displayPropertiesDialog.style.zIndex = currentZ + 1;
-              displayPropertiesDialog.querySelector('input, button')?.focus(); // Focus first focusable
+              displayPropertiesDialog.querySelector('input, button')?.focus();
               return;
           }
           displayPropertiesDialog = document.createElement('div');
-          displayPropertiesDialog.className = 'display-properties-dialog'; // Style this class in desktop-context-menu.css
-          const initialLeft = Math.max(0, (desktopElement.clientWidth - 380) / 2); // Adjusted width
-          const initialTop = Math.max(0, (desktopElement.clientHeight - 320) / 3); // Adjusted height
+          displayPropertiesDialog.className = 'display-properties-dialog';
+          const initialLeft = Math.max(0, (desktopElement.clientWidth - 380) / 2);
+          const initialTop = Math.max(0, (desktopElement.clientHeight - 320) / 3);
           displayPropertiesDialog.style.left = `${initialLeft}px`;
           displayPropertiesDialog.style.top = `${initialTop}px`;
           displayPropertiesDialog.style.zIndex = '15001';
@@ -67,13 +73,12 @@
               <div class="display-properties-dialog-titlebar">
                   <span class="display-properties-dialog-title">Display Properties</span>
                   <div class="display-properties-dialog-controls">
-                      <button class="dialog-close-btn" title="Close">r</button> <!-- Marlett 'r' -->
+                      <button class="dialog-close-btn" title="Close">r</button>
                   </div>
               </div>
               <div class="display-properties-dialog-content">
                   <div class="display-properties-tabs">
                       <div class="display-properties-tab active" data-tab="background">Background</div>
-                      <!-- Add other tabs here if needed -->
                   </div>
                   <div class="display-properties-tab-content active" data-tab-content="background">
                       <fieldset style="margin-bottom:10px;">
@@ -109,11 +114,9 @@
           const clearImageBtn = displayPropertiesDialog.querySelector('#dpClearImageBtn');
           const previewEl = displayPropertiesDialog.querySelector('#dpPreview');
 
-          // Ensure close button uses Marlett if available
           if (closeBtn.style.fontFamily.toLowerCase().includes('marlett')) {
-              closeBtn.style.fontSize = '10px'; // Adjust for Marlett
+              closeBtn.style.fontSize = '10px';
           }
-
 
           function updatePreview() {
               previewEl.style.backgroundColor = colorInput.value;
@@ -122,10 +125,9 @@
                   const reader = new FileReader();
                   reader.onload = (e) => { previewEl.style.backgroundImage = `url(${e.target.result})`; };
                   reader.readAsDataURL(file);
-              } else if (imageInput.value === "") { // Only clear if explicitly cleared
+              } else if (imageInput.value === "") {
                    previewEl.style.backgroundImage = 'none';
               }
-              // If there's a currentBgImage and no new file selected, keep showing currentBgImage in preview
               else if (currentBgImage && !file) {
                    previewEl.style.backgroundImage = `url(${currentBgImage})`;
               }
@@ -146,16 +148,15 @@
               updatePreview();
           });
           clearImageBtn.addEventListener('click', () => {
-              imageInput.value = ""; // Clear the file input
-              // currentBgImage = ''; // Don't clear currentBgImage yet, only on Apply/OK
-              updatePreview(); // This will set backgroundImage to 'none' in preview
+              imageInput.value = "";
+              updatePreview();
           });
 
           function applySettings() {
               const newBgColor = colorInput.value;
               desktopElement.style.backgroundColor = newBgColor;
               localStorage.setItem(DESKTOP_BACKGROUND_COLOR_KEY, newBgColor);
-              currentBgColor = newBgColor; // Update module's current color
+              currentBgColor = newBgColor;
 
               if (typeof window.updateThemeForDesktopBackground === 'function') {
                   window.updateThemeForDesktopBackground(newBgColor);
@@ -173,13 +174,10 @@
                   };
                   reader.readAsDataURL(file);
               } else if (imageInput.value === "" && previewEl.style.backgroundImage === 'none') {
-                  // This condition means "Remove Image" was clicked and preview reflects it
                   currentBgImage = '';
                   desktopElement.style.backgroundImage = 'none';
                   localStorage.removeItem(DESKTOP_BACKGROUND_IMAGE_KEY);
               }
-              // If no new file and imageInput.value is not empty, it means an old file path might be there
-              // but we don't re-apply it unless a new file is chosen or explicitly cleared.
           }
 
           applyBtn.addEventListener('click', applySettings);
@@ -208,7 +206,6 @@
           } else {
               desktopElement.style.backgroundImage = 'none';
           }
-          // Initial theme update after loading preferences
           if (typeof window.updateThemeForDesktopBackground === 'function') {
               window.updateThemeForDesktopBackground(currentBgColor);
           }
@@ -252,71 +249,90 @@
               }
           });
           desktopElement.appendChild(contextMenuElement);
-          hideContextMenu();
+          hideContextMenu(); // Create hidden by default
       }
 
-      function showContextMenu(event, targetIcon = null) { // targetIcon for long press
-          // Prevent menu on windows or dialogs, unless it's an icon within the desktop
-          if (event.target.closest('.window:not(.desktop-icon .window)') || event.target.closest('.display-properties-dialog')) {
-               // Check if it's an icon that was the target of a long press
-              if (!targetIcon || (targetIcon && !targetIcon.classList.contains('desktop-icon'))) {
-                  return;
+      function showContextMenu(event, targetIcon = null) {
+          // If targetIcon is not specified (i.e., contextmenu on desktop background or long press on desktop):
+          // then check if the event.target is on a window/dialog/menu itself and prevent if so.
+          if (!targetIcon) {
+              if (event.target.closest('.window:not(.desktop-icon .window)') || // General window (not an icon's pseudo-window)
+                  event.target.closest('.display-properties-dialog') ||      // Display properties dialog
+                  event.target.closest('.desktop-context-menu')) {          // The context menu itself
+                  return; // Do not show menu on these elements if it's a general desktop context action
               }
           }
+          // If targetIcon *is* specified, it means an icon handler explicitly called this,
+          // so we assume it's valid to show the menu for that icon.
 
-          event.preventDefault();
-          event.stopPropagation();
-          if (!contextMenuElement || !desktopElement.contains(contextMenuElement)) createContextMenu();
+          event.preventDefault(); // Prevent native context menu
+          event.stopPropagation(); // Stop event from bubbling further
 
-          // If an icon was specifically targeted (e.g., by long press), ensure it's selected
+          if (!contextMenuElement || !desktopElement.contains(contextMenuElement)) {
+              createContextMenu();
+          }
+
           if (targetIcon && targetIcon.classList.contains('desktop-icon')) {
-              if (window.Win9xDesktopUtils && typeof Win9xDesktopUtils.clearSelection === 'function' && !event.ctrlKey) {
-                  Win9xDesktopUtils.clearSelection(); // Clear others if not ctrl-long-press
+              if (window.Win9xDesktopUtils && typeof Win9xDesktopUtils.clearSelection === 'function' && !event.ctrlKey && !event.metaKey) {
+                  Win9xDesktopUtils.clearSelection();
               }
-              // Select the target icon (desktop-icons.js handles actual selection effect)
               targetIcon.classList.add('selected');
               if (window.Win9xDesktopUtils && window.Win9xDesktopUtils.selectedIcons) {
-                   window.Win9xDesktopUtils.selectedIcons.add(targetIcon); // Keep internal set consistent
+                   window.Win9xDesktopUtils.selectedIcons.add(targetIcon);
               }
           }
 
-
           const desktopRect = desktopElement.getBoundingClientRect();
-          let x = event.clientX - desktopRect.left, y = event.clientY - desktopRect.top;
+          let x = event.clientX - desktopRect.left;
+          let y = event.clientY - desktopRect.top;
           contextMenuElement.style.display = 'block';
           const menuRect = contextMenuElement.getBoundingClientRect();
           const padding = 5;
           if (x + menuRect.width + padding > desktopElement.clientWidth) x = desktopElement.clientWidth - menuRect.width - padding;
           if (y + menuRect.height + padding > desktopElement.clientHeight) y = desktopElement.clientHeight - menuRect.height - padding;
-          x = Math.max(padding, x); y = Math.max(padding, y);
-          contextMenuElement.style.left = `${x}px`; contextMenuElement.style.top = `${y}px`;
+          x = Math.max(padding, x);
+          y = Math.max(padding, y);
+          contextMenuElement.style.left = `${x}px`;
+          contextMenuElement.style.top = `${y}px`;
           contextMenuElement.style.zIndex = '20000';
+
+          // These listeners are for hiding the menu if a click happens *outside*
+          // The pointerdown at the end of the file handles general clicks outside.
+          // The 'click' and 'contextmenu' listeners here are specific to *after* the menu is shown.
           setTimeout(() => {
               document.addEventListener('click', handleClickOutsideContextMenu, { once: true, capture: true });
+              // Add contextmenu listener to prevent native menu if right-click happens while our menu is up
               document.addEventListener('contextmenu', handleRightClickOutsideContextMenu, { once: true, capture: true });
           }, 0);
       }
 
       function hideContextMenu() {
           if (contextMenuElement) contextMenuElement.style.display = 'none';
+          // Clean up listeners added by showContextMenu
+          document.removeEventListener('click', handleClickOutsideContextMenu, { capture: true });
+          document.removeEventListener('contextmenu', handleRightClickOutsideContextMenu, { capture: true });
       }
 
       function handleClickOutsideContextMenu(event) {
           if (contextMenuElement && contextMenuElement.style.display === 'block') {
-              if (!contextMenuElement.contains(event.target)) hideContextMenu();
-              else { // Click was inside, re-arm listeners
-                  setTimeout(() => {
-                      document.addEventListener('click', handleClickOutsideContextMenu, { once: true, capture: true });
-                      document.addEventListener('contextmenu', handleRightClickOutsideContextMenu, { once: true, capture: true });
-                  }, 0);
+              if (!contextMenuElement.contains(event.target)) {
+                  hideContextMenu();
+              } else { // Click was inside the menu, re-arm listeners
+                  document.addEventListener('click', handleClickOutsideContextMenu, { once: true, capture: true });
+                  document.addEventListener('contextmenu', handleRightClickOutsideContextMenu, { once: true, capture: true });
               }
           }
       }
+
       function handleRightClickOutsideContextMenu(event) {
            if (contextMenuElement && contextMenuElement.style.display === 'block') {
-              if (!contextMenuElement.contains(event.target)) hideContextMenu(); // Hide if outside
-              else event.preventDefault(); // Prevent native if inside our menu
-              // Re-arm listeners is handled by showContextMenu if another menu is shown
+              if (!contextMenuElement.contains(event.target)) { // Click outside
+                  hideContextMenu();
+                  // Potentially show a new context menu at the new location if it's on the desktop
+                  // but the main 'contextmenu' listener on desktopElement should handle this.
+              } else { // Click inside our menu
+                  event.preventDefault(); // Prevent native context menu if right-clicking inside our custom menu
+              }
           }
       }
 
@@ -327,31 +343,127 @@
           const allIconsOnDesktop = Array.from(desktopElement.querySelectorAll('.desktop-icon'));
           allIconsOnDesktop.forEach(icon => {
               icon.style.position = ''; icon.style.left = ''; icon.style.top = '';
-              icon.style.margin = ''; // Default margin from CSS will apply if any
+              icon.style.margin = '';
               icon.classList.remove('is-positioned', 'selected');
           });
           if (window.Win9xDesktopUtils && typeof Win9xDesktopUtils.clearSelection === 'function') {
-              Win9xDesktopUtils.clearSelection(); // Clear selection state in desktop-icons.js
+              Win9xDesktopUtils.clearSelection();
           }
           if (window.Win9xDesktopUtils && typeof Win9xDesktopUtils.forceRelayoutAllIcons === 'function') {
               Win9xDesktopUtils.forceRelayoutAllIcons();
           } else {
               console.warn("forceRelayoutAllIcons not found. Icons may not reposition correctly after Arrange.");
-              // As a crude fallback, reload, but this is not ideal.
-              // window.location.reload();
           }
           hideContextMenu();
       }
 
+      // --- Long-press Helper Functions ---
+      function handleDesktopPointerDownForLongPress(e) {
+          // Only for primary button (touch, or left mouse button if testing)
+          if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+          // IMPORTANT: Do NOT trigger desktop long-press if the target is an icon,
+          // a window, a dialog, or the context menu itself.
+          // Icon long-press should be handled by the icon's own event listeners,
+          // which would then call `DesktopContextMenu.show(e, iconElement)`.
+          if (e.target.closest('.desktop-icon') ||
+              e.target.closest('.window:not(.desktop-icon .window)') || // General window
+              e.target.closest('.display-properties-dialog') ||
+              e.target.closest('.desktop-context-menu')) {
+              clearLongPressTimer(); // Just in case
+              return;
+          }
+
+          pointerDownClientX = e.clientX;
+          pointerDownClientY = e.clientY;
+
+          if (longPressTimer) clearTimeout(longPressTimer); // Clear any existing timer
+
+          longPressTimer = setTimeout(() => {
+              longPressTimer = null; // Clear the timer ID
+
+              // If a context menu (ours) is already visible, do nothing.
+              // This can happen if a 'contextmenu' event fired very quickly after pointerdown.
+              if (DesktopContextMenu.isVisible()) return;
+
+              // e.preventDefault(); // Already called in showContextMenu.
+              // Calling it here too early might interfere with other pointerdown logic if not careful.
+              // showContextMenu will call it.
+
+              showContextMenu(e); // Pass the original pointerdown event.
+                                  // targetIcon will be null, which is correct for desktop background.
+          }, LONG_PRESS_DURATION);
+      }
+
+      function clearLongPressTimer() {
+          if (longPressTimer) {
+              clearTimeout(longPressTimer);
+              longPressTimer = null;
+          }
+      }
+
+      function handleDesktopPointerMoveForLongPress(e) {
+          if (longPressTimer) { // Only if a long press is pending
+              const deltaX = Math.abs(e.clientX - pointerDownClientX);
+              const deltaY = Math.abs(e.clientY - pointerDownClientY);
+              if (deltaX > MAX_MOVE_THRESHOLD || deltaY > MAX_MOVE_THRESHOLD) {
+                  clearLongPressTimer(); // Moved too much, cancel long press
+              }
+          }
+      }
+      // --- End Long-press Helper Functions ---
+
+
       function initDesktopContextMenu() {
           desktopElement = document.getElementById('desktop');
           if (!desktopElement) { console.error('ContextMenu: Desktop element not found.'); return; }
+
           loadDesktopPreferences();
-          desktopElement.addEventListener('contextmenu', showContextMenu);
+          createContextMenu(); // Create the menu structure once, keep it hidden
+
+          // For desktop browsers (right-click)
+          desktopElement.addEventListener('contextmenu', (e) => {
+              // If a long-press timer is active (meaning pointerdown happened but timer hasn't fired),
+              // and a contextmenu event fires (e.g. quick right-click), cancel the long-press.
+              if (longPressTimer) {
+                  clearLongPressTimer();
+              }
+
+              // If the target of the right-click is an icon, do nothing here.
+              // The icon itself should have a contextmenu listener that calls
+              // window.DesktopContextMenu.show(e, iconElement).
+              if (e.target.closest('.desktop-icon')) {
+                  // e.preventDefault(); // Optional: if icon handler doesn't, this would stop native menu on icon.
+                                     // But ideally, icon handler manages its own event.
+                  return;
+              }
+
+              // If our custom menu is already visible (e.g., from a long press that also triggered contextmenu)
+              // or if clicking on elements that shouldn't get a desktop background menu.
+              if (DesktopContextMenu.isVisible() ||
+                  e.target.closest('.window:not(.desktop-icon .window)') ||
+                  e.target.closest('.display-properties-dialog') ||
+                  e.target.closest('.desktop-context-menu')) {
+                  e.preventDefault(); // Prevent native menu if ours is up or on disallowed element
+                  return;
+              }
+              showContextMenu(e); // targetIcon will be null.
+          });
+
+          // For mobile long-press (and potentially mouse long-press if desired) on the desktop background
+          desktopElement.addEventListener('pointerdown', handleDesktopPointerDownForLongPress);
+          desktopElement.addEventListener('pointermove', handleDesktopPointerMoveForLongPress);
+          // Use document for pointerup/leave to catch cases where pointer is released outside desktopElement
+          // or finger leaves the screen.
+          document.addEventListener('pointerup', clearLongPressTimer);
+          document.addEventListener('pointerleave', clearLongPressTimer); // Catches mouse leaving window
+
+
           document.addEventListener('keydown', (event) => {
               if (event.key === 'Escape') {
-                  if (contextMenuElement && contextMenuElement.style.display === 'block') hideContextMenu();
-                  else if (displayPropertiesDialog && desktopElement.contains(displayPropertiesDialog)) {
+                  if (contextMenuElement && contextMenuElement.style.display === 'block') {
+                      hideContextMenu();
+                  } else if (displayPropertiesDialog && desktopElement.contains(displayPropertiesDialog)) {
                       const closeBtn = displayPropertiesDialog.querySelector('.dialog-close-btn');
                       if (closeBtn) closeBtn.click();
                       else { displayPropertiesDialog.remove(); displayPropertiesDialog = null; }
@@ -360,23 +472,29 @@
           });
       }
 
-      // Expose functions for long-press and other modules
+      // Expose functions for long-press on icons (from other modules) and other interactions
       if (!window.DesktopContextMenu) window.DesktopContextMenu = {};
       window.DesktopContextMenu.show = showContextMenu;
       window.DesktopContextMenu.hide = hideContextMenu;
       window.DesktopContextMenu.isVisible = () => contextMenuElement && contextMenuElement.style.display === 'block';
-
 
       if (document.readyState === 'loading') {
           document.addEventListener('DOMContentLoaded', initDesktopContextMenu);
       } else {
           initDesktopContextMenu();
       }
-      // Listener to hide menu on any pointerdown outside, slightly delayed
-      document.addEventListener('pointerdown', e => {
-        if (contextMenuElement && contextMenuElement.style.display === 'block' && !e.target.closest('.desktop-context-menu')) {
-          setTimeout(hideContextMenu, 50); // Short delay to allow menu item click to process
+
+      // General listener to hide menu on any pointerdown outside the menu.
+      // This needs to be distinct from handleClickOutsideContextMenu which is for 'click' events.
+      document.addEventListener('pointerdown', (e) => {
+        // Check if menu exists, is visible, and the click is NOT on the menu itself
+        if (contextMenuElement &&
+            contextMenuElement.style.display === 'block' &&
+            !e.target.closest('.desktop-context-menu')) {
+          // Use a small timeout to allow any click action on a menu item to process first
+          // before hideContextMenu potentially removes listeners or the item itself.
+          setTimeout(hideContextMenu, 50);
         }
-      }, {capture:true});
+      }, { capture: true }); // Use capture to catch the event early
 
   })(window);
