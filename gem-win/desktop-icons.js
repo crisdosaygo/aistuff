@@ -29,7 +29,6 @@
           window.APP_DEFINITIONS.recycleBin.api) {
           return window.APP_DEFINITIONS.recycleBin.api;
       }
-      // console.warn("Recycle Bin API not found."); // Less noisy
       return null;
   }
 
@@ -61,21 +60,18 @@
 
   function attachListenersToAllDesktopIcons() {
     allDesktopIcons.forEach(icon => {
-        // Clean up potential old pointerdown listeners first
         icon.removeEventListener('pointerdown', onIconPointerDown);
-        
-        // For dragstart, we need a reference to the function to remove it.
         const img = icon.querySelector('img');
         if (img && img.fnPreventDragStart) {
             img.removeEventListener('dragstart', img.fnPreventDragStart);
         }
 
-        if (icon.style.display !== 'none') { // Add listeners only to currently visible icons
+        if (icon.style.display !== 'none') {
             icon.addEventListener('pointerdown', onIconPointerDown);
             if (img) {
                 const preventDragStart = (e) => e.preventDefault();
                 img.addEventListener('dragstart', preventDragStart);
-                img.fnPreventDragStart = preventDragStart; // Store reference for removal
+                img.fnPreventDragStart = preventDragStart;
             }
         }
     });
@@ -86,17 +82,16 @@
       const initialDomIcons = Array.from(desktopElement.querySelectorAll('.desktop-icon'));
       const recycleBinApi = getRecycleBinApi();
       const recycledAppIds = recycleBinApi ? recycleBinApi.getRecycledItemIds() : [];
-      // console.log('[DesktopIcons] Recycled App IDs on refresh:', recycledAppIds);
 
-      allDesktopIcons = []; // Reset and rebuild
+      allDesktopIcons = [];
 
       initialDomIcons.forEach(icon => {
           const appId = icon.dataset.appId;
-          if (appId && recycledAppIds.includes(appId) && appId !== 'recycleBin') { // Recycle Bin itself is never "recycled"
+          if (appId && recycledAppIds.includes(appId) && appId !== 'recycleBin') {
               icon.style.display = 'none';
           } else {
-              icon.style.display = ''; // Ensure it's visible if previously hidden
-              allDesktopIcons.push(icon); // Add to the active list
+              icon.style.display = '';
+              allDesktopIcons.push(icon);
           }
       });
 
@@ -105,10 +100,7 @@
 
       allDesktopIcons.forEach(icon => {
           const appId = icon.dataset.appId;
-          if (icon.style.display === 'none') return; 
-
-          // If isInitialLoad is true, try to use stored position.
-          // If isInitialLoad is false (Arrange All), it falls through to snapping.
+          if (icon.style.display === 'none') return;
           if (isInitialLoad && appId && storedPositions[appId]) {
               const pos = storedPositions[appId];
               icon.style.position = 'absolute';
@@ -117,9 +109,6 @@
               icon.style.margin = '0';
               icon.classList.add('is-positioned');
           } else {
-              // Needs to be snapped if:
-              // 1. It's an "Arrange All" call (isInitialLoad is false).
-              // 2. Or it's an initial load but the icon has no stored position.
               iconsRequiringSnap.push(icon);
           }
       });
@@ -133,7 +122,7 @@
                   savePositionFn: saveIconPosition
               });
           } else {
-              console.warn("SnapToGrid module not found. Icons requiring snap may not be positioned correctly.");
+              console.warn("SnapToGrid module not found.");
               let yOffset = 10;
               iconsRequiringSnap.forEach(icon => {
                   if (icon.style.display === 'none') return;
@@ -149,14 +138,27 @@
       }
   }
 
+  function _applySelectionVisuals(iconElement) {
+    if (!iconElement) return;
+    iconElement.classList.add('selected');
+    if (window.IconSelectionEffect && typeof window.IconSelectionEffect.applySelectionEffect === 'function') {
+        const img = iconElement.querySelector('img');
+        if (img) window.IconSelectionEffect.applySelectionEffect(img);
+    }
+  }
+
+  function _removeSelectionVisuals(iconElement) {
+    if (!iconElement) return;
+    iconElement.classList.remove('selected');
+    if (window.IconSelectionEffect && typeof window.IconSelectionEffect.removeSelectionEffect === 'function') {
+        const img = iconElement.querySelector('img');
+        if (img) window.IconSelectionEffect.removeSelectionEffect(img);
+    }
+  }
 
   function clearSelection() {
       selectedIcons.forEach(icon => {
-          icon.classList.remove('selected');
-          if (window.IconSelectionEffect && typeof window.IconSelectionEffect.removeSelectionEffect === 'function') {
-              const img = icon.querySelector('img');
-              if (img) window.IconSelectionEffect.removeSelectionEffect(img);
-          }
+          _removeSelectionVisuals(icon);
       });
       selectedIcons.clear();
   }
@@ -165,37 +167,25 @@
       if (!isAdditive) clearSelection();
       if (iconElement && iconElement.style.display !== 'none' && !selectedIcons.has(iconElement)) {
           selectedIcons.add(iconElement);
-          iconElement.classList.add('selected');
-          if (window.IconSelectionEffect && typeof window.IconSelectionEffect.applySelectionEffect === 'function') {
-              const img = iconElement.querySelector('img');
-              if (img) window.IconSelectionEffect.applySelectionEffect(img);
-          }
+          _applySelectionVisuals(iconElement);
       }
   }
 
   function toggleSelectIcon(iconElement) {
-      if (iconElement.style.display === 'none') return;
+      if (!iconElement || iconElement.style.display === 'none') return;
       if (selectedIcons.has(iconElement)) {
           selectedIcons.delete(iconElement);
-          iconElement.classList.remove('selected');
-          if (window.IconSelectionEffect && typeof window.IconSelectionEffect.removeSelectionEffect === 'function') {
-              const img = iconElement.querySelector('img');
-              if (img) window.IconSelectionEffect.removeSelectionEffect(img);
-          }
+          _removeSelectionVisuals(iconElement);
       } else {
           selectedIcons.add(iconElement);
-          iconElement.classList.add('selected');
-          if (window.IconSelectionEffect && typeof window.IconSelectionEffect.applySelectionEffect === 'function') {
-              const img = iconElement.querySelector('img');
-              if (img) window.IconSelectionEffect.applySelectionEffect(img);
-          }
+          _applySelectionVisuals(iconElement);
       }
   }
 
   function startMarquee(event) {
       if (event.button !== 0 || (window.DesktopContextMenu && DesktopContextMenu.isVisible && DesktopContextMenu.isVisible())) return;
       isMarqueeSelecting = true;
-      hasDragged = false; 
+      hasDragged = false;
       desktopRectCache = desktopElement.getBoundingClientRect();
       const desktopStyle = window.getComputedStyle(desktopElement);
       const paddingLeft = parseFloat(desktopStyle.paddingLeft) || 0;
@@ -228,16 +218,20 @@
       allDesktopIcons.forEach(icon => {
           if (icon.style.display === 'none') return;
           const iconRect = icon.getBoundingClientRect();
+          const isCurrentlySelected = selectedIcons.has(icon);
+
           if (isIntersecting(marqueeRect, iconRect)) {
-              if (!selectedIcons.has(icon)) selectIcon(icon, true);
+              if (!isCurrentlySelected) {
+                  // Add to selection without clearing others (marquee is additive by nature for unselected items)
+                  selectedIcons.add(icon);
+                  _applySelectionVisuals(icon);
+              }
           } else {
-              if (selectedIcons.has(icon) && !(event.ctrlKey || event.shiftKey)) { // only deselect if not additive marquee
+              // Only deselect if it was part of the marquee selection
+              // and not a pre-existing selection held with Ctrl/Shift
+              if (isCurrentlySelected && !(event.ctrlKey || event.shiftKey)) {
                   selectedIcons.delete(icon);
-                  icon.classList.remove('selected');
-                  if (window.IconSelectionEffect) {
-                      const img = icon.querySelector('img');
-                      if (img) window.IconSelectionEffect.removeSelectionEffect(img);
-                  }
+                  _removeSelectionVisuals(icon);
               }
           }
       });
@@ -251,7 +245,8 @@
       if (marqueeElement) { marqueeElement.remove(); marqueeElement = null; }
       document.body.classList.remove('no-select');
       isMarqueeSelecting = false;
-      if (!hasDragged && selectedIcons.size === 0 && event.target === desktopElement) {
+      // If it was just a click on the desktop (no drag for marquee, no items selected by it) and not ctrl/shift, clear selection.
+      if (!hasDragged && selectedIcons.size === 0 && event.target === desktopElement && !event.ctrlKey && !event.shiftKey) {
           clearSelection();
       }
   }
@@ -262,34 +257,30 @@
 
   function startIconDrag(event, iconElement) {
       if (event.button !== 0) return;
-      hasDragged = false; 
+      hasDragged = false;
       primaryDraggedIcon = iconElement;
       desktopRectCache = desktopElement.getBoundingClientRect();
 
-      if (!event.ctrlKey && !event.shiftKey && !selectedIcons.has(iconElement)) {
-          clearSelection();
-          selectIcon(iconElement);
-      } else if (event.ctrlKey && !event.shiftKey) { // Ctrl + click
-          toggleSelectIcon(iconElement); // Toggle selection for this icon
-      } else if (!event.ctrlKey && event.shiftKey) { // Shift + click (not standard Win95, but can be for range select later)
-          // For now, treat shift like a normal click if it's the first in a selection
-          if (selectedIcons.size === 0) selectIcon(iconElement);
-          // else if (selectedIcons.has(iconElement)) { /* do nothing, it's already selected */ }
-          // else selectIcon(iconElement, true); // Add to selection
-          // Standard behavior might be to select iconElement and clear others if not ctrlKey
+      // Handle selection based on modifiers
+      if (event.ctrlKey) { // Ctrl + click always toggles
+          toggleSelectIcon(iconElement);
+      } else if (event.shiftKey) { // Shift + click (simple version: if not selected, select exclusively)
           if (!selectedIcons.has(iconElement)) {
-            clearSelection();
-            selectIcon(iconElement);
+              clearSelection();
+              selectIcon(iconElement); // isAdditive is false by default here
           }
-
-      } else if (!selectedIcons.has(iconElement)) { // Click on unselected icon when others are selected (no ctrl/shift)
-          clearSelection();
-          selectIcon(iconElement);
+          // If already selected with shift, it remains selected as part of potential group drag
+      } else { // No Ctrl, No Shift
+          if (!selectedIcons.has(iconElement)) { // Clicked on an unselected icon
+              clearSelection();
+              selectIcon(iconElement);
+          }
+          // If clicked on an already selected icon (and it's the only one or part of a group), prepare to drag.
       }
-      // If iconElement is already selected and part of a group, dragging moves the group.
 
-      isDraggingGroup = selectedIcons.size > 0 && selectedIcons.has(primaryDraggedIcon); // Drag selected group if clicked icon is in it
-      
+      // isDraggingGroup is true if the icon we start dragging is part of the current selection set
+      isDraggingGroup = selectedIcons.has(primaryDraggedIcon);
+
       const clickedIconRect = primaryDraggedIcon.getBoundingClientRect();
       const desktopStyle = window.getComputedStyle(desktopElement);
       const desktopPaddingLeft = parseFloat(desktopStyle.paddingLeft) || 0;
@@ -302,9 +293,9 @@
 
       iconsToDrag.forEach(icon => {
           draggedItemsInitialStates.set(icon, { x: icon.offsetLeft, y: icon.offsetTop, zIndex: icon.style.zIndex || '' });
-          icon.style.zIndex = '10000'; 
-          icon.classList.add('is-positioned'); 
-          icon.style.position = 'absolute'; 
+          icon.style.zIndex = '10000';
+          icon.classList.add('is-positioned', 'dragging'); // Add 'dragging' class
+          icon.style.position = 'absolute';
           icon.style.margin = '0';
       });
       document.body.classList.add('no-select');
@@ -315,14 +306,23 @@
       if (!primaryDraggedIcon) return;
       if (!hasDragged && (Math.abs(event.movementX) > 3 || Math.abs(event.movementY) > 3)) {
           hasDragged = true;
-          clearLongPressAttempt(); 
+          clearLongPressAttempt();
+          // If we started dragging, ensure items in drag group (if any) visually reflect selection
+          // (This is more a failsafe; startIconDrag should handle initial selection)
+          const iconsInDrag = isDraggingGroup ? selectedIcons : new Set([primaryDraggedIcon]);
+          iconsInDrag.forEach(icon => {
+              if (!icon.classList.contains('selected')) {
+                  _applySelectionVisuals(icon);
+              }
+          });
+
       }
-      if (!hasDragged) return; 
+      if (!hasDragged) return;
 
       const desktopStyle = window.getComputedStyle(desktopElement);
       const desktopPaddingLeft = parseFloat(desktopStyle.paddingLeft) || 0;
       const desktopPaddingTop = parseFloat(desktopStyle.paddingTop) || 0;
-      
+
       const iconAreaMetrics = (window.SnapToGrid && SnapToGrid.getDesktopIconAreaMetrics) ? SnapToGrid.getDesktopIconAreaMetrics(desktopElement) : { iconAreaOffsetX: 0, iconAreaOffsetY: 0, contentWidthForGrid: desktopElement.clientWidth, contentHeightForGrid: desktopElement.clientHeight };
       const minX = iconAreaMetrics.iconAreaOffsetX;
       const minY = iconAreaMetrics.iconAreaOffsetY;
@@ -335,7 +335,7 @@
       newPrimaryY = Math.max(minY, Math.min(newPrimaryY, draggableHeight - primaryDraggedIcon.offsetHeight));
 
       const primaryInitialState = draggedItemsInitialStates.get(primaryDraggedIcon);
-      if (!primaryInitialState) return; 
+      if (!primaryInitialState) return;
       const deltaX = newPrimaryX - primaryInitialState.x;
       const deltaY = newPrimaryY - primaryInitialState.y;
 
@@ -354,7 +354,11 @@
       const recycleBinApi = getRecycleBinApi();
       if (recycleBinApi) {
           const recycleBinIconEl = recycleBinApi.getDesktopIconElement();
-          if (recycleBinIconEl && primaryDraggedIcon !== recycleBinIconEl && iconsToMove.has(primaryDraggedIcon) && !iconsToMove.has(recycleBinIconEl)) { // Ensure we are not dragging the bin itself
+          // Condition: recycleBinIconEl exists, we are dragging something, and it's not the recycle bin itself
+          // AND the primary dragged icon is not the recycle bin (to avoid self-highlight on drag)
+          const isDraggingRecycleBinItself = iconsToMove.has(recycleBinIconEl);
+
+          if (recycleBinIconEl && !isDraggingRecycleBinItself && primaryDraggedIcon !== recycleBinIconEl) {
               const currentX = event.clientX;
               const currentY = event.clientY;
               const binRect = recycleBinIconEl.getBoundingClientRect();
@@ -363,32 +367,24 @@
 
               if (isOverBin) {
                   if (!recycleBinIconEl.classList.contains('selected')) {
-                      recycleBinIconEl.classList.add('selected');
-                      if (window.IconSelectionEffect && typeof window.IconSelectionEffect.applySelectionEffect === 'function') {
-                          const img = recycleBinIconEl.querySelector('img');
-                          if (img) window.IconSelectionEffect.applySelectionEffect(img);
-                      }
+                      _applySelectionVisuals(recycleBinIconEl); // Apply full selection visuals
                   }
-                  recycleBinIconEl.classList.add('drop-target');
+                  recycleBinIconEl.classList.add('drop-target'); // For additional drop-target specific styles
               } else {
                   if (recycleBinIconEl.classList.contains('selected')) {
-                      recycleBinIconEl.classList.remove('selected');
-                      if (window.IconSelectionEffect && typeof window.IconSelectionEffect.removeSelectionEffect === 'function') {
-                          const img = recycleBinIconEl.querySelector('img');
-                          if (img) window.IconSelectionEffect.removeSelectionEffect(img);
-                      }
+                      // Only remove selection if it was applied *because* of this drag-over.
+                      // If the bin was already selected by a click, it should stay selected.
+                      // This is tricky. For now, we'll remove it, assuming drag-over is temporary.
+                      // A more complex state would be needed to distinguish click-selected vs drag-over-selected.
+                      _removeSelectionVisuals(recycleBinIconEl);
                   }
                   recycleBinIconEl.classList.remove('drop-target');
               }
-          } else if (recycleBinIconEl) { // Dragging the recycle bin itself or no valid drag for hover effect
-              if (recycleBinIconEl.classList.contains('selected')) {
-                   recycleBinIconEl.classList.remove('selected');
-                   if (window.IconSelectionEffect && typeof window.IconSelectionEffect.removeSelectionEffect === 'function') {
-                       const img = recycleBinIconEl.querySelector('img');
-                       if (img) window.IconSelectionEffect.removeSelectionEffect(img);
-                   }
-              }
+          } else if (recycleBinIconEl && (isDraggingRecycleBinItself || primaryDraggedIcon === recycleBinIconEl)) {
+              // If dragging the bin itself, ensure it doesn't have the drop-target highlight
+              // but keep its regular selection if it was part of the selected group.
               recycleBinIconEl.classList.remove('drop-target');
+              // If it was selected and is being dragged, its selection visuals are handled by the main drag group logic.
           }
       }
   }
@@ -400,31 +396,31 @@
       }
       document.body.classList.remove('no-select');
 
+      // Remove 'dragging' class from all dragged items
+      const iconsThatWereDragged = isDraggingGroup ? selectedIcons : new Set([primaryDraggedIcon]);
+      iconsThatWereDragged.forEach(icon => icon.classList.remove('dragging'));
+
+
       let droppedOnRecycleBin = false;
       const recycleBinApi = getRecycleBinApi();
       const recycleBinIconEl = recycleBinApi ? recycleBinApi.getDesktopIconElement() : null;
 
       if (hasDragged) {
-          const iconsThatWereDragged = isDraggingGroup ? selectedIcons : new Set([primaryDraggedIcon]);
-          if (recycleBinIconEl && primaryDraggedIcon !== recycleBinIconEl && !iconsThatWereDragged.has(recycleBinIconEl) && recycleBinApi.addItem) {
-              const primaryRect = primaryDraggedIcon.getBoundingClientRect(); // Use primary dragged icon for drop check
+          const isDraggingRecycleBinItself = iconsThatWereDragged.has(recycleBinIconEl);
+          if (recycleBinIconEl && !isDraggingRecycleBinItself && primaryDraggedIcon !== recycleBinIconEl && recycleBinApi.addItem) {
               const binRect = recycleBinIconEl.getBoundingClientRect();
-              
-              // Check using current pointer position instead of primaryDraggedIcon's rect
               const isOverBin = event.clientX >= binRect.left && event.clientX <= binRect.right &&
                                 event.clientY >= binRect.top && event.clientY <= binRect.bottom;
 
               if (isOverBin) {
                   droppedOnRecycleBin = true;
-                  const itemsToRecycle = Array.from(iconsThatWereDragged); // Use the set of icons actually dragged
+                  const itemsToRecycle = Array.from(iconsThatWereDragged);
 
                   itemsToRecycle.forEach(iconToRecycle => {
-                      if (iconToRecycle === recycleBinIconEl) return;
-
+                      if (iconToRecycle === recycleBinIconEl) return; // Should be redundant due to earlier check
                       const appId = iconToRecycle.dataset.appId;
                       const iconNameElement = iconToRecycle.querySelector('span');
                       const iconName = iconNameElement ? iconNameElement.textContent : (appId || 'Unknown Item');
-                      
                       let originalIconSrc = '';
                       if (window.APP_DEFINITIONS && window.APP_DEFINITIONS[appId]) {
                           originalIconSrc = window.APP_DEFINITIONS[appId].icon;
@@ -432,65 +428,62 @@
                           const iconImgElement = iconToRecycle.querySelector('img');
                           originalIconSrc = iconImgElement ? iconImgElement.src : '';
                       }
-                      
-                      recycleBinApi.addItem({ 
-                          id: appId, 
-                          name: iconName, 
-                          iconSrc: originalIconSrc, 
-                          originalAppId: appId 
-                      });
-                      
-                      iconToRecycle.style.display = 'none'; 
-                      selectedIcons.delete(iconToRecycle); // Remove from selection if it was selected
+                      recycleBinApi.addItem({ id: appId, name: iconName, iconSrc: originalIconSrc, originalAppId: appId });
+                      iconToRecycle.style.display = 'none';
+                      selectedIcons.delete(iconToRecycle);
+                      _removeSelectionVisuals(iconToRecycle); // Ensure visuals removed from now-hidden icon
                   });
-                  
-                  // After recycling, refresh the desktop icon states
+
                   if (window.Win9xDesktopUtils && Win9xDesktopUtils.refreshIconStateAndListeners) {
-                      Win9xDesktopUtils.refreshIconStateAndListeners(); // Refresh all desktop icons state
+                      Win9xDesktopUtils.refreshIconStateAndListeners();
                   }
-                  if (selectedIcons.size === 0 && !event.ctrlKey && !event.shiftKey) { // If all selected items were recycled
-                       clearSelection(); // Clears the class from remaining items
+                  // If after deleting items, selection becomes empty, and no modifiers were held for the original click
+                  if (selectedIcons.size === 0 && !event.ctrlKey && !event.shiftKey) {
+                       // No need to clearSelection() here, as deleted items are removed from selectedIcons.
+                       // The bin's own selection state will be handled below.
                   }
               }
           }
 
           if (!droppedOnRecycleBin) {
               iconsThatWereDragged.forEach(icon => {
-                  if (icon.style.display !== 'none') { 
+                  if (icon.style.display !== 'none') {
                       saveIconPosition(icon.dataset.appId, icon.offsetLeft, icon.offsetTop);
                   }
               });
           }
-          
+
           draggedItemsInitialStates.forEach((state, icon) => {
-              if (icon.style.display !== 'none') { 
+              if (icon.style.display !== 'none') {
                    icon.style.zIndex = state.zIndex;
               }
           });
 
-      } else { // Click (not a drag)
+      } else { // Click (not a drag) - selection handled in startIconDrag
           draggedItemsInitialStates.forEach((state, icon) => {
               if (icon.style.display !== 'none') icon.style.zIndex = state.zIndex;
           });
-          // Click logic is handled by startIconDrag for selection based on ctrl/shift
       }
-      
+
+      // Cleanup Recycle Bin specific highlighting from drag-over
       if (recycleBinIconEl) {
-          if (recycleBinIconEl.classList.contains('selected')) {
-              recycleBinIconEl.classList.remove('selected');
-              if (window.IconSelectionEffect && typeof window.IconSelectionEffect.removeSelectionEffect === 'function') {
-                  const img = recycleBinIconEl.querySelector('img');
-                  if (img) window.IconSelectionEffect.removeSelectionEffect(img);
-              }
+          if (recycleBinIconEl.classList.contains('drop-target')) {
+              recycleBinIconEl.classList.remove('drop-target');
           }
-          recycleBinIconEl.classList.remove('drop-target');
+          // If the bin was highlighted *only* for drag-over, and not part of a click-selection, remove its selection.
+          // This is tricky. If `hasDragged` is true, and the bin is selected, and it's NOT the primaryDraggedIcon (meaning it wasn't clicked),
+          // then it was likely selected due to drag-over.
+          if (hasDragged && recycleBinIconEl.classList.contains('selected') && !selectedIcons.has(recycleBinIconEl)) {
+            // The above condition 'selectedIcons.has(recycleBinIconEl)' implies it was selected by a click.
+            // If not in selectedIcons, but has .selected class, it means it was highlighted by drag-over.
+             _removeSelectionVisuals(recycleBinIconEl);
+          }
+          // If it IS in selectedIcons (clicked to select), its selection state persists as expected.
       }
 
       primaryDraggedIcon = null;
       isDraggingGroup = false;
       draggedItemsInitialStates.clear();
-      // If it was a click and not a drag, selection state is already set by startIconDrag
-      // No need to clear selection here unless specific conditions met.
   }
 
   function clearLongPressAttempt() {
@@ -503,47 +496,56 @@
       const iconElement = event.currentTarget;
       if (iconElement.style.display === 'none') return;
 
-      hasDragged = false; 
+      hasDragged = false;
 
       if (event.button === 2 || (window.DesktopContextMenu && DesktopContextMenu.isVisible && DesktopContextMenu.isVisible())) {
           clearLongPressAttempt();
           if (event.button === 2 && window.DesktopContextMenu && typeof DesktopContextMenu.show === 'function') {
+              if (!selectedIcons.has(iconElement)) { // If right-clicking on unselected item
+                if(!event.ctrlKey && !event.shiftKey) clearSelection(); // Clear others unless ctrl/shift
+                selectIcon(iconElement, event.ctrlKey || event.shiftKey); // Select it (additively if ctrl/shift)
+              }
               DesktopContextMenu.show(event, iconElement);
           }
-          return; 
+          return;
       }
 
-      if (event.button === 0) { 
+      if (event.button === 0) {
           longPressTargetIcon = iconElement;
           longPressPointerDownX = event.clientX;
           longPressPointerDownY = event.clientY;
           longPressPointerId = event.pointerId;
 
-          clearTimeout(longPressTimer); 
+          clearTimeout(longPressTimer);
           longPressTimer = setTimeout(() => {
               if (longPressTargetIcon && window.DesktopContextMenu && typeof DesktopContextMenu.show === 'function' && !hasDragged) {
-                  const lpEvent = { ...event, clientX: longPressPointerDownX, clientY: longPressPointerDownY, target: longPressTargetIcon, button: 0, type: 'contextmenu' }; 
+                  const lpEvent = { ...event, clientX: longPressPointerDownX, clientY: longPressPointerDownY, target: longPressTargetIcon, button: 0, type: 'contextmenu' };
+                  if (!selectedIcons.has(longPressTargetIcon)) { // Long press on unselected icon
+                    if(!event.ctrlKey && !event.shiftKey) clearSelection();
+                    selectIcon(longPressTargetIcon, event.ctrlKey || event.shiftKey);
+                  }
                   DesktopContextMenu.show(lpEvent, longPressTargetIcon);
-                  hasDragged = true; 
-                  if (primaryDraggedIcon === longPressTargetIcon && primaryDraggedIcon.hasPointerCapture(longPressPointerId)) { 
+                  hasDragged = true; // Prevent drag from starting after context menu
+                  if (primaryDraggedIcon === longPressTargetIcon && primaryDraggedIcon.hasPointerCapture(longPressPointerId)) {
                       try { primaryDraggedIcon.releasePointerCapture(longPressPointerId); } catch (e) { /* ignore */ }
-                      primaryDraggedIcon = null; 
-                      document.body.classList.remove('no-select'); 
+                      primaryDraggedIcon = null;
+                      document.body.classList.remove('no-select');
                       const initialState = draggedItemsInitialStates.get(longPressTargetIcon);
                       if (initialState) longPressTargetIcon.style.zIndex = initialState.zIndex;
+                      longPressTargetIcon.classList.remove('dragging');
                   }
               }
               longPressTimer = null; longPressTargetIcon = null; longPressPointerId = null;
           }, LONG_PRESS_DURATION);
-          
-          startIconDrag(event, iconElement); 
+
+          startIconDrag(event, iconElement);
       }
-      event.stopPropagation(); 
+      event.stopPropagation();
   }
 
   function onDesktopPointerDown(event) {
       if (event.target === desktopElement) {
-          clearLongPressAttempt(); 
+          clearLongPressAttempt();
           if (event.button === 0 && !(window.DesktopContextMenu && DesktopContextMenu.isVisible && DesktopContextMenu.isVisible())) {
                startMarquee(event);
           }
@@ -551,35 +553,33 @@
   }
 
   function onDocumentPointerMove(event) {
-      if (longPressTargetIcon && !hasDragged) { 
-          const moveThreshold = 10; 
+      if (longPressTargetIcon && !hasDragged) {
+          const moveThreshold = 10;
           if (Math.abs(event.clientX - longPressPointerDownX) > moveThreshold ||
               Math.abs(event.clientY - longPressPointerDownY) > moveThreshold) {
-              clearLongPressAttempt(); 
+              clearLongPressAttempt();
           }
       }
 
       if (isMarqueeSelecting) {
           updateMarquee(event);
       } else if (primaryDraggedIcon) {
-          processDrag(event); 
+          processDrag(event);
       }
   }
 
   function onDocumentPointerUp(event) {
-      const wasLongPressFiring = !!longPressTimer; 
-      clearLongPressAttempt(); 
+      const wasLongPressFiring = !!longPressTimer;
+      clearLongPressAttempt();
 
       if (isMarqueeSelecting) {
           endMarquee(event);
       } else if (primaryDraggedIcon) {
           endIconDrag(event);
-      } else if (event.target === desktopElement && !wasLongPressFiring && event.button === 0 && !hasDragged) { // ensure no drag occurred
-          // Only clear selection on desktop click if it wasn't a context menu trigger (long press)
-          // and not part of a drag operation that just ended.
+      } else if (event.target === desktopElement && !wasLongPressFiring && event.button === 0 && !hasDragged) {
           clearSelection();
       }
-      hasDragged = false; // Reset for next interaction
+      hasDragged = false;
   }
 
   const debouncedCheckAndSnapIcons = debounce(() => {
@@ -601,7 +601,7 @@
       if (anIconIsOffscreen) {
           const currentlySelected = new Set(selectedIcons); clearSelection();
           if (window.Win9xDesktopUtils && typeof Win9xDesktopUtils.snapSelectedIconsToGrid === 'function') {
-              Win9xDesktopUtils.snapSelectedIconsToGrid(); 
+              Win9xDesktopUtils.snapSelectedIconsToGrid();
           }
           currentlySelected.forEach(icon => {
               if (icon.style.display !== 'none') selectIcon(icon, true);
@@ -613,16 +613,16 @@
       desktopElement = document.getElementById('desktop');
       if (!desktopElement) { console.error('DesktopInteractions: Desktop element not found.'); return; }
 
-      applyAllIconPositionsAndSnap(true); 
-      attachListenersToAllDesktopIcons();  
+      applyAllIconPositionsAndSnap(true);
+      attachListenersToAllDesktopIcons();
 
       desktopElement.addEventListener('pointerdown', onDesktopPointerDown);
       document.addEventListener('pointermove', onDocumentPointerMove);
       document.addEventListener('pointerup', onDocumentPointerUp);
-      document.addEventListener('pointercancel', (event) => { 
+      document.addEventListener('pointercancel', (event) => {
           clearLongPressAttempt();
           if (isMarqueeSelecting) endMarquee(event);
-          else if (primaryDraggedIcon) endIconDrag(event); 
+          else if (primaryDraggedIcon) endIconDrag(event);
           hasDragged = false;
       });
 
@@ -630,7 +630,7 @@
           SnapToGrid.configure({ gridSizeX: 85, gridSizeY: 87, desktopPadding: 10 });
       }
 
-      debouncedCheckAndSnapIcons(); 
+      debouncedCheckAndSnapIcons();
       if (typeof ResizeObserver !== 'undefined') {
           const resizeObserver = new ResizeObserver(debouncedCheckAndSnapIcons);
           resizeObserver.observe(desktopElement);
@@ -643,9 +643,9 @@
   window.Win9xDesktopUtils.snapSelectedIconsToGrid = () => {
       if (!window.SnapToGrid || typeof SnapToGrid.snap !== 'function' || !desktopElement) return;
       const currentVisibleIcons = Array.from(desktopElement.querySelectorAll('.desktop-icon:not([style*="display: none"])'));
-      
-      let iconsToProcess = selectedIcons.size > 0 ? 
-          Array.from(selectedIcons).filter(icon => icon.style.display !== 'none') : 
+
+      let iconsToProcess = selectedIcons.size > 0 ?
+          Array.from(selectedIcons).filter(icon => icon.style.display !== 'none') :
           currentVisibleIcons.filter(icon => icon.classList.contains('is-positioned'));
 
       if (iconsToProcess.length === 0 && currentVisibleIcons.length > 0) {
@@ -654,29 +654,28 @@
 
       if (iconsToProcess.length > 0) {
           SnapToGrid.snap({
-              iconsToSnap: iconsToProcess, 
-              allDesktopIcons: currentVisibleIcons, 
-              desktopElement: desktopElement, 
+              iconsToSnap: iconsToProcess,
+              allDesktopIcons: currentVisibleIcons,
+              desktopElement: desktopElement,
               savePositionFn: saveIconPosition
           });
       }
   };
-  
-  // This is for "Arrange Icons" command
+
   window.Win9xDesktopUtils.forceRelayoutAllIcons = () => {
-      applyAllIconPositionsAndSnap(false); // 'false' means not initial load, so arrange/snap all
+      applyAllIconPositionsAndSnap(false);
       attachListenersToAllDesktopIcons();
   };
 
-  // This is for refreshing state after an action like restore/delete
   window.Win9xDesktopUtils.refreshIconStateAndListeners = () => {
-      applyAllIconPositionsAndSnap(true); // 'true' means like initial load, respect stored positions
+      applyAllIconPositionsAndSnap(true);
       attachListenersToAllDesktopIcons();
   };
 
   window.Win9xDesktopUtils.clearSelection = clearSelection;
-  window.Win9xDesktopUtils.selectIcon = selectIcon; // Expose selectIcon
+  window.Win9xDesktopUtils.selectIcon = selectIcon;
   window.Win9xDesktopUtils.getAllVisibleDesktopIcons = () => {
+      if (!desktopElement) return [];
       return Array.from(desktopElement.querySelectorAll('.desktop-icon:not([style*="display: none"])'));
   };
   window.Win9xDesktopUtils.getDesktopIconByAppId = (appId) => {
