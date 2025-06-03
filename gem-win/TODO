@@ -1,9 +1,6 @@
 Next steps
-  - improve the network neighborhood
-    - window top bar should be khaki
-    - styles should be a little more retro window like (especially menu)
-  - [mobile] the icons for the special fonts (webdings?) that give us window controls and the 'x' in browser tab no show.
   - [mobile] manual long press (as i think blocking user select will mean no context menu naturally)
+  - recycle bin should actually delete stuff (from start menu and desktop). It's true delete. You have to reset site data to get back haha.
   - integrate BrowserBox locally
   - open up Cloud Tabs access to everyone
 
