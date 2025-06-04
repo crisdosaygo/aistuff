@@ -36,8 +36,18 @@ export const calculatorAppDefinition = {
 
         return `
             <div id="calculator-app" style="display: flex; flex-direction: column; height: 100%; background: #c0c0c0; padding: 3px; font-family: 'MS Sans Serif', Tahoma, Arial; font-size:11px; box-sizing: border-box;">
-                <div style="padding: 0px 3px 2px 3px; margin-bottom:3px;"><u>E</u>dit <u>V</u>iew <u>H</u>elp</div>
-                <input type="text" id="calc-display" readonly value="0." style="width: 100%; margin-bottom: 5px; text-align: right; padding: 2px 5px; border: 1px inset #808080; background: white; height:28px; box-sizing:border-box; font-size:14px; font-family: 'Lucida Console', monospace;">
+                <div style="padding: 0px 3px 2px 3px; margin-bottom:3px; color: #808080;">
+                  <span style="margin-right: 6px; display: inline-block;">
+                    <u>E</u>dit
+                  </span>
+                  <span style="margin-right: 6px; display: inline-block;">
+                    <u>V</u>iew 
+                  </span>
+                  <span style="margin-right: 6px; display: inline-block;">
+                    <u>H</u>elp
+                  </span>
+                </div>
+                <input type="text" id="calc-display" value="0." style="width: 100%; margin-bottom: 5px; text-align: right; padding: 2px 5px; border: 1px inset #808080; background: white; height:28px; box-sizing:border-box; font-size:14px; font-family: 'Lucida Console', monospace;">
 
                 <div style="display: flex; justify-content: space-between; margin-bottom: 5px; padding: 0 0px;">
                     <div style="border: 1px groove #808080; padding: 2px 3px 1px 3px; display:flex;" id="calc-base-group">
