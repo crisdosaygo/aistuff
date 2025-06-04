@@ -13,17 +13,16 @@
       defaultHeight: 400,
       menuBar: [
           {
-              name: "File",
+              name: "<u>F</u>ile",
               items: [
-                  { name: "Restore", action: "restoreSelectedItem", disabled: true, shortcut: "" },
+                  { name: "<u>R</u>estore", action: "restoreSelectedItem", disabled: true, shortcut: "" },
+                  { name: "<u>E</u>mpty Recycle Bin", action: "emptyRecycleBin", disabled: true, shortcut: "" },
                   { separator: true },
-                  { name: "Empty Recycle Bin", action: "emptyRecycleBin", disabled: true, shortcut: "" },
-                  { separator: true },
-                  { name: "Close", action: "closeWindow", disabled: false, shortcut: "" }
+                  { name: "<u>C</u>lose", action: "closeWindow", disabled: false, shortcut: "" }
               ]
           },
           {
-              name: "Edit",
+              name: "<u>E</u>dit",
               disabled: true,
               items: [
                   { name: "Undo", action: "undo", disabled: true, shortcut: "Ctrl+Z" },
@@ -37,7 +36,7 @@
               ]
           },
           {
-              name: "View",
+              name: "<u>V</u>iew",
               disabled: true,
               items: [
                   { name: "Toolbar", action: "toggleToolbar", checked: true, disabled: true },
@@ -56,7 +55,7 @@
               ]
           },
           {
-              name: "Help",
+              name: "<u>H</u>elp",
               disabled: true,
               items: [
                   { name: "Help Topics", action: "helpTopics", disabled: true },
@@ -480,7 +479,7 @@
       appDef.menuBar.forEach(menu => {
           const menuButton = document.createElement('div');
           menuButton.className = 'menu-bar-button';
-          menuButton.textContent = menu.name;
+          menuButton.innerHTML = menu.name;
           menuButton.style.padding = '2px 6px';
           menuButton.style.marginRight = '1px';
           menuButton.style.cursor = 'default';
@@ -548,7 +547,7 @@
           } else {
               const menuItemEl = document.createElement('div');
               menuItemEl.className = 'menu-dropdown-item';
-              menuItemEl.innerHTML = `<span>${escapeHTML(item.name)}</span>`;
+              menuItemEl.innerHTML = `<span>${item.name}</span>`;
               menuItemEl.style.padding = '3px 20px 3px 25px';
               menuItemEl.style.position = 'relative';
               menuItemEl.style.whiteSpace = 'nowrap';

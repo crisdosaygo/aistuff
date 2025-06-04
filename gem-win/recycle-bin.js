@@ -479,7 +479,7 @@
       appDef.menuBar.forEach(menu => {
           const menuButton = document.createElement('div');
           menuButton.className = 'menu-bar-button';
-          menuButton.textContent = menu.name;
+          menuButton.innerHTML = menu.name;
           menuButton.style.padding = '2px 6px';
           menuButton.style.marginRight = '1px';
           menuButton.style.cursor = 'default';
