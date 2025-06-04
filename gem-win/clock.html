@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Date/Time Properties</title>
+<style>
+    body {
+        background-color: #008080; /* Teal desktop background */
+        font-family: "MS Sans Serif", "Tahoma", "Geneva", sans-serif; /* Classic Windows font */
+        font-size: 12px; /* Standard Win9x font size */
+        line-height: 1.2;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        overflow: hidden;
+    }
+
+    .win9x-window {
+        background-color: #C0C0C0; /* Standard grey */
+        border-top: 1px solid #FFFFFF;
+        border-left: 1px solid #FFFFFF;
+        border-right: 1px solid #000000;
+        border-bottom: 1px solid #000000;
+        box-shadow: 1px 1px 0 #808080; /* Outer shadow */
+        width: 420px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .win9x-title-bar {
+        background: linear-gradient(to right, #000080, #1084D0); /* Dark blue to lighter blue */
+        color: white;
+        padding: 2px 3px 3px 3px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: bold;
+        height: 18px; /* More accurate height */
+    }
+
+    .win9x-title-bar-text {
+        margin-left: 3px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .win9x-title-bar-controls button {
+        background-color: #C0C0C0;
+        border-top: 1px solid #FFFFFF;
+        border-left: 1px solid #FFFFFF;
+        border-right: 1px solid #000000;
+        border-bottom: 1px solid #000000;
+        box-shadow: 1px 1px 0 #808080;
+        font-family: "Marlett", "Webdings", sans-serif; /* Using symbols for close */
+        font-size: 10px; /* Adjusted for symbol legibility */
+        width: 16px;
+        height: 14px;
+        padding: 0;
+        margin-left: 2px;
+        line-height: 12px; /* Center symbol */
+        cursor: default;
+        text-align: center;
+    }
+    .win9x-title-bar-controls button:active {
+        border-top: 1px solid #000000;
+        border-left: 1px solid #000000;
+        border-right: 1px solid #FFFFFF;
+        border-bottom: 1px solid #FFFFFF;
+        box-shadow: none;
+        padding-top: 1px; /* Nudge content */
+        padding-left: 1px;
+    }
+
+
+    .win9x-content {
+        padding: 10px;
+        /* Inner border for content area - not typically visible but good for structure */
+    }
+
+    .win9x-tabs {
+        display: flex;
+        margin-bottom: -2px; /* Overlap border correctly */
+        position: relative; /* For z-index */
+        height: 22px;
+    }
+
+    .win9x-tab {
+        background-color: #C0C0C0;
+        padding: 4px 8px;
+        border-top: 1px solid #FFFFFF;
+        border-left: 1px solid #FFFFFF;
+        border-right: 1px solid #000000;
+        /* border-bottom will be handled by active state */
+        margin-right: 2px;
+        cursor: default;
+        position: relative;
+        z-index: 0;
+        box-shadow: 1px 0px 0px #808080; /* Right shadow on inactive */
+    }
+    .win9x-tab:last-child {
+         margin-right: 0;
+    }
+
+    .win9x-tab.active {
+        border-bottom: 2px solid #C0C0C0; /* Make it look like it merges */
+        z-index: 2;
+        font-weight: normal; /* Often active tabs are not bold */
+        box-shadow: none; /* No right shadow when active */
+        padding-bottom: 5px; /* Adjust padding to align text nicely */
+    }
+    .win9x-tab:not(.active):hover {
+        /* Subtle hover if desired, though not strictly Win9x */
+    }
+
+
+    .win9x-tab-panel {
+        border-top: 1px solid #808080; /* Darker top line for sunken effect */
+        border-left: 1px solid #808080;
+        border-right: 1px solid #FFFFFF; /* Lighter right line */
+        border-bottom: 1px solid #FFFFFF; /* Lighter bottom line */
+        padding: 15px;
+        position: relative;
+        z-index: 1;
+        background-color: #C0C0C0;
+        min-height: 250px;
+        margin-top: 1px; /* Align with tab bottom */
+    }
+    .win9x-tab-panel:not(.active) {
+        display: none;
+    }
+
+    .win9x-groupbox {
+        border-top: 1px solid #808080;
+        border-left: 1px solid #808080;
+        border-right: 1px solid #FFFFFF;
+        border-bottom: 1px solid #FFFFFF;
+        padding: 12px 10px 8px 10px;
+        margin-bottom: 10px;
+        position: relative;
+    }
+
+    .win9x-groupbox-legend {
+        background-color: #C0C0C0;
+        padding: 0 4px;
+        margin-left: 8px; /* Indent from groupbox border */
+        position: absolute;
+        top: -7px; /* Overlap border */
+        font-size: 12px;
+    }
+
+    .win9x-datetime-container {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .win9x-date-section, .win9x-time-section {
+        width: calc(50% - 5px);
+    }
+
+    .win9x-date-controls {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    .win9x-date-controls select, .win9x-date-controls input[type="text"] {
+         height: 21px; /* Match other inputs */
+    }
+
+    .win9x-dropdown {
+        background-color: white;
+        border-top: 1px solid #000000;
+        border-left: 1px solid #000000;
+        border-right: 1px solid #808080; /* Slightly lighter for sunken effect */
+        border-bottom: 1px solid #808080;
+        padding: 2px 3px;
+        margin-right: 5px;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        min-width: 80px;
+        font-family: inherit;
+        font-size: inherit;
+        position: relative; /* For potential custom arrow if needed */
+    }
+    /* The custom arrow button */
+    .win9x-dropdown-arrow {
+        background-color: #C0C0C0;
+        border-top: 1px solid #FFFFFF;
+        border-left: 1px solid #FFFFFF;
+        border-right: 1px solid #000000;
+        border-bottom: 1px solid #000000;
+        box-shadow: 1px 1px 0px #808080;
+        width: 17px;
+        height: 21px; /* Match input height */
+        display: inline-flex; /* Changed from inline-block for better alignment */
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-size: 10px; /* Or use a Marlett symbol if available */
+        cursor: default;
+        margin-left: -6px; /* Overlap select border slightly */
+        vertical-align: top; /* Align with top of select */
+    }
+     .win9x-dropdown-arrow:active {
+        border-top: 1px solid #000000;
+        border-left: 1px solid #000000;
+        border-right: 1px solid #FFFFFF;
+        border-bottom: 1px solid #FFFFFF;
+        box-shadow: none;
+        padding-top: 1px; /* Nudge content */
+        padding-left: 1px;
+    }
+
+    .win9x-spin-control {
+        display: flex;
+        align-items: center;
+    }
+
+    .win9x-spin-control input[type="text"] {
+        width: 50px;
+        text-align: center;
+        border-top: 1px solid #000000;
+        border-left: 1px solid #000000;
+        border-right: 1px solid #808080;
+        border-bottom: 1px solid #808080;
+        padding: 2px;
+        height: 17px; /* Total height 21px with border */
+        font-family: inherit;
+        font-size: inherit;
+    }
+    
+    .win9x-spin-buttons {
+        display: flex;
+        flex-direction: column;
+        margin-left: -1px; /* Overlap input border */
+    }
+
+    .win9x-spin-buttons button {
+        background-color: #C0C0C0;
+        border-top: 1px solid #FFFFFF;
+        border-left: 1px solid #FFFFFF;
+        border-right: 1px solid #000000;
+        border-bottom: 1px solid #000000;
+        box-shadow: 1px 1px 0px #808080;
+        width: 17px;
+        height: 10px; /* Half of target input height (approx) */
+        font-size: 8px;
+        line-height: 6px; /* Center symbol */
+        padding: 0;
+        cursor: default;
+    }
+     .win9x-spin-buttons button:first-child {
+        margin-bottom: 1px; /* Small gap */
+     }
+     .win9x-spin-buttons button:active {
+        border-top: 1px solid #000000;
+        border-left: 1px solid #000000;
+        border-right: 1px solid #FFFFFF;
+        border-bottom: 1px solid #FFFFFF;
+        box-shadow: none;
+        padding-top: 1px; /* Nudge */
+    }
+
+
+    .win9x-calendar {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: center;
+    }
+    .win9x-calendar th, .win9x-calendar td {
+        padding: 2px;
+        width: 14.28%;
+    }
+    .win9x-calendar th {
+        font-weight: normal;
+    }
+    .win9x-calendar td.selected {
+        background-color: #000080;
+        color: white;
+        outline: 1px dotted #FFFFFF; /* Inner focus for selected date */
+        outline-offset: -1px;
+    }
+
+    .win9x-analog-clock {
+        width: 120px;
+        height: 120px;
+        border-top: 1px solid #000000;
+        border-left: 1px solid #000000;
+        border-right: 1px solid #808080;
+        border-bottom: 1px solid #808080;
+        border-radius: 50%;
+        background-color: white;
+        margin: 10px auto;
+        position: relative;
+    }
+    /* Clock ticks and hands remain the same as they are fairly accurate */
+    .win9x-analog-clock .tick { position: absolute; background-color: black; width: 2px; height: 6px; left: 50%; top: 0; transform-origin: 1px 60px; }
+    .win9x-analog-clock .tick.major { height: 10px; }
+    .win9x-analog-clock .tick:nth-child(1) { transform: translateX(-50%) rotate(0deg); } .win9x-analog-clock .tick:nth-child(2) { transform: translateX(-50%) rotate(30deg); } .win9x-analog-clock .tick:nth-child(3) { transform: translateX(-50%) rotate(60deg); } .win9x-analog-clock .tick:nth-child(4) { transform: translateX(-50%) rotate(90deg); } .win9x-analog-clock .tick:nth-child(5) { transform: translateX(-50%) rotate(120deg); } .win9x-analog-clock .tick:nth-child(6) { transform: translateX(-50%) rotate(150deg); } .win9x-analog-clock .tick:nth-child(7) { transform: translateX(-50%) rotate(180deg); } .win9x-analog-clock .tick:nth-child(8) { transform: translateX(-50%) rotate(210deg); } .win9x-analog-clock .tick:nth-child(9) { transform: translateX(-50%) rotate(240deg); } .win9x-analog-clock .tick:nth-child(10) { transform: translateX(-50%) rotate(270deg); } .win9x-analog-clock .tick:nth-child(11) { transform: translateX(-50%) rotate(300deg); } .win9x-analog-clock .tick:nth-child(12) { transform: translateX(-50%) rotate(330deg); }
+    .win9x-clock-hand { position: absolute; background-color: black; left: 50%; bottom: 50%; transform-origin: 50% 100%; }
+    .win9x-hour-hand { width: 4px; height: 35px; background-color: #000080; transform: translate(-50%) rotate(118deg); }
+    .win9x-minute-hand { width: 3px; height: 50px; background-color: #000080; transform: translate(-50%) rotate(336deg); }
+    .win9x-second-hand { width: 1px; height: 55px; background-color: #A0A0A0; transform: translate(-50%) rotate(180deg); }
+    .win9x-clock-center { position: absolute; width: 8px; height: 8px; background-color: #808080; border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; }
+
+
+    .win9x-time-input-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 10px;
+    }
+    .win9x-time-input-container input[type="text"] {
+        width: 80px;
+        text-align: center;
+        border-top: 1px solid #000000;
+        border-left: 1px solid #000000;
+        border-right: 1px solid #808080;
+        border-bottom: 1px solid #808080;
+        padding: 2px;
+        height: 17px; /* total 21px */
+        font-family: inherit;
+        font-size: inherit;
+    }
+
+    .win9x-current-timezone {
+        margin-top: 15px;
+        text-align: center;
+    }
+
+    .win9x-buttons-bar {
+        display: flex;
+        justify-content: flex-end;
+        padding: 10px 10px 8px 10px; /* A bit more padding for bottom buttons */
+        border-top: 1px solid #FFFFFF; /* Inner shadow part */
+    }
+
+    .win9x-button {
+        background-color: #C0C0C0;
+        border-top: 1px solid #FFFFFF;
+        border-left: 1px solid #FFFFFF;
+        border-right: 1px solid #000000;
+        border-bottom: 1px solid #000000;
+        box-shadow: 1px 1px 0 #808080;
+        padding: 3px 12px; /* Reduced padding for more compact look */
+        margin-left: 6px;
+        min-width: 70px;
+        height: 23px; /* Standard button height */
+        cursor: default;
+        text-align: center;
+        line-height: 1; /* Ensure text is centered */
+    }
+    .win9x-button:focus {
+        outline: 1px dotted #000000;
+        outline-offset: -4px; /* Inside button */
+    }
+    .win9x-button:active {
+        border-top: 1px solid #000000;
+        border-left: 1px solid #000000;
+        border-right: 1px solid #FFFFFF;
+        border-bottom: 1px solid #FFFFFF;
+        box-shadow: none; /* Pressed button loses outer shadow */
+        padding: 4px 11px 2px 13px; /* Nudge text on press */
+    }
+    .win9x-button:disabled {
+        color: #808080;
+        text-shadow: 1px 1px #FFFFFF;
+        /* Disabled state has less prominent shadow, but borders remain */
+        border-top: 1px solid #FFFFFF;
+        border-left: 1px solid #FFFFFF;
+        border-right: 1px solid #000000;
+        border-bottom: 1px solid #000000;
+        box-shadow: 1px 1px 0 #808080;
+        cursor: default;
+    }
+    .win9x-button:disabled:active { /* No active state for disabled */
+         padding: 3px 12px;
+    }
+
+
+    .win9x-timezone-dropdown-container {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    .win9x-timezone-dropdown-container select {
+        flex-grow: 1;
+    }
+
+    .win9x-map-container {
+        width: 100%;
+        height: 180px;
+        background-color: #0000A0; /* Dark blue for oceans */
+        margin-bottom: 10px;
+        border-top: 1px solid #000000; /* Sunken effect */
+        border-left: 1px solid #000000;
+        border-right: 1px solid #FFFFFF;
+        border-bottom: 1px solid #FFFFFF;
+        position: relative;
+        overflow: hidden;
+        display: flex; /* For centering placeholder text if needed */
+        align-items: center;
+        justify-content: center;
+        color: #A0A0A0; /* Light grey text for placeholder */
+    }
+    .win9x-map-container .timezone-highlight {
+        position: absolute;
+        top: 0;
+        left: 20%; /* Approximate for Pacific Time */
+        width: 15%; /* Approximate width */
+        height: 100%;
+        background-color: rgba(0, 128, 255, 0.4);
+        /* Yellow lines are usually part of the map image, so I'll remove them here for a cleaner highlight */
+    }
+
+
+    .win9x-checkbox-container {
+        display: flex;
+        align-items: center;
+        cursor: default; /* Apply to container for easier clicking */
+    }
+    .win9x-checkbox {
+        width: 13px;
+        height: 13px;
+        border-top: 1px solid #000000; /* Sunken */
+        border-left: 1px solid #000000;
+        border-right: 1px solid #FFFFFF;
+        border-bottom: 1px solid #FFFFFF;
+        background-color: white;
+        margin-right: 8px;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        line-height: 13px;
+    }
+    .win9x-checkbox.checked::before {
+        content: '✓';
+        font-size: 12px; /* Adjust for crispness */
+        font-weight: bold; /* Checkmarks were often bold */
+        color: #000000;
+    }
+
+</style>
+</head>
+<body>
+
+<div class="win9x-window">
+    <div class="win9x-title-bar">
+        <span class="win9x-title-bar-text">Date/Time Properties</span>
+        <div class="win9x-title-bar-controls">
+            <button title="Help" aria-label="Help">?</button>
+            <button title="Close" aria-label="Close">r</button> <!-- 'r' in Marlett font is an X -->
+        </div>
+    </div>
+    <div class="win9x-content">
+        <div class="win9x-tabs">
+            <button class="win9x-tab active" data-tab="dateTime">Date & Time</button>
+            <button class="win9x-tab" data-tab="timeZone">Time Zone</button>
+        </div>
+
+        <div class="win9x-tab-panel active" id="dateTimePanel">
+            <div class="win9x-datetime-container">
+                <div class="win9x-date-section">
+                    <div class="win9x-groupbox">
+                        <span class="win9x-groupbox-legend">Date</span>
+                        <div class="win9x-date-controls">
+                            <select class="win9x-dropdown" aria-label="Month">
+                                <option>June</option>
+                                <!-- Options -->
+                            </select>
+                             <span class="win9x-dropdown-arrow" aria-hidden="true">▼</span>
+                            <div class="win9x-spin-control">
+                                <input type="text" value="2025" aria-label="Year">
+                                <div class="win9x-spin-buttons">
+                                    <button aria-label="Increase year">▲</button>
+                                    <button aria-label="Decrease year">▼</button>
+                                </div>
+                            </div>
+                        </div>
+                        <table class="win9x-calendar" aria-labelledby="calendar-heading">
+                            <!-- Calendar (same as before) -->
+                            <thead>
+                                <tr><th>S</th><th>M</th><th>T</th><th>W</th><th>T</th><th>F</th><th>S</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>1</td><td>2</td><td class="selected">3</td><td>4</td><td>5</td><td>6</td><td>7</td></tr>
+                                <tr><td>8</td><td>9</td><td>10</td><td>11</td><td>12</td><td>13</td><td>14</td></tr>
+                                <tr><td>15</td><td>16</td><td>17</td><td>18</td><td>19</td><td>20</td><td>21</td></tr>
+                                <tr><td>22</td><td>23</td><td>24</td><td>25</td><td>26</td><td>27</td><td>28</td></tr>
+                                <tr><td>29</td><td>30</td><td></td><td></td><td></td><td></td><td></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="win9x-time-section">
+                    <div class="win9x-groupbox">
+                        <span class="win9x-groupbox-legend">Time</span>
+                        <div class="win9x-analog-clock" role="img" aria-label="Analog clock showing 3:56 AM">
+                             <!-- Ticks (same as before) -->
+                            <div class="tick major"></div> <div class="tick"></div> <div class="tick"></div> <div class="tick major"></div> <div class="tick"></div> <div class="tick"></div> <div class="tick major"></div> <div class="tick"></div> <div class="tick"></div> <div class="tick major"></div> <div class="tick"></div> <div class="tick"></div>
+                            <div class="win9x-hour-hand"></div>
+                            <div class="win9x-minute-hand"></div>
+                            <div class="win9x-second-hand"></div>
+                            <div class="win9x-clock-center"></div>
+                        </div>
+                        <div class="win9x-time-input-container">
+                            <input type="text" value="3:56:23 AM" aria-label="Current time">
+                             <div class="win9x-spin-buttons">
+                                <button aria-label="Increase time">▲</button>
+                                <button aria-label="Decrease time">▼</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="win9x-current-timezone">
+                Current time zone: Pacific Daylight Time
+            </div>
+        </div>
+
+        <div class="win9x-tab-panel" id="timeZonePanel">
+            <div class="win9x-timezone-dropdown-container">
+                <select class="win9x-dropdown" style="width:100%;" aria-label="Select timezone">
+                    <option>(GMT-08:00) Pacific Time (US & Canada); Tijuana</option>
+                    <!-- Other timezones -->
+                </select>
+                <span class="win9x-dropdown-arrow" aria-hidden="true">▼</span>
+            </div>
+            <div class="win9x-map-container" role="img" aria-label="World map showing selected timezone">
+                <!--
+                    <<< INSERT SVG WORLD MAP HERE >>>
+                    The SVG should have landmasses styled with a fill like #00B000 (green)
+                    and the container's background is #0000A0 (blue for oceans).
+                    Example structure:
+                    <svg viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet">
+                        <style>
+                            .land { fill: #00B000; }
+                            .ocean { fill: #0000A0; } /* Or rely on container background */
+                        </style>
+                        <path class="land" d="M... (North America) ..." />
+                        <path class="land" d="M... (South America) ..." />
+                        ... etc ...
+                    </svg>
+                -->
+                 <div class="timezone-highlight"></div> <!-- This can overlay the SVG -->
+                 <span style="font-style: italic;">SVG World Map Placeholder</span>
+            </div>
+            <div class="win9x-checkbox-container" onclick="this.querySelector('.win9x-checkbox').classList.toggle('checked'); this.querySelector('input[type=checkbox]').checked = !this.querySelector('input[type=checkbox]').checked;">
+                <input type="checkbox" id="dstCheckbox" class="win9x-checkbox visually-hidden" checked> <!-- Hidden but functional checkbox -->
+                <label for="dstCheckbox" class="win9x-checkbox checked" aria-hidden="true"></label> <!-- Visual part -->
+                <span>Automatically adjust clock for daylight saving changes</span>
+            </div>
+        </div>
+    </div>
+    <div class="win9x-buttons-bar">
+        <button class="win9x-button">OK</button>
+        <button class="win9x-button">Cancel</button>
+        <button class="win9x-button" disabled>Apply</button>
+    </div>
+</div>
+
+<style>
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+</style>
+
+<script>
+    const tabs = document.querySelectorAll('.win9x-tab');
+    const panels = document.querySelectorAll('.win9x-tab-panel');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Deactivate all
+            tabs.forEach(t => t.classList.remove('active'));
+            panels.forEach(p => {
+                p.classList.remove('active');
+                p.setAttribute('aria-hidden', 'true');
+            });
+
+            // Activate clicked
+            tab.classList.add('active');
+            const targetPanelId = tab.dataset.tab + "Panel";
+            const activePanel = document.getElementById(targetPanelId);
+            activePanel.classList.add('active');
+            activePanel.setAttribute('aria-hidden', 'false');
+
+            // Set focus to the panel or first focusable element in it
+            activePanel.focus(); // Or a specific element
+        });
+    });
+
+    // Checkbox functionality (making the visual one control a hidden real one)
+    document.querySelectorAll('.win9x-checkbox-container').forEach(container => {
+        const visualCheckbox = container.querySelector('.win9x-checkbox[aria-hidden="true"]');
+        const actualCheckbox = container.querySelector('input[type="checkbox"].visually-hidden');
+        if (visualCheckbox && actualCheckbox) {
+            // Sync initial state
+             if (actualCheckbox.checked) {
+                visualCheckbox.classList.add('checked');
+            } else {
+                visualCheckbox.classList.remove('checked');
+            }
+
+            container.addEventListener('click', (event) => {
+                // Prevent clicks on the label text from double-triggering if it's wrapped by <label>
+                if (event.target.tagName === 'SPAN') return;
+
+                actualCheckbox.checked = !actualCheckbox.checked;
+                visualCheckbox.classList.toggle('checked', actualCheckbox.checked);
+
+                // Dispatch a change event for the actual checkbox if needed for other JS
+                actualCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+
+            // Allow spacebar to toggle when visual checkbox or container is focused
+            container.setAttribute('tabindex', '0'); // Make container focusable
+            container.addEventListener('keydown', (event) => {
+                if (event.key === ' ' || event.key === 'Enter') {
+                    event.preventDefault(); // Prevent page scroll on space
+                    actualCheckbox.checked = !actualCheckbox.checked;
+                    visualCheckbox.classList.toggle('checked', actualCheckbox.checked);
+                    actualCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+        }
+    });
+
+    // Set initial active tab focus
+    document.querySelector('.win9x-tab-panel.active').setAttribute('aria-hidden', 'false');
+    document.querySelectorAll('.win9x-tab-panel:not(.active)').forEach(p => p.setAttribute('aria-hidden', 'true'));
+
+</script>
+
+</body>
+</html>
