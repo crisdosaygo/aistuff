@@ -6,11 +6,12 @@ BrowserBox
   - az qst
   - winget
   - choco
+  - implement Docker image signing (cosign)
   - write a CONOPS PDF (short + clear, with diagram)
+  - release v1 of krnl browser.
   - create a “Government & Military” landing page
     - explain key terms like: STIG, RMF, hardened containers, CONOPS
     - highlight things like: secure ephemeral sessions, cloud/tab isolation, dev-free deploy, easy audits
-  - implement Docker image signing (cosign)
   - create a simple SSDF (NIST SP 800-218) checklist for BrowserBox
   - possibly support older OS (Windows Server 2008 / 2012)
     - investigate if headless mode works under those OSes
