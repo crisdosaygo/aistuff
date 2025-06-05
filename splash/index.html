@@ -32,6 +32,7 @@
             width: 100%;
             height: 100%;
             background-color: #000000;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='250'%3E%3Ctext x='50%25' y='50%25' font-family='Press Start 2P, cursive' font-size='50px' fill='%23222222' text-anchor='middle' dominant-baseline='central' transform='rotate(-30 200 125) skewX(-15)'%3EDOSAYGO%3C/text%3E%3C/svg%3E");
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -46,10 +47,8 @@
         }
 
         .dosaygo-logo-svg-8bit {
-            /* viewBox is "14 0 72 108" (width 72, height 108) */
-            /* Aspect ratio 72:108 = 2:3 */
-            width: 96px;   /* If width is 96px (72 * 1.333) */
-            height: 144px; /* Then height is 108 * 1.333 = 144px */
+            width: 96px;
+            height: 144px;
         }
 
         .dosaygo-logo-svg-8bit .dosaygo-y-path {
@@ -60,12 +59,8 @@
         }
 
         @keyframes bob-element {
-            0%, 100% {
-                transform: translateY(0);
-            }
-            50% {
-                transform: translateY(-3px); /* Adjust bob intensity if needed */
-            }
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
         }
         @keyframes pulse-element {
             from { opacity: 0.7; }
@@ -93,6 +88,8 @@
             font-size: 1em;
             text-transform: uppercase;
             animation: blink-text 1.2s infinite steps(1, end);
+            /* background-color: #000000; */ /* Optional: for text pop */
+            /* padding: 0 5px; */ /* Optional: if background for text is used */
         }
 
         @keyframes blink-text {
@@ -100,6 +97,37 @@
             50% { visibility: hidden; }
         }
 
+        /* Debug Slider Styles */
+        #debug-controls {
+            position: fixed;
+            bottom: 20px; /* Adjusted for better visibility */
+            left: 50%;
+            transform: translateX(-50%); /* Center the controls */
+            background: rgba(40,40,40,0.85);
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: 1px solid #555;
+            z-index: 10000; /* Above splash screen */
+            color: white;
+            font-family: 'Arial', sans-serif; /* Different font for debug UI */
+            font-size: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+        #debug-controls label {
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        #debug-splash-slider {
+            width: 250px; /* Wider slider */
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+        #debug-progress-value {
+            display: inline-block;
+            min-width: 30px; /* To prevent jitter */
+            text-align: right;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -109,27 +137,10 @@
             <svg class="dosaygo-logo-svg-8bit" viewBox="14 0 72 108" xmlns="http://www.w3.org/2000/svg">
               <title>DOSAYGO Logo (8-bit, Tri-Axial, Chakra Colors)</title>
               <desc>8-bit style: Symmetrical 120-degree tri-axial Y shape (Red) with a Violet outlined circle floating closely above its crux.</desc>
-
-              <!-- The 'Y' shape (Red - Root Chakra) -->
-              <!-- Crux at (50,68). Stem length 30. Arm length 30. Stroke 10. -->
-              <!-- Stem: M50,68 (crux) L50,98 (bottom) -->
-              <!-- Left Arm: M50,68 (crux) L24.02,53 (tip: 50-30*cos(60), 68-30*sin(60) if axes were normal, but SVG Y is inverted )-->
-              <!-- Corrected arm calculation for SVG: Xc +- L*sin(angle_from_vertical_up), Yc - L*cos(angle_from_vertical_up) -->
-              <!-- Stem from crux (50,68) down to (50,98) -->
-              <!-- Left arm from crux (50,68) to (50 - 30*sin(60deg_from_vert), 68 - 30*cos(60deg_from_vert)) -->
-              <!-- sin(60) = 0.866, cos(60) = 0.5 -->
-              <!-- Left arm tip: (50 - 30*0.866, 68 - 30*0.5) = (50 - 25.98, 68 - 15) = (24.02, 53) -->
-              <!-- Right arm tip: (50 + 25.98, 53) = (75.98, 53) -->
               <path class="dosaygo-y-path"
                     d="M50,98 L50,68 M24.02,53 L50,68 L75.98,53"
                     stroke="#FF0000" stroke-width="10" fill="none"
                     stroke-linecap="butt" stroke-linejoin="miter"/>
-
-              <!-- The Circle (Violet - Crown Chakra) -->
-              <!-- Center (50,24). Radius 15. Stroke 8. -->
-              <!-- Top of Y arms (visual center of stroke): y=53. Visual top edge: 53 - (10/2) = 48 -->
-              <!-- Bottom of Circle (visual center of stroke): cy+r = 24+15 = 39. Visual bottom edge: 39 + (8/2) = 43 -->
-              <!-- Gap: 48 (Y top) - 43 (Circle bottom) = 5 units. -->
               <circle class="dosaygo-circle-shape"
                       cx="50" cy="24" r="15"
                       fill="none" stroke="#9400D3" stroke-width="8"/>
@@ -141,55 +152,117 @@
         <div class="splash-status-text-8bit">Loading</div>
     </div>
 
+    <!-- Debug Slider HTML -->
+    <div id="debug-controls">
+        <label for="debug-splash-slider">Splash Progress:</label>
+        <input type="range" id="debug-splash-slider" min="0" max="100" value="0" step="1">
+        <span id="debug-progress-value">0</span>%
+    </div>
+
     <script>
         const progressBarFill8bit = document.getElementById('splash-progress-8bit-fill');
         const statusText8bit = document.querySelector('.splash-status-text-8bit');
         let currentProgress8bit = 0;
+        let hideTimeoutId = null; // To manage the hide timeout
 
-        function updateSplashProgress8bit(percentage) {
-            currentProgress8bit = Math.min(100, Math.max(0, percentage));
+        // --- Internal Helper Functions ---
+        function _updateProgressBar(percentage) {
+            currentProgress8bit = Math.min(100, Math.max(0, Math.round(percentage))); // Ensure integer
             if (progressBarFill8bit) {
                 progressBarFill8bit.style.width = currentProgress8bit + '%';
             }
+            // Update debug slider display value if present
+            const debugValueDisplay = document.getElementById('debug-progress-value');
+            if (debugValueDisplay) {
+                debugValueDisplay.textContent = currentProgress8bit;
+            }
         }
 
-        function hideSplashScreen8bit() {
+        function _setSplashStatusText(statusKey) { // "loading" or "ready"
+            if (statusText8bit) {
+                if (statusKey === "ready") {
+                    statusText8bit.textContent = "READY";
+                    statusText8bit.style.animation = 'none'; // Stop blinking
+                    statusText8bit.style.visibility = 'visible';
+                } else { // "loading"
+                    statusText8bit.textContent = "Loading";
+                    statusText8bit.style.animation = 'blink-text 1.2s infinite steps(1, end)';
+                    statusText8bit.style.visibility = 'visible';
+                }
+            }
+        }
+
+        function _executeHideSplashAnimation() {
             const splash8bit = document.getElementById('splash-screen-8bit');
             if (splash8bit) {
                 splash8bit.style.opacity = '0';
                 setTimeout(() => {
                     splash8bit.style.display = 'none';
-                    document.body.style.overflow = 'auto';
-                }, 200);
+                    document.body.style.overflow = 'auto'; // Restore scrollbars
+                    // Optionally hide debug controls too, or leave them
+                    // const debugControls = document.getElementById('debug-controls');
+                    // if (debugControls) debugControls.style.display = 'none';
+                }, 200); // Match opacity transition duration (0.2s)
             }
         }
 
-        let demoProgress8bit = 0;
-        const demoInterval8bit = setInterval(() => {
-            demoProgress8bit += Math.random() * 20 + 10;
-            updateSplashProgress8bit(demoProgress8bit);
+        // --- Public API for Splash Control ---
+        window.SPLASH_API = {
+            setProgress: function(percentage) {
+                clearTimeout(hideTimeoutId); // Clear any pending hide if progress changes
+                hideTimeoutId = null;
 
-            if (demoProgress8bit >= 100) {
-                clearInterval(demoInterval8bit);
-                if (statusText8bit) {
-                    statusText8bit.textContent = "READY";
-                    statusText8bit.style.animation = 'none';
-                    statusText8bit.style.visibility = 'visible';
+                const numPercentage = parseFloat(percentage);
+                _updateProgressBar(numPercentage);
+
+                if (numPercentage < 100) {
+                    _setSplashStatusText("loading");
+                } else {
+                    _setSplashStatusText("ready");
+                    // Note: setProgress(100) shows "READY" but doesn't auto-hide.
+                    // Call completeAndHide() for the full hide sequence.
                 }
-                setTimeout(hideSplashScreen8bit, 600);
+            },
+            completeAndHide: function() {
+                clearTimeout(hideTimeoutId); // Clear previous timeout, if any
+                _updateProgressBar(100);
+                _setSplashStatusText("ready");
+                hideTimeoutId = setTimeout(_executeHideSplashAnimation, 600); // Delay to see "READY"
             }
-        }, 150);
+        };
 
-        // --- HOW YOU'LL INTEGRATE ---
-        // window.onload = function() {
-        //     updateSplashProgress8bit(100);
-        //     if (statusText8bit) {
-        //         statusText8bit.textContent = "READY";
-        //         statusText8bit.style.animation = 'none';
-        //         statusText8bit.style.visibility = 'visible';
-        //     }
-        //     setTimeout(hideSplashScreen8bit, 600);
-        // };
+        // --- Debug Slider Logic ---
+        const debugSlider = document.getElementById('debug-splash-slider');
+        const debugValueDisplay = document.getElementById('debug-progress-value');
+
+        if (debugSlider) {
+            debugSlider.addEventListener('input', function() {
+                const value = parseInt(this.value, 10);
+                debugValueDisplay.textContent = value; // Update display immediately
+
+                if (value >= 100) {
+                    // If slider hits 100, trigger the full completion sequence
+                    window.SPLASH_API.completeAndHide();
+                } else {
+                    // Otherwise, just set the progress (this also cancels any pending hide)
+                    window.SPLASH_API.setProgress(value);
+                }
+            });
+        }
+
+        // --- Initial Splash State ---
+        // Set initial state without calling API to avoid clearing potential early timeout
+        _updateProgressBar(0);
+        _setSplashStatusText("loading");
+        if (debugSlider) { // Sync slider UI if it exists
+            debugSlider.value = "0";
+            if (debugValueDisplay) debugValueDisplay.textContent = "0";
+        }
+
+        // Example usage of the API (you would call this from your main app logic):
+        // setTimeout(() => window.SPLASH_API.setProgress(30), 1000);
+        // setTimeout(() => window.SPLASH_API.setProgress(70), 2000);
+        // setTimeout(() => window.SPLASH_API.completeAndHide(), 3000);
     </script>
 
 </body>
