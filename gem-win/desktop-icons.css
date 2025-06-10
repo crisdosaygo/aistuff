@@ -14,9 +14,10 @@
 /* --- NEW FOR MARQUEE --- */
 .marquee-select-box {
     position: absolute;
-    border: 1px solid #000080; /* Classic Windows selection blue */
-    background-color: rgba(0, 0, 255, 0.2); /* Semi-transparent blue */
-    z-index: 999; /* Above static icons, below actively dragged icon */
+    border: 1px dotted white; /* var(--theme-color-active-titlebar); */
+    mix-blend-mode: difference;
+    /* background-color: rgba(0, 0, 128, 0.2); /* Consider a variable if theme changes drastically */
+    z-index: 1000;
     pointer-events: none; /* Crucial: allows events to pass through to icons underneath */
 }
 

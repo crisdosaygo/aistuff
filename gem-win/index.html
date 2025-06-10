@@ -67,12 +67,13 @@
           display: inline-block;
           max-width: 75px;
           width: min-content;
+          border: 1px solid transparent;
+          padding: 1px 2px;
         }
         .desktop-icon.selected span {
             background-color: var(--theme-color-active-titlebar); /* Use theme color for selection */
             color: white;
             border: 1px dotted var(--desktop-icon-text-color); /* Dotted border with icon text color */
-            padding: 1px 2px;
         }
 
         .taskbar {
@@ -164,22 +165,29 @@
         }
 
         .start-menu-sidebar {
-            background: linear-gradient(0deg, var(--theme-color-active-titlebar) 62%, dodgerblue, var(--theme-color-active-titlebar));
+            background: linear-gradient(0deg, var(--theme-color-active-titlebar) 80%, dodgerblue, var(--theme-color-active-titlebar));
             color: white;
-            padding: 10px 5px;
+            padding: 0;
             writing-mode: vertical-lr;
             text-orientation: mixed;
             transform: rotate(180deg);
             font-weight: bold;
-            font-size: 16px;
+            font-size: 18px;
             align-items: center;
             justify-content: center;
             border-right: 2px outset #dfdfdf;
-            padding-inline-start: 5ex;
+            padding-inline-start: 1ex;
         }
         .start-menu-sidebar .and-half {
+          font-weight: 100;
+          opacity: 0.8;
           display: inline-block;
           transform:rotate(90deg);
+        }
+        .start-menu-sidebar .class98 {
+          font-weight: 100;
+          opacity: 0.8;
+          font-size: 19px;
         }
         .start-menu-sidebar-text {
             white-space: nowrap;
@@ -373,12 +381,6 @@
         }
         .no-select { user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; }
 
-        .marquee-select-box {
-            position: absolute;
-            border: 1px dotted var(--theme-color-active-titlebar);
-            background-color: rgba(0, 0, 128, 0.2); /* Consider a variable if theme changes drastically */
-            z-index: 1000;
-        }
     </style>
     <link rel=stylesheet href=desktop-icons.css> <!-- Contains .desktop-icon specific styles if any beyond above -->
     <link rel="stylesheet" href="desktop-context-menu.css">
@@ -418,7 +420,7 @@
 
     <div class="start-menu" id="startMenu" tabindex="-1">
         <div class="start-menu-sidebar">
-            <span class="start-menu-sidebar-text">Windows&nbsp;98<span class="and-half">½</span></span>
+            <span class="start-menu-sidebar-text">Windows<span class="class98">98</span><span class="and-half">½</span></span>
         </div>
         <div class="start-menu-items-container">
             <div class="start-menu-item" data-app-id="networkExplorer"><img src="./network_normal_two_pcs-0.png" class="start-menu-icon" alt=""> Network Neighborhood</div>
