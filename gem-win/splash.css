@@ -1,0 +1,120 @@
+
+        #splash-screen-8bit {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+            color: #FFFFFF;
+            font-family: 'Press Start 2P', cursive, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: pixelated;
+            font-smooth: never;
+            -webkit-font-smoothing: none;
+            -moz-osx-font-smoothing: grayscale;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000000;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='250'%3E%3Ctext x='50%25' y='50%25' font-family='Press Start 2P, cursive' font-size='50px' fill='%23222222' text-anchor='middle' dominant-baseline='central' transform='rotate(-30 200 125) skewX(-15)'%3EDOSAYGO%3C/text%3E%3C/svg%3E");
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.2s linear;
+        }
+
+        .splash-logo-container-8bit {
+            margin-bottom: 35px;
+        }
+
+        .dosaygo-logo-svg-8bit {
+            width: 96px;
+            height: 144px;
+        }
+
+        .dosaygo-logo-svg-8bit .dosaygo-y-path {
+            animation: pulse-element 2s infinite ease-in-out alternate;
+        }
+        .dosaygo-logo-svg-8bit .dosaygo-circle-shape {
+            animation: bob-element 1.5s infinite ease-in-out;
+        }
+
+        @keyframes bob-element {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+        @keyframes pulse-element {
+            from { opacity: 0.7; }
+            to { opacity: 1; }
+        }
+
+        .splash-progress-bar-8bit-container {
+            width: 240px;
+            height: 24px;
+            background-color: #000000;
+            border: 3px solid #FFFFFF;
+            padding: 2px;
+            box-sizing: border-box;
+            margin-bottom: 25px;
+        }
+
+        .splash-progress-8bit-fill {
+            width: 0%;
+            height: 100%;
+            background-color: #FFFFFF;
+            transition: width 0.05s linear;
+        }
+
+        .splash-status-text-8bit {
+            font-size: 1em;
+            text-transform: uppercase;
+            animation: blink-text 1.2s infinite steps(1, end);
+            /* background-color: #000000; */ /* Optional: for text pop */
+            /* padding: 0 5px; */ /* Optional: if background for text is used */
+        }
+
+        @keyframes blink-text {
+            0%, 100% { visibility: visible; }
+            50% { visibility: hidden; }
+        }
+
+        /* Debug Slider Styles */
+        #debug-controls {
+            position: fixed;
+            bottom: 20px; /* Adjusted for better visibility */
+            left: 50%;
+            transform: translateX(-50%); /* Center the controls */
+            background: rgba(40,40,40,0.85);
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: 1px solid #555;
+            z-index: 10000; /* Above splash screen */
+            color: white;
+            font-family: 'Arial', sans-serif; /* Different font for debug UI */
+            font-size: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+        #debug-controls label {
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        #debug-splash-slider {
+            width: 250px; /* Wider slider */
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+        #debug-progress-value {
+            display: inline-block;
+            min-width: 30px; /* To prevent jitter */
+            text-align: right;
+            font-weight: bold;
+        }
