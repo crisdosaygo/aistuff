@@ -78,7 +78,7 @@
         .desktop-icon.selected span {
             background-color: var(--theme-color-active-titlebar);
             color: white; /* Ensure text is white on dark blue */
-            border: 1px dotted var(--desktop-icon-text-color);
+            border: 1px dotted white;
             /* padding is already set on base span */
         }
         .taskbar {
@@ -105,7 +105,7 @@
         }
         .start-menu-item:hover { background-color: var(--theme-color-active-titlebar); color: white; }
         .start-menu-item:focus { outline: none; }
-        .start-menu-icon { width: 20px; height: 20px; margin-right: 8px; vertical-align: middle; }
+        .start-menu-icon { width: 22px; height: 22px; margin-right: 8px; vertical-align: middle; }
         .start-menu-separator {
             height: 1px; background-color: #808080; margin: 2px 0; border-bottom: 1px solid #ffffff;
         }
@@ -204,6 +204,10 @@
             /* You might use a filter or a different ::after pseudo-element for this */
             /* filter: drop-shadow(0 0 5px blue); */
         }
+        input[type="radio"]:checked {
+          accent-color: black;
+          filter: invert(1.0);
+        }
     </style>
     <link rel="stylesheet" href="./desktop-icons.css">
     <link rel="stylesheet" href="./desktop-context-menu.css">
@@ -270,7 +274,7 @@
             <div class="start-menu-item disabled"><img src="./settings_gear-0.png" class="start-menu-icon" alt=""> Settings</div>
             <div class="start-menu-item disabled"><img src="./help_book_cool-0.png" class="start-menu-icon" alt=""> Help</div>
             <div class="start-menu-separator"></div>
-            <div class="start-menu-item" id="shutdownButtonTrigger"><img src="./shut_down_cool-0.png" class="start-menu-icon" alt=""> Shut Down...</div>
+            <div class="start-menu-item" id="shutdownButtonTrigger"><img src="./shut_down_normal-0.png" class="start-menu-icon" alt=""> Shut Down...</div>
         </div>
     </div>
     <div class="taskbar">
