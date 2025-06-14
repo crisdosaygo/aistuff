@@ -161,10 +161,18 @@ export class BrowserApp {
                 if (!tabElement) return;
                 const tabId = tabElement.dataset.tabId;
 
-                if (e.target.classList.contains('tab-close-btn-ie')) {
-                    this.closeTab(tabId);
-                } else {
-                    this.switchTab(tabId);
+                const list = Array.from(e?.composedPath?.() || [e.target]);
+                console.log(list);
+
+                const onTabHead = list.some(target => target?.classList?.contains?.('browser-tab-ie'));
+
+                if ( onTabHead ) {
+                  e.stopPropagation();
+                  if (list.some(target => target?.classList?.contains?.('tab-close-btn-ie'))) {
+                      this.closeTab(tabId);
+                  } else {
+                      this.switchTab(tabId);
+                  }
                 }
             });
         }
@@ -306,9 +314,6 @@ export class BrowserApp {
     _handleTabClosed(detail) { /* ... (same as previous complete version, but now calls _renderTabs) ... */
         console.log(`[BrowserApp ${this.webviewId}] Tab closed in webview:`, detail.tabId);
         this._renderTabs(); 
-        if (this.webviewEl.tabs.length === 0) {
-            this.addTab(this.defaultUrl, true);
-        }
     }
 
     _handleActiveTabChanged(detail) { /* ... (same as previous complete version, but now calls _renderTabs) ... */
@@ -356,6 +361,7 @@ export class BrowserApp {
     }
 
     async addTab(url = this.defaultUrl, makeActive = true) { /* ... (same as previous complete version) ... */
+        alert((new Error).stack);
         console.log(`[BrowserApp ${this.webviewId}] Requesting new tab for URL: ${url}`);
         const newTabId = await this.webviewEl.createTab(this._prepareUrl(url));
         if (makeActive && newTabId) {
