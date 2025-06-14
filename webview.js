@@ -24,7 +24,7 @@ class Communication {
 
     sendMessage(type, data = {}, tabId = null) {
         const message = { type, tabId, data };
-        alert('[WEBVIEW]' + JSON.stringify(message, null, 2));
+        alert('[WEBVIEW]' + JSON.stringify(message, null, 2) + (new Error).stack);
         console.log(`${this.#logPrefix} Sending ${type}:`, message);
         if (this.#element.contentWindow) {
             this.#element.contentWindow.postMessage(message, this.#targetOrigin);
