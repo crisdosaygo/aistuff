@@ -117,7 +117,7 @@ export class BrowserApp {
                         <button class="browser-new-tab-btn-ie" title="New Tab">+</button>
                     </div>
                 </div>
-                <browser-webview id="${webviewId}" style="flex-grow: 1; min-height: 100px;"></browser-webview>
+                <browser-webview src="https://MacBook-Air.local:9222/login?token=95b70ea4aa25f9567e9946f7663e4a82&ui=false" id="${webviewId}" style="flex-grow: 1; min-height: 100px;"></browser-webview>
                 <div class="browser-status-bar-ie">
                     <div class="status-bar-panel status-bar-main">
                         <img src="./channels-4.png" alt="" class="status-bar-icon-main"/>
@@ -378,52 +378,89 @@ export class BrowserApp {
     }
 
     _renderTabs() {
-        if (!this.ui.tabBar) return; // Guard if tab bar isn't present
-        this.ui.tabBar.querySelectorAll('.browser-tab-ie').forEach(el => el.remove());
-        
+        if (!this.ui.tabBar) return;
+
         const tabsFromWebview = this.webviewEl.tabs;
         const currentActiveIdInWebview = this.webviewEl.activeTabId;
 
-        tabsFromWebview.forEach(tabData => {
-            const tabEl = document.createElement('div');
-            tabEl.className = 'browser-tab-ie';
-            tabEl.dataset.tabId = tabData.id;
-            if (tabData.id === currentActiveIdInWebview) {
-                tabEl.classList.add('active');
-            }
+        // --- Start of new synchronization logic ---
 
-            const faviconContainer = document.createElement('div');
-            faviconContainer.className = 'tab-favicon-ie';
-            const faviconImg = document.createElement('img');
-            faviconImg.src = tabData.favicon || this.defaultFavicon;
-            faviconImg.alt = '';
-            faviconContainer.appendChild(faviconImg);
-            tabEl.appendChild(faviconContainer);
-
-            let titleText = tabData.title || (tabData.loading ? 'Loading...' : (tabData.url === "about:blank" ? "Blank Page" : "New Tab"));
-            if (tabData.loading && !titleText.toLowerCase().includes('loading')) {
-                 titleText = `Loading ${tabData.url && !tabData.url.startsWith("about:") ? new URL(tabData.url).hostname : '...'}`;
-            } else if (tabData.loading && !tabData.title) {
-                titleText = 'Loading...';
-            }
-
-            const titleSpan = document.createElement('span');
-            titleSpan.className = 'tab-title-text-ie';
-            titleSpan.textContent = titleText.substring(0, 20) + (titleText.length > 20 ? '…' : ''); 
-            
-            if (tabData.loading) {
-                titleSpan.style.fontStyle = "italic";
-            }
-            tabEl.appendChild(titleSpan);
-
-            const closeBtn = document.createElement('span');
-            closeBtn.className = 'tab-close-btn-ie';
-            closeBtn.innerHTML = '×'; // Using HTML entity for 'x'
-            closeBtn.title = 'Close Tab';
-            tabEl.appendChild(closeBtn);
-
-            this.ui.tabBar.insertBefore(tabEl, this.ui.newTabButton);
+        // 1. Get the current state of the DOM
+        const existingTabElements = new Map();
+        this.ui.tabBar.querySelectorAll('.browser-tab-ie').forEach(el => {
+            existingTabElements.set(el.dataset.tabId, el);
         });
+
+        // 2. Synchronize DOM with the desired state from the webview
+        tabsFromWebview.forEach((tabData, index) => {
+            let tabEl = existingTabElements.get(tabData.id);
+
+            if (tabEl) {
+                // --- UPDATE EXISTING TAB ---
+                // It already exists, just update its content
+                const titleSpan = tabEl.querySelector('.tab-title-text-ie');
+                const faviconImg = tabEl.querySelector('.tab-favicon-ie img');
+
+                let titleText = tabData.title || (tabData.loading ? 'Loading...' : (tabData.url === "about:blank" ? "Blank Page" : "New Tab"));
+                titleSpan.textContent = titleText.substring(0, 20) + (titleText.length > 20 ? '…' : '');
+                titleSpan.style.fontStyle = tabData.loading ? "italic" : "normal";
+
+                if (faviconImg) {
+                    faviconImg.src = tabData.favicon || this.defaultFavicon;
+                }
+
+                // Update active state
+                if (tabData.id === currentActiveIdInWebview) {
+                    tabEl.classList.add('active');
+                } else {
+                    tabEl.classList.remove('active');
+                }
+
+                // Mark this element as processed
+                existingTabElements.delete(tabData.id);
+
+            } else {
+                // --- CREATE NEW TAB ---
+                // It doesn't exist in the DOM, so create and insert it
+                tabEl = document.createElement('div');
+                tabEl.className = 'browser-tab-ie';
+                tabEl.dataset.tabId = tabData.id;
+
+                if (tabData.id === currentActiveIdInWebview) {
+                    tabEl.classList.add('active');
+                }
+
+                const faviconContainer = document.createElement('div');
+                faviconContainer.className = 'tab-favicon-ie';
+                const faviconImg = document.createElement('img');
+                faviconImg.src = tabData.favicon || this.defaultFavicon;
+                faviconImg.alt = '';
+                faviconContainer.appendChild(faviconImg);
+                tabEl.appendChild(faviconContainer);
+
+                let titleText = tabData.title || (tabData.loading ? 'Loading...' : (tabData.url === "about:blank" ? "Blank Page" : "New Tab"));
+                const titleSpan = document.createElement('span');
+                titleSpan.className = 'tab-title-text-ie';
+                titleSpan.textContent = titleText.substring(0, 20) + (titleText.length > 20 ? '…' : '');
+                titleSpan.style.fontStyle = tabData.loading ? "italic" : "normal";
+                tabEl.appendChild(titleSpan);
+
+                const closeBtn = document.createElement('span');
+                closeBtn.className = 'tab-close-btn-ie';
+                closeBtn.innerHTML = '×';
+                closeBtn.title = 'Close Tab';
+                tabEl.appendChild(closeBtn);
+
+                // Insert it before the "new tab" button
+                this.ui.tabBar.insertBefore(tabEl, this.ui.newTabButton);
+            }
+        });
+
+        // 3. Remove any leftover DOM elements that no longer exist in the state
+        for (const [tabId, tabEl] of existingTabElements.entries()) {
+            tabEl.remove();
+        }
+        // --- End of new synchronization logic ---
     }
     
     navigateToCurrentAddress() { /* ... (same as previous complete version) ... */ 

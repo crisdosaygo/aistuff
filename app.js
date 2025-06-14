@@ -4,6 +4,7 @@
   import { notepadAppDefinition } from './notepad.js';
   import { calculatorAppDefinition } from './calculator.js';
   import { recycleBinAppDefinition } from './recycle-bin.js';
+  let browserAppCache = new Map();
 
   const APP_DEFINITIONS = {
       networkExplorer: networkExplorerAppDefinition,
@@ -33,38 +34,53 @@
           `
       },
       internetBrowser: {
-          // netscape: true, // This was in your provided app.js, BrowserApp constructor now has netscapeFlag_unused
           title: "Internet Browser",
           icon: "./search_web-0.png",
           defaultWidth: 700,
           defaultHeight: 500,
-          generateContent: (windowInstanceId, webviewId) => BrowserApp.generateInitialHTML(webviewId),
+          // REMOVED: generateContent function is no longer used for browsers.
           initApp: (windowEl, windowInstanceId, webviewId, appDefinition) => {
-              // Assuming BrowserApp's 4th param is netscape-like flag.
-              // For "Internet Browser", let's assume it's NOT Netscape-styled.
+              // The DOM is created here ONCE and cached.
+              const browserContainer = document.createElement('div');
+              browserContainer.innerHTML = BrowserApp.generateInitialHTML(webviewId);
+              const browserRootEl = browserContainer.firstElementChild;
+
+              // Append the persistent DOM element to the window.
+              windowEl.querySelector('.window-content').appendChild(browserRootEl);
+              
+              // Cache the root element.
+              browserAppCache.set(windowInstanceId, browserRootEl);
+              
+              // Return the new BrowserApp instance, which now controls this persistent DOM.
               return new BrowserApp(windowEl, windowInstanceId, webviewId, false, appDefinition);
           }
       },
       internetExplorer: {
-          // netscape: false, // This was in your provided app.js
           title: "Internet Explorer",
           icon: "./msie2-0.png",
           defaultWidth: 700,
           defaultHeight: 500,
-          generateContent: (windowInstanceId, webviewId) => BrowserApp.generateInitialHTML(webviewId),
           initApp: (windowEl, windowInstanceId, webviewId, appDefinition) => {
+              const browserContainer = document.createElement('div');
+              browserContainer.innerHTML = BrowserApp.generateInitialHTML(webviewId);
+              const browserRootEl = browserContainer.firstElementChild;
+              windowEl.querySelector('.window-content').appendChild(browserRootEl);
+              browserAppCache.set(windowInstanceId, browserRootEl);
               return new BrowserApp(windowEl, windowInstanceId, webviewId, false, appDefinition);
           }
       },
       netscapeNavigator: {
-          // netscape: true, // This was in your provided app.js
           title: "Netscape Navigator",
           icon: "./n2-2.png",
           defaultWidth: 700,
           defaultHeight: 500,
-          generateContent: (windowInstanceId, webviewId) => BrowserApp.generateInitialHTML(webviewId),
           initApp: (windowEl, windowInstanceId, webviewId, appDefinition) => {
-              return new BrowserApp(windowEl, windowInstanceId, webviewId, true, appDefinition); // Pass true for Netscape style
+              const browserContainer = document.createElement('div');
+              browserContainer.innerHTML = BrowserApp.generateInitialHTML(webviewId);
+              const browserRootEl = browserContainer.firstElementChild;
+              windowEl.querySelector('.window-content').appendChild(browserRootEl);
+              browserAppCache.set(windowInstanceId, browserRootEl);
+              return new BrowserApp(windowEl, windowInstanceId, webviewId, true, appDefinition);
           }
       },
   };
@@ -198,6 +214,7 @@
       let highestZIndex = 100;
       let openWindows = {};
       let windowIdCounter = 0;
+
       window.openWindows = openWindows;
       window.focusWindow = focusWindow;
 
@@ -315,10 +332,12 @@
           const isBrowserApp = ['internetBrowser', 'internetExplorer', 'netscapeNavigator'].includes(appId);
           if (isBrowserApp) webviewId = `webview-${windowInstanceId}`;
 
+          // MODIFIED: Only call generateContent if it exists (i.e., for non-browser apps)
           if (appDef.generateContent) {
               windowEl.querySelector('.window-content').innerHTML = appDef.generateContent(windowInstanceId, webviewId);
           } else {
-              windowEl.querySelector('.window-content').innerHTML = typeof appDef.content === 'function' ? appDef.content() : appDef.content;
+              // For browser apps, initApp will handle adding content. Clear any template placeholders.
+              windowEl.querySelector('.window-content').innerHTML = '';
           }
 
           const maxAllowedWidth = desktop.clientWidth - 20;
@@ -522,9 +541,15 @@
           }
           // No deselectAllDesktopIcons() here, as desktop-icons.js handles selection.
       }
-      function closeWindow(windowEl) { /* ... (same as your latest) ... */
+      function closeWindow(windowEl) {
           const instanceId = windowEl.dataset.instanceId;
           if (openWindows[instanceId]) {
+              // NEW: Clean up the browser DOM element from our cache.
+              if (browserAppCache.has(instanceId)) {
+                  browserAppCache.delete(instanceId);
+              }
+              
+              // ... (rest of the existing 'if' block is the same)
               if (openWindows[instanceId].taskbarButton) openWindows[instanceId].taskbarButton.remove();
               if (openWindows[instanceId].appInstance && typeof openWindows[instanceId].appInstance.destroy === 'function') {
                   openWindows[instanceId].appInstance.destroy();

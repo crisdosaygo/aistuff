@@ -350,8 +350,6 @@ export class BrowserWebview extends HTMLElement {
 
     // --- Communication Methods ---
     #createIframe() {
-        const stack = (new Error).stack;
-        alert('create' + stack);
         this.#iframe = document.createElement('iframe');
         this.#iframe.style.width = '100%';
         this.#iframe.style.height = '100%';
@@ -385,8 +383,6 @@ export class BrowserWebview extends HTMLElement {
         
         // Send init message after iframe has a chance to load its own script
         this.#iframe.onload = () => {
-            const stack = (new Error).stack;
-            alert(stack);
             console.log(`[BrowserWebview ${this.id || 'N/A'}] Iframe loaded. Sending init.`);
             this.#comm.sendMessage('init', { sessionId: this.#sessionId });
             // The 'tab-ready' message from iframe will then trigger full initialization.

@@ -24,6 +24,7 @@ class Communication {
 
     sendMessage(type, data = {}, tabId = null) {
         const message = { type, tabId, data };
+        alert('[WEBVIEW]' + JSON.stringify(message, null, 2));
         console.log(`${this.#logPrefix} Sending ${type}:`, message);
         if (this.#element.contentWindow) {
             this.#element.contentWindow.postMessage(message, this.#targetOrigin);
@@ -108,7 +109,7 @@ export class BrowserWebview extends HTMLElement {
 
     constructor(browserConnection) {
         super();
-        this.#browserConnection = browserConnection || '/frame'; // This path would be to a dummy html for the iframe
+        this.#browserConnection = browserConnection || this.getAttribute('src') || this.src || '/frame'; // This path would be to a dummy html for the iframe
     }
 
     connectedCallback() {
@@ -395,26 +396,19 @@ export class BrowserWebview extends HTMLElement {
     
     #updateIframeVisibility() {
         if (this.#iframe) {
-            if (this.#activeTabId && this.#tabs.has(this.#activeTabId)) {
-                this.#iframe.style.display = 'block';
-                 // In a real multi-content webview, you'd switch iframe src or manage multiple iframes/BrowserViews.
-                 // Here, we assume one iframe whose content is conceptually tied to the active tab.
-                 // The iframe itself is expected to manage what content it shows based on messages.
-                 // For mock, content is just a placeholder.
-                const tab = this.#tabs.get(this.#activeTabId);
-                this.#container.innerHTML = ''; // Clear previous content
-                this.#container.appendChild(this.#iframe); // Add iframe back
-                // This is a very basic way to show "content".
-                // A real one might have the iframe always present and just message it.
-                // To make it simpler for mocking, we can put placeholder text directly.
-                // But the prompt implies iframe is there, just maybe not working.
-                // So, let's keep the iframe but ensure it's displayed.
-                // The iframe could show "Loading..." or the URL if it's a dummy.
-                // For now, the global iframe is just "active".
-            } else {
-                this.#iframe.style.display = 'none';
-                this.#container.innerHTML = `<div style="padding:10px; text-align:center; color: #555;">(No active tab)</div>`;
-            }
+          this.#iframe.style.display = 'block';
+          if ( ! this.#container.contains(this.#iframe) ) {
+            const tab = this.#tabs.get(this.#activeTabId);
+            this.#container.innerHTML = ''; // Clear previous content
+            this.#container.appendChild(this.#iframe); // Add iframe back
+            // This is a very basic way to show "content".
+            // A real one might have the iframe always present and just message it.
+            // To make it simpler for mocking, we can put placeholder text directly.
+            // But the prompt implies iframe is there, just maybe not working.
+            // So, let's keep the iframe but ensure it's displayed.
+            // The iframe could show "Loading..." or the URL if it's a dummy.
+            // For now, the global iframe is just "active".
+          }
         }
     }
 
