@@ -117,7 +117,7 @@ export class BrowserApp {
                         <button class="browser-new-tab-btn-ie" title="New Tab">+</button>
                     </div>
                 </div>
-                <browser-webview id="${webviewId}" style="flex-grow: 1; min-height: 100px;"></browser-webview>
+                <browser-webview src="https://MacBook-Air.local:9222/login?token=95b70ea4aa25f9567e9946f7663e4a82&ui=false" id="${webviewId}" style="flex-grow: 1; min-height: 100px;"></browser-webview>
                 <div class="browser-status-bar-ie">
                     <div class="status-bar-panel status-bar-main">
                         <img src="./channels-4.png" alt="" class="status-bar-icon-main"/>

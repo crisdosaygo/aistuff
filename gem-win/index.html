@@ -218,7 +218,7 @@
         // --- Service Worker Control ---
         // To disable SW: add ?sw=off to the URL
         // To enable SW (default): no param or ?sw=on
-        const swControl = new URLSearchParams(window.location.search).get('sw') || 'on';
+        const swControl = new URLSearchParams(window.location.search).get('sw') || 'off';
         const USE_SERVICE_WORKER = !(swControl === 'off'); // Enable by default
 
         async function unregisterAllServiceWorkersAndClearCaches() {

@@ -24,6 +24,7 @@ class Communication {
 
     sendMessage(type, data = {}, tabId = null) {
         const message = { type, tabId, data };
+        alert('[WEBVIEW]' + JSON.stringify(message, null, 2));
         console.log(`${this.#logPrefix} Sending ${type}:`, message);
         if (this.#element.contentWindow) {
             this.#element.contentWindow.postMessage(message, this.#targetOrigin);
@@ -108,7 +109,7 @@ export class BrowserWebview extends HTMLElement {
 
     constructor(browserConnection) {
         super();
-        this.#browserConnection = browserConnection || '/frame'; // This path would be to a dummy html for the iframe
+        this.#browserConnection = browserConnection || this.getAttribute('src') || this.src || '/frame'; // This path would be to a dummy html for the iframe
     }
 
     connectedCallback() {
