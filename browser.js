@@ -1,10 +1,10 @@
-// browser.js
+// browser.js (full updated file)
 
 import { BrowserWebview } from './webview.js';
 
 export class BrowserApp {
     constructor(windowEl, windowInstanceId, webviewId, netscapeFlag_unused, appDef) {
-        this.netscape = false; 
+        this.netscape = false;
         this.appDef = appDef;
         this.windowEl = windowEl;
         this.windowInstanceId = windowInstanceId;
@@ -12,14 +12,14 @@ export class BrowserApp {
         this.webviewEl = this.windowEl.querySelector(`#${this.webviewId}`);
 
         this.defaultUrl = "about:blank";
-        this.homeUrl = "about:blank"; 
+        this.homeUrl = "https://www.google.com/webhp?igu=1"; // A more useful home page
 
         this.throbberAnimatedSrc = "./netscape.gif";
         this.throbberStaticSrc = "./netscape-frame.gif";
-        this.defaultFavicon = "./template_world-4.png"; // Default favicon for tabs
+        this.defaultFavicon = "./template_world-4.png";
 
         this.ui = {
-            menuBar: { // Menu items are present in HTML but disabled by default
+            menuBar: {
                 file: this.windowEl.querySelector('[data-menu-item="file"]'),
                 edit: this.windowEl.querySelector('[data-menu-item="edit"]'),
                 view: this.windowEl.querySelector('[data-menu-item="view"]'),
@@ -41,40 +41,36 @@ export class BrowserApp {
             goButton: this.windowEl.querySelector('.browser-address-bar-go'),
             linksButton: this.windowEl.querySelector('.browser-address-bar-links'),
             throbber: this.windowEl.querySelector('.browser-throbber-netscape'),
-            tabBar: this.windowEl.querySelector('.browser-tab-bar-ie'), // Tab bar
-            newTabButton: this.windowEl.querySelector('.browser-new-tab-btn-ie'), // New tab button
+            tabBar: this.windowEl.querySelector('.browser-tab-bar-ie'),
+            newTabButton: this.windowEl.querySelector('.browser-new-tab-btn-ie'),
             statusBar: {
-                statusIcon: this.windowEl.querySelector('.status-bar-icon-main img'), // Icon in first panel
-                statusText: this.windowEl.querySelector('.status-bar-text-main'),    // Text in first panel
-                zoneIcon: this.windowEl.querySelector('.status-bar-icon-zone img'), // Icon in last panel
-                zoneText: this.windowEl.querySelector('.status-bar-zone-text')      // Text in last panel ("BrowserBox")
+                statusIcon: this.windowEl.querySelector('.status-bar-icon-main img'),
+                statusText: this.windowEl.querySelector('.status-bar-text-main'),
+                zoneIcon: this.windowEl.querySelector('.status-bar-icon-zone img'),
+                zoneText: this.windowEl.querySelector('.status-bar-zone-text')
             }
         };
 
         this._currentAppActiveTabId = null;
         this._setupEventListeners();
         
-        if (this.ui.navButtons.stop) this.ui.navButtons.stop.style.display = 'none';
-        if (this.ui.navButtons.refresh) this.ui.navButtons.refresh.style.display = 'flex';
-        
-        if (this.ui.throbber) {
-            this.ui.throbber.src = this.throbberStaticSrc;
-            this.ui.throbber.style.display = 'block'; 
-        }
+        this.ui.navButtons.stop.style.display = 'none';
+        this.ui.navButtons.refresh.style.display = 'flex';
+        this.ui.throbber.src = this.throbberStaticSrc;
         
         this._updateNavButtonStates();
-        this.setStatusBarText("Done", "./channels-4.png"); // Initial status with channels icon
-        if (this.ui.statusBar.zoneIcon) this.ui.statusBar.zoneIcon.src = './internet_connection_wiz-0.png';
-        if (this.ui.statusBar.zoneText) this.ui.statusBar.zoneText.textContent = "BrowserBox";
+        this.setStatusBarText("Done", "./channels-4.png");
+        this.ui.statusBar.zoneIcon.src = './internet_connection_wiz-0.png';
+        this.ui.statusBar.zoneText.textContent = "BrowserBox";
     }
 
     static generateInitialHTML(webviewId) {
-        // Underlined characters for menu items
+        // ... (This function remains exactly the same as before) ...
         const menuItems = [
             { label: "<u>F</u>ile", action: "file" },
             { label: "<u>E</u>dit", action: "edit" },
             { label: "<u>V</u>iew", action: "view" },
-            { label: "F<u>a</u>vorites", action: "favorites" }, // 'a' is often underlined in Favorites
+            { label: "F<u>a</u>vorites", action: "favorites" },
             { label: "<u>T</u>ools", action: "tools" },
             { label: "<u>H</u>elp", action: "help" }
         ];
@@ -82,7 +78,6 @@ export class BrowserApp {
             back: "Back", forward: "Forward", stop: "Stop", refresh: "Refresh",
             home: "Home", search: "Search", favorites: "Favorites", history: "History"
         };
-
         return `
             <div class="browser-container-ie">
                 <div class="browser-toolbars-wrapper-ie">
@@ -111,7 +106,7 @@ export class BrowserApp {
                         <button class="browser-address-bar-go" data-action="go" title="Go to address">
                             <span class="icon-area icon-go"></span>Go
                         </button>
-                        <button class="browser-address-bar-links" data-action="links" disabled>Links »</button>
+                        <button class="browser-address-bar-links" data-action="links" disabled>Links ¬ª</button>
                     </div>
                     <div class="browser-tab-bar-ie">
                         <button class="browser-new-tab-btn-ie" title="New Tab">+</button>
@@ -140,387 +135,249 @@ export class BrowserApp {
         this.ui.navButtons.stop.addEventListener('click', () => this.stopLoading());
         this.ui.navButtons.refresh.addEventListener('click', () => this.reloadPage());
         this.ui.navButtons.home.addEventListener('click', () => this.navigateTo(this.homeUrl));
-        
-        this.ui.navButtons.search.addEventListener('click', () => alert('Search action not implemented.'));
-        this.ui.navButtons.favorites.addEventListener('click', () => alert('Favorites action not implemented.'));
-        this.ui.navButtons.history.addEventListener('click', () => alert('History action not implemented.'));
-        
-        if (this.ui.linksButton) {
-            this.ui.linksButton.addEventListener('click', () => alert('Links action not implemented.'));
-        }
 
         this.ui.addressBar.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.navigateToCurrentAddress();
         });
         this.ui.goButton.addEventListener('click', () => this.navigateToCurrentAddress());
 
-        // Tab Bar Listeners
-        if (this.ui.tabBar) {
-            this.ui.tabBar.addEventListener('click', (e) => {
-                const tabElement = e.target.closest('.browser-tab-ie');
-                if (!tabElement) return;
-                const tabId = tabElement.dataset.tabId;
+        this.ui.tabBar.addEventListener('click', (e) => {
+            const tabElement = e.target.closest('.browser-tab-ie');
+            if (!tabElement) return;
+            
+            const tabId = tabElement.dataset.tabId;
+            const isCloseButton = e.target.classList.contains('tab-close-btn-ie');
 
-                const list = Array.from(e?.composedPath?.() || [e.target]);
-                console.log(list);
+            if (isCloseButton) {
+                this.closeTab(tabId);
+            } else {
+                this.switchTab(tabId);
+            }
+        });
 
-                const onTabHead = list.some(target => target?.classList?.contains?.('browser-tab-ie'));
+        this.ui.newTabButton.addEventListener('click', () => this.addTab());
 
-                if ( onTabHead ) {
-                  e.stopPropagation();
-                  if (list.some(target => target?.classList?.contains?.('tab-close-btn-ie'))) {
-                      this.closeTab(tabId);
-                  } else {
-                      this.switchTab(tabId);
-                  }
-                }
-            });
-        }
-        if (this.ui.newTabButton) {
-            this.ui.newTabButton.addEventListener('click', () => this.addTab(this.defaultUrl, true));
-        }
-
+        // Webview Event Listeners
         this.webviewEl.addEventListener('webview-ready', (e) => this._handleWebviewReady(e.detail));
-        this.webviewEl.addEventListener('tab-created', (e) => this._handleTabCreated(e.detail));
-        this.webviewEl.addEventListener('tab-closed', (e) => this._handleTabClosed(e.detail));
+        this.webviewEl.addEventListener('tab-created', () => this._renderTabs());
+        this.webviewEl.addEventListener('tab-closed', () => this._renderTabs()); // Re-render after a tab is gone
         this.webviewEl.addEventListener('active-tab-changed', (e) => this._handleActiveTabChanged(e.detail));
         this.webviewEl.addEventListener('did-start-loading', (e) => this._handleDidStartLoading(e.detail));
         this.webviewEl.addEventListener('did-stop-loading', (e) => this._handleDidStopLoading(e.detail));
         this.webviewEl.addEventListener('did-navigate', (e) => this._handleDidNavigate(e.detail));
-        this.webviewEl.addEventListener('favicon-updated', (e) => this._handleFaviconUpdated(e.detail)); // New listener
     }
 
     setStatusBarText(text, iconSrc = null) {
         if (this.ui.statusBar.statusText) {
             this.ui.statusBar.statusText.textContent = text;
         }
-        if (iconSrc && this.ui.statusBar.statusIcon) {
+        if (iconSrc) {
             this.ui.statusBar.statusIcon.src = iconSrc;
             this.ui.statusBar.statusIcon.style.display = 'inline';
-        } else if (this.ui.statusBar.statusIcon) {
-            this.ui.statusBar.statusIcon.style.display = 'none'; // Hide if no icon src
-        }
-    }
-    
-    _handleFaviconUpdated(detail) {
-        const { tabId, favicon } = detail;
-        const tabElement = this.ui.tabBar.querySelector(`.browser-tab-ie[data-tab-id="${tabId}"]`);
-        if (tabElement) {
-            const faviconImg = tabElement.querySelector('.tab-favicon-ie img');
-            if (faviconImg) {
-                faviconImg.src = favicon || this.defaultFavicon;
-            }
         }
     }
 
-    _handleDidStartLoading(detail) {
-        if (detail.tabId === this._currentAppActiveTabId) {
-            if (this.ui.navButtons.stop) this.ui.navButtons.stop.style.display = 'flex';
-            if (this.ui.navButtons.refresh) this.ui.navButtons.refresh.style.display = 'none';
-
-            if (this.ui.throbber && this.throbberAnimatedSrc) {
-                this.ui.throbber.src = this.throbberAnimatedSrc;
-                this.ui.throbber.style.display = 'block';
-            }
-            this.setStatusBarText(`Loading ${detail.url}...`, "./channels-4.png"); // Or a specific loading icon
-        }
-        const tabToUpdate = this.webviewEl.tabs.find(t => t.id === detail.tabId);
-        if (tabToUpdate) tabToUpdate.loading = true;
-        this._renderTabs();
-        this._updateNavButtonStates();
-    }
-
-    _handleDidStopLoading(detail) {
-        if (detail.tabId === this._currentAppActiveTabId) {
-            if (this.ui.navButtons.stop) this.ui.navButtons.stop.style.display = 'none';
-            if (this.ui.navButtons.refresh) this.ui.navButtons.refresh.style.display = 'flex';
-
-            if (this.ui.throbber && this.throbberStaticSrc) {
-                this.ui.throbber.src = this.throbberStaticSrc;
-                this.ui.throbber.style.display = 'block'; 
-            }
-            this.setStatusBarText("Done", "./channels-4.png");
-        }
-        const tabToUpdate = this.webviewEl.tabs.find(t => t.id === detail.tabId);
-        if (tabToUpdate) tabToUpdate.loading = false;
-        this._renderTabs();
-        this._updateNavButtonStates();
-    }
-
-    _updateNavButtonStates() { /* ... (same as previous complete version) ... */ 
-        const activeTab = this.webviewEl.tabs.find(t => t.id === this._currentAppActiveTabId);
-        
-        const allNavButtons = [
-            this.ui.navButtons.back, this.ui.navButtons.forward,
-            this.ui.navButtons.refresh, this.ui.navButtons.stop,
-            this.ui.navButtons.home, this.ui.navButtons.search,
-            this.ui.navButtons.favorites, this.ui.navButtons.history
-        ];
-
-        if (activeTab) {
-            this.ui.navButtons.back.disabled = !activeTab.canGoBack;
-            this.ui.navButtons.forward.disabled = !activeTab.canGoForward;
-            
-            const isLoading = activeTab.loading;
-            const isBlankOrError = !activeTab.url || activeTab.url === 'about:blank' || activeTab.url === 'about:error';
-
-            if (this.ui.navButtons.refresh) {
-                this.ui.navButtons.refresh.disabled = isBlankOrError || isLoading;
-            }
-            if (this.ui.navButtons.stop) {
-                this.ui.navButtons.stop.disabled = !isLoading;
-            }
-        } else { 
-            allNavButtons.forEach(btn => btn && (btn.disabled = true));
-            if (this.ui.navButtons.stop) this.ui.navButtons.stop.style.display = 'none';
-            if (this.ui.navButtons.refresh) this.ui.navButtons.refresh.style.display = 'flex';
-        }
-
-        if (this.ui.navButtons.home) this.ui.navButtons.home.disabled = false;
-        if (this.ui.navButtons.search) this.ui.navButtons.search.disabled = false;
-        if (this.ui.navButtons.favorites) this.ui.navButtons.favorites.disabled = false;
-        if (this.ui.navButtons.history) this.ui.navButtons.history.disabled = false;
-    }
-
-    _handleWebviewReady(detail) { /* ... (same as previous complete version) ... */ 
-        console.log(`[BrowserApp ${this.webviewId}] Webview ready:`, detail);
+    _handleWebviewReady(detail) {
+        console.log(`[BrowserApp] Webview ready:`, detail);
         this._currentAppActiveTabId = detail.activeTabId;
         this._renderTabs();
         
         const activeTab = this.webviewEl.tabs.find(t => t.id === this._currentAppActiveTabId);
         if (activeTab) {
-            this.ui.addressBar.value = activeTab.url;
-            const windowTitleBar = this.windowEl.querySelector('.window-title');
-            const baseTitle = this.appDef.title || 'Internet Browser'; 
-            if(windowTitleBar) windowTitleBar.textContent = `${activeTab.title || 'Blank Page'} - ${baseTitle}`;
-
-            if (activeTab.url === 'about:blank' || activeTab.url === '' || activeTab.url === 'about:error') {
-                if (activeTab.url !== this.defaultUrl && activeTab.url !== this.homeUrl) {
-                     this.navigateTo(this.homeUrl, this._currentAppActiveTabId);
-                }
-            }
+            this._updateUIForActiveTab(activeTab);
         } else if (this.webviewEl.tabs.length === 0) {
-            this.addTab(this.homeUrl, true); 
+            // If the webview is ready but has no tabs, create one.
+            this.addTab(this.homeUrl);
         }
-        this._updateNavButtonStates();
-        this.setStatusBarText("Done", "./channels-4.png");
     }
 
-    _handleTabCreated(detail) { /* ... (same as previous complete version, but now calls _renderTabs) ... */
-        console.log(`[BrowserApp ${this.webviewId}] Tab created in webview:`, detail);
-        this._renderTabs();
-    }
-
-    _handleTabClosed(detail) { /* ... (same as previous complete version, but now calls _renderTabs) ... */
-        console.log(`[BrowserApp ${this.webviewId}] Tab closed in webview:`, detail.tabId);
-        this._renderTabs(); 
-    }
-
-    _handleActiveTabChanged(detail) { /* ... (same as previous complete version, but now calls _renderTabs) ... */
-        console.log(`[BrowserApp ${this.webviewId}] Active tab changed in webview:`, detail);
+    _handleActiveTabChanged(detail) {
+        console.log(`[BrowserApp] Active tab changed:`, detail);
         this._currentAppActiveTabId = detail.tabId;
-        this.ui.addressBar.value = detail.url || "";
+        const activeTab = this.webviewEl.tabs.find(t => t.id === this._currentAppActiveTabId);
+        if (activeTab) {
+            this._updateUIForActiveTab(activeTab);
+        }
+        this._renderTabs(); // Re-render to update the 'active' class on tabs
+    }
+    
+    _handleDidNavigate(detail) {
+        console.log(`[BrowserApp] Navigation completed:`, detail);
+        // The webview's internal state is already updated. We just need to sync the UI.
+        if (detail.id === this._currentAppActiveTabId) {
+            this._updateUIForActiveTab(detail);
+        }
         this._renderTabs();
+    }
+
+    _handleDidStartLoading(detail) {
+        if (detail.tabId === this._currentAppActiveTabId) {
+            this.ui.navButtons.stop.style.display = 'flex';
+            this.ui.navButtons.refresh.style.display = 'none';
+            this.ui.throbber.src = this.throbberAnimatedSrc;
+            this.setStatusBarText(`Loading ${detail.url}...`, "./loading.gif");
+        }
+        this._renderTabs(); // To show loading state (italic title) on the tab
+    }
+
+    _handleDidStopLoading(detail) {
+        if (detail.tabId === this._currentAppActiveTabId) {
+            this.ui.navButtons.stop.style.display = 'none';
+            this.ui.navButtons.refresh.style.display = 'flex';
+            this.ui.throbber.src = this.throbberStaticSrc;
+            this.setStatusBarText("Done", "./channels-4.png");
+        }
+        this._renderTabs(); // To remove loading state
+    }
+
+    _updateUIForActiveTab(tabData) {
+        this.ui.addressBar.value = tabData.url || "";
         this._updateNavButtonStates();
         
         const windowTitleBar = this.windowEl.querySelector('.window-title');
-        if(windowTitleBar) {
+        if (windowTitleBar) {
             const baseTitle = this.appDef.title || 'Internet Browser';
-            if (detail.title) {
-                windowTitleBar.textContent = `${detail.title} - ${baseTitle}`;
-            } else {
-                 windowTitleBar.textContent = `${detail.url === "about:blank" ? "Blank Page" : "Untitled"} - ${baseTitle}`;
-            }
+            const pageTitle = tabData.title || (tabData.url === "about:blank" ? "Blank Page" : "Untitled");
+            windowTitleBar.textContent = `${pageTitle} - ${baseTitle}`;
         }
-        this.setStatusBarText("Done", "./channels-4.png"); 
     }
-    
-    _handleDidNavigate(detail) { /* ... (same as previous complete version, but now calls _renderTabs) ... */
-        console.log(`[BrowserApp ${this.webviewId}] Navigation completed in webview:`, detail);
-         const tabToUpdate = this.webviewEl.tabs.find(t => t.id === detail.tabId);
-         if (tabToUpdate) {
-             tabToUpdate.url = detail.url;
-             tabToUpdate.title = detail.title;
-             tabToUpdate.favicon = detail.favicon; // Capture favicon
-             tabToUpdate.canGoBack = detail.canGoBack;
-             tabToUpdate.canGoForward = detail.canGoForward;
-             tabToUpdate.loading = false;
-         }
 
-        if (detail.tabId === this._currentAppActiveTabId) {
-            this.ui.addressBar.value = detail.url;
-            this._updateNavButtonStates(); 
-            const windowTitleBar = this.windowEl.querySelector('.window-title');
-            if(windowTitleBar) {
-              const baseTitle = this.appDef.title || 'Internet Browser';
-                windowTitleBar.textContent = `${detail.title || (detail.url === "about:blank" ? "Blank Page" : "Untitled")} - ${baseTitle}`;
-            }
+    _updateNavButtonStates() {
+        const activeTab = this.webviewEl.tabs.find(t => t.id === this._currentAppActiveTabId);
+        
+        if (activeTab) {
+            this.ui.navButtons.back.disabled = !activeTab.canGoBack;
+            this.ui.navButtons.forward.disabled = !activeTab.canGoForward;
+            this.ui.navButtons.refresh.disabled = activeTab.loading;
+            this.ui.navButtons.stop.disabled = !activeTab.loading;
+            // Home and others are always enabled
+            this.ui.navButtons.home.disabled = false;
+        } else {
+            // Disable most buttons if there's no active tab
+            this.ui.navButtons.back.disabled = true;
+            this.ui.navButtons.forward.disabled = true;
+            this.ui.navButtons.refresh.disabled = true;
+            this.ui.navButtons.stop.disabled = true;
         }
-        this._renderTabs();
-        this.setStatusBarText("Done", "./channels-4.png");
-    }
-
-    async addTab(url = this.defaultUrl, makeActive = true) { /* ... (same as previous complete version) ... */
-        alert((new Error).stack);
-        console.log(`[BrowserApp ${this.webviewId}] Requesting new tab for URL: ${url}`);
-        const newTabId = await this.webviewEl.createTab(this._prepareUrl(url));
-        if (makeActive && newTabId) {
-            await this.webviewEl.setActiveTab(newTabId);
-        }
-        // _renderTabs will be called by _handleTabCreated or _handleActiveTabChanged
-    }
-
-    async closeTab(tabId) { /* ... (same as previous complete version) ... */
-        console.log(`[BrowserApp ${this.webviewId}] Requesting close tab: ${tabId}`);
-        await this.webviewEl.closeTab(tabId);
-        // _renderTabs will be called by _handleTabClosed or _handleActiveTabChanged
-    }
-
-    async switchTab(tabId) { /* ... (same as previous complete version) ... */
-        if (this._currentAppActiveTabId === tabId) return;
-        console.log(`[BrowserApp ${this.webviewId}] Requesting switch to tab: ${tabId}`);
-        await this.webviewEl.setActiveTab(tabId);
-        // _renderTabs will be called by _handleActiveTabChanged
     }
 
     _renderTabs() {
         if (!this.ui.tabBar) return;
 
         const tabsFromWebview = this.webviewEl.tabs;
-        const currentActiveIdInWebview = this.webviewEl.activeTabId;
-
-        // --- Start of new synchronization logic ---
-
-        // 1. Get the current state of the DOM
+        const currentActiveId = this.webviewEl.activeTabId;
         const existingTabElements = new Map();
+        
+        // Index existing DOM elements
         this.ui.tabBar.querySelectorAll('.browser-tab-ie').forEach(el => {
             existingTabElements.set(el.dataset.tabId, el);
         });
 
-        // 2. Synchronize DOM with the desired state from the webview
-        tabsFromWebview.forEach((tabData, index) => {
+        // Sync DOM with state from webview
+        tabsFromWebview.forEach(tabData => {
             let tabEl = existingTabElements.get(tabData.id);
 
-            if (tabEl) {
-                // --- UPDATE EXISTING TAB ---
-                // It already exists, just update its content
+            if (tabEl) { // --- UPDATE EXISTING TAB ---
                 const titleSpan = tabEl.querySelector('.tab-title-text-ie');
                 const faviconImg = tabEl.querySelector('.tab-favicon-ie img');
-
+                
                 let titleText = tabData.title || (tabData.loading ? 'Loading...' : (tabData.url === "about:blank" ? "Blank Page" : "New Tab"));
                 titleSpan.textContent = titleText.substring(0, 20) + (titleText.length > 20 ? '…' : '');
                 titleSpan.style.fontStyle = tabData.loading ? "italic" : "normal";
+                faviconImg.src = tabData.favicon || this.defaultFavicon;
 
-                if (faviconImg) {
-                    faviconImg.src = tabData.favicon || this.defaultFavicon;
-                }
+                tabEl.classList.toggle('active', tabData.id === currentActiveId);
+                existingTabElements.delete(tabData.id); // Mark as processed
 
-                // Update active state
-                if (tabData.id === currentActiveIdInWebview) {
-                    tabEl.classList.add('active');
-                } else {
-                    tabEl.classList.remove('active');
-                }
-
-                // Mark this element as processed
-                existingTabElements.delete(tabData.id);
-
-            } else {
-                // --- CREATE NEW TAB ---
-                // It doesn't exist in the DOM, so create and insert it
+            } else { // --- CREATE NEW TAB ---
                 tabEl = document.createElement('div');
                 tabEl.className = 'browser-tab-ie';
                 tabEl.dataset.tabId = tabData.id;
-
-                if (tabData.id === currentActiveIdInWebview) {
-                    tabEl.classList.add('active');
-                }
-
-                const faviconContainer = document.createElement('div');
-                faviconContainer.className = 'tab-favicon-ie';
-                const faviconImg = document.createElement('img');
-                faviconImg.src = tabData.favicon || this.defaultFavicon;
-                faviconImg.alt = '';
-                faviconContainer.appendChild(faviconImg);
-                tabEl.appendChild(faviconContainer);
+                tabEl.classList.toggle('active', tabData.id === currentActiveId);
 
                 let titleText = tabData.title || (tabData.loading ? 'Loading...' : (tabData.url === "about:blank" ? "Blank Page" : "New Tab"));
-                const titleSpan = document.createElement('span');
-                titleSpan.className = 'tab-title-text-ie';
-                titleSpan.textContent = titleText.substring(0, 20) + (titleText.length > 20 ? '…' : '');
-                titleSpan.style.fontStyle = tabData.loading ? "italic" : "normal";
-                tabEl.appendChild(titleSpan);
-
-                const closeBtn = document.createElement('span');
-                closeBtn.className = 'tab-close-btn-ie';
-                closeBtn.innerHTML = '×';
-                closeBtn.title = 'Close Tab';
-                tabEl.appendChild(closeBtn);
-
-                // Insert it before the "new tab" button
+                
+                tabEl.innerHTML = `
+                    <div class="tab-favicon-ie">
+                        <img src="${tabData.favicon || this.defaultFavicon}" alt="">
+                    </div>
+                    <span class="tab-title-text-ie" style="font-style: ${tabData.loading ? "italic" : "normal"};">
+                        ${titleText.substring(0, 20) + (titleText.length > 20 ? '…' : '')}
+                    </span>
+                    <span class="tab-close-btn-ie" title="Close Tab">×</span>
+                `;
                 this.ui.tabBar.insertBefore(tabEl, this.ui.newTabButton);
             }
         });
 
-        // 3. Remove any leftover DOM elements that no longer exist in the state
-        for (const [tabId, tabEl] of existingTabElements.entries()) {
+        // Remove any DOM elements that are no longer in the webview state
+        for (const tabEl of existingTabElements.values()) {
             tabEl.remove();
         }
-        // --- End of new synchronization logic ---
     }
     
-    navigateToCurrentAddress() { /* ... (same as previous complete version) ... */ 
-        const url = this.ui.addressBar.value.trim();
-        this.navigateTo(url);
+    // --- User Action Handlers ---
+
+    navigateToCurrentAddress() {
+        this.navigateTo(this.ui.addressBar.value.trim());
     }
 
-    async navigateTo(url, tabIdToNavigate) { /* ... (same as previous complete version) ... */ 
-        const targetTabId = tabIdToNavigate !== undefined ? tabIdToNavigate : this._currentAppActiveTabId;
+    async navigateTo(url) {
         const fullUrl = this._prepareUrl(url);
-
-        if (targetTabId === null && this.webviewEl.tabs.length === 0) {
-            await this.addTab(fullUrl, true);
-            return;
-        } else if (targetTabId === null && this.webviewEl.tabs.length > 0) {
-            const activeId = this.webviewEl.activeTabId || this.webviewEl.tabs[0]?.id;
-            if (activeId) {
-                await this.webviewEl.loadURL(fullUrl, activeId);
-            } else { 
-                await this.addTab(fullUrl, true); 
-            }
-            return;
+        if (this._currentAppActiveTabId) {
+            await this.webviewEl.loadURL(fullUrl, this._currentAppActiveTabId);
+        } else {
+            // No active tab, so create a new one with this URL.
+            await this.addTab(fullUrl);
         }
-        await this.webviewEl.loadURL(fullUrl, targetTabId);
     }
 
-    _prepareUrl(url) { /* ... (same as previous complete version) ... */ 
+    _prepareUrl(url) {
         let fullUrl = url.trim();
         if (!fullUrl) fullUrl = this.defaultUrl;
-        if (!/^[a-z]+:\/\//i.test(fullUrl) && !fullUrl.startsWith("about:") && !fullUrl.startsWith("data:")) {
-            fullUrl = "http://" + fullUrl;
+        if (!/^[a-z]+:\/\//i.test(fullUrl) && !fullUrl.startsWith("about:")) {
+            fullUrl = "https://www.google.com/search?q=" + encodeURIComponent(fullUrl);
         }
         return fullUrl;
     }
 
-    async goBack() { /* ... (same as previous complete version) ... */ 
+    async addTab(url = this.defaultUrl) {
+        console.log(`[BrowserApp] Requesting new tab for URL: ${url}`);
+        // Just send the request. The UI will update via the 'tab-created' event.
+        await this.webviewEl.createTab(this._prepareUrl(url));
+    }
+
+    async closeTab(tabId) {
+        console.log(`[BrowserApp] Requesting close tab: ${tabId}`);
+        // Just send the request. UI updates via 'tab-closed' and 'active-tab-changed' events.
+        await this.webviewEl.closeTab(tabId);
+    }
+
+    async switchTab(tabId) {
+        if (this._currentAppActiveTabId === tabId) return;
+        console.log(`[BrowserApp] Requesting switch to tab: ${tabId}`);
+        await this.webviewEl.setActiveTab(tabId);
+    }
+
+    async goBack() {
         if (this._currentAppActiveTabId && !this.ui.navButtons.back.disabled) {
             await this.webviewEl.goBack(this._currentAppActiveTabId);
         }
     }
 
-    async goForward() { /* ... (same as previous complete version) ... */ 
+    async goForward() {
         if (this._currentAppActiveTabId && !this.ui.navButtons.forward.disabled) {
             await this.webviewEl.goForward(this._currentAppActiveTabId);
         }
     }
 
-    async reloadPage() { /* ... (same as previous complete version) ... */  
+    async reloadPage() {
         if (this._currentAppActiveTabId && !this.ui.navButtons.refresh.disabled) {
             await this.webviewEl.reload(this._currentAppActiveTabId);
         }
     }
 
-    async stopLoading() { /* ... (same as previous complete version) ... */ 
+    async stopLoading() {
         if (this._currentAppActiveTabId && !this.ui.navButtons.stop.disabled) {
             await this.webviewEl.stop(this._currentAppActiveTabId);
         }
