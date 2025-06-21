@@ -56,7 +56,15 @@ export class BrowserWebview extends HTMLElement {
     // --- Public API Methods ---
     createTab(url = 'about:blank') { this.#sendMessage('createTab', { url }); }
     loadURL(url, tabId) { this.#sendMessage('loadURL', { url }, tabId); }
-    closeTab(tabId) { this.#sendMessage('closeTab', {}, tabId); }
+    closeTab(tabId) { 
+        // Optimistically remove the tab from our state.
+        if (this.#tabs.has(tabId)) {
+            this.#tabs.delete(tabId);
+            this.#dispatchEvent('tab-closed', { tabId });
+        }
+        // Then send the message to the iframe, without waiting.
+        this.#sendMessage('closeTab', {}, tabId); 
+    }
     setActiveTab(tabId) { this.#sendMessage('setActiveTab', {}, tabId); }
     goBack(tabId) { this.#sendMessage('goBack', {}, tabId); }
     goForward(tabId) { this.#sendMessage('goForward', {}, tabId); }
@@ -125,8 +133,12 @@ export class BrowserWebview extends HTMLElement {
                 this.#sendRequest('getActiveTab')
             ]).then(([tabs, activeTab]) => {
                 this.#tabs.clear();
-                (tabs || []).forEach(tabData => this.#tabs.set(tabData.id, tabData));
-                this.#activeTabId = activeTab ? activeTab.id : (this.#tabs.size > 0 ? this.#tabs.keys().next().value : null);
+                (tabs || []).forEach(tabData => {
+                    const id = tabData.id || tabData.targetId;
+                    this.#tabs.set(id, { ...tabData, id });
+                });
+                const activeId = activeTab ? (activeTab.id || activeTab.targetId) : (this.#tabs.size > 0 ? this.#tabs.keys().next().value : null);
+                this.#activeTabId = activeId;
                 this.#isWebViewReady = true;
 
                 this.#dispatchEvent('webview-ready', { tabs: this.tabs, activeTabId: this.#activeTabId });
@@ -138,42 +150,63 @@ export class BrowserWebview extends HTMLElement {
 
         // State update handlers
         this.#registerHandler('tab-created', ({ data }) => {
-            this.#tabs.set(data.id, data);
-            this.#dispatchEvent('tab-created', { tabId: data.id, data });
+            const id = data.id || data.targetId;
+            if (!id) {
+                console.warn(`${this.#logPrefix} Received tab-created without an ID.`, data);
+                return;
+            }
+            this.#tabs.set(id, { ...data, id });
+            this.#dispatchEvent('tab-created', { tabId: id, data: { ...data, id } });
         });
-        this.#registerHandler('tab-closed', ({ tabId }) => {
-            if (this.#tabs.has(tabId)) {
-                this.#tabs.delete(tabId);
-                this.#dispatchEvent('tab-closed', { tabId });
+        this.#registerHandler('tab-closed', ({ tabId, data }) => {
+            const id = tabId || (data && (data.id || data.targetId));
+            if (this.#tabs.has(id)) {
+                this.#tabs.delete(id);
+                // The event is now dispatched optimistically in closeTab,
+                // but we keep this handler for cases where the iframe initiates the close.
+                this.#dispatchEvent('tab-closed', { tabId: id });
             }
         });
-        this.#registerHandler('active-tab-changed', ({ tabId }) => {
-            if (this.#activeTabId !== tabId) {
-                this.#activeTabId = tabId;
-                const activeTabData = tabId ? this.#tabs.get(tabId) : null;
-                this.#dispatchEvent('active-tab-changed', { tabId, url: activeTabData?.url, title: activeTabData?.title });
+        this.#registerHandler('active-tab-changed', ({ tabId, data }) => {
+            const id = tabId || (data && (data.id || data.targetId));
+            if (this.#activeTabId !== id) {
+                this.#activeTabId = id;
+                const activeTabData = id ? this.#tabs.get(id) : null;
+                this.#dispatchEvent('active-tab-changed', { tabId: id, url: activeTabData?.url, title: activeTabData?.title });
             }
         });
         this.#registerHandler('did-navigate', ({ data }) => {
-            const tab = this.#tabs.get(data.id);
-            if (tab) {
-                Object.assign(tab, data, { loading: false });
-                this.#dispatchEvent('did-navigate', { ...tab });
+            const id = data.id || data.targetId;
+            if (!id) return; // Ignore navigations without an ID
+
+            let tab = this.#tabs.get(id);
+            if (!tab) {
+                // This is a new tab that we didn't catch in 'tab-created'
+                console.log(`${this.#logPrefix} New tab detected from did-navigate: ${id}`);
+                tab = { id, ...data };
+                this.#tabs.set(id, tab);
+                // Dispatch a created event so the main app knows about it
+                this.#dispatchEvent('tab-created', { tabId: id, data: tab });
             }
+            
+            Object.assign(tab, data, { id, loading: false });
+            this.#dispatchEvent('did-navigate', { ...tab });
         });
         this.#registerHandler('did-start-loading', ({ tabId, data }) => {
-            const tab = this.#tabs.get(tabId);
+            const id = tabId || (data && (data.id || data.targetId));
+            const tab = this.#tabs.get(id);
             if (tab) {
                 tab.loading = true;
                 if (data && data.url) tab.url = data.url;
-                this.#dispatchEvent('did-start-loading', { tabId, url: tab.url });
+                this.#dispatchEvent('did-start-loading', { tabId: id, url: tab.url });
             }
         });
-        this.#registerHandler('did-stop-loading', ({ tabId }) => {
-            const tab = this.#tabs.get(tabId);
+        this.#registerHandler('did-stop-loading', ({ tabId, data }) => {
+            const id = tabId || (data && (data.id || data.targetId));
+            const tab = this.#tabs.get(id);
             if (tab) {
                 tab.loading = false;
-                this.#dispatchEvent('did-stop-loading', { tabId, url: tab.url });
+                this.#dispatchEvent('did-stop-loading', { tabId: id, url: tab.url });
             }
         });
     }
