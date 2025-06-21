@@ -185,11 +185,10 @@ export class BrowserApp {
       this._renderTabs(tabs);
     }
 
-    _handleWebviewReady(event) {
+    _handleWebviewReady(detail) {
         console.log('[BrowserApp] Webview is ready. Received data:', event.detail);
         const { tabs, activeTabId } = event.detail;
         if (tabs && tabs.size > 0) {
-            this.tabs.clear();
             this._currentAppActiveTabId = activeTabId;
             this._renderTabs(tabs);
             
