@@ -159,6 +159,7 @@ export class BrowserApp {
         this.ui.newTabButton.addEventListener('click', () => this.addTab());
 
         // Webview Event Listeners
+        this.webviewEl.addEventListener('tabs-updated', e => this._handleTabsUpdated(e.detail));
         this.webviewEl.addEventListener('webview-ready', (e) => this._handleWebviewReady(e.detail));
         this.webviewEl.addEventListener('tab-created', (e) => this._handleTabCreated(e.detail));
         this.webviewEl.addEventListener('tab-closed', () => this._renderTabs()); // Re-render after a tab is gone
@@ -178,18 +179,27 @@ export class BrowserApp {
         }
     }
 
-    _handleWebviewReady(detail) {
-        console.log(`[BrowserApp] Webview ready:`, detail);
-        const initialTabs = detail.tabs || [];
-        this._currentAppActiveTabId = detail.activeTabId;
-        this._renderTabs(initialTabs);
-        
-        const activeTab = initialTabs.find(t => t.id === this._currentAppActiveTabId);
-        if (activeTab) {
-            this._updateUIForActiveTab(activeTab);
-        } else if (initialTabs.length === 0) {
-            // If the webview is ready but has no tabs, create one.
-            this.addTab(this.homeUrl);
+    _handleTabsUpdated(detail) {
+      const { tabs } = event.detail;
+      console.log('new render', tabs);
+      this._renderTabs(tabs);
+    }
+
+    _handleWebviewReady(event) {
+        console.log('[BrowserApp] Webview is ready. Received data:', event.detail);
+        const { tabs, activeTabId } = event.detail;
+        if (tabs && tabs.size > 0) {
+            this.tabs.clear();
+            this._currentAppActiveTabId = activeTabId;
+            this._renderTabs(tabs);
+            
+            const activeTab = tabs.get(this._currentAppActiveTabId);
+            if (activeTab) {
+                this._updateUIForActiveTab(activeTab);
+            } else if (tabs.length === 0) {
+                // If the webview is ready but has no tabs, create one.
+                this.addTab(this.homeUrl);
+            }
         }
     }
 
@@ -206,7 +216,7 @@ export class BrowserApp {
     _handleActiveTabChanged(detail) {
         console.log(`[BrowserApp] Active tab changed:`, detail);
         this._currentAppActiveTabId = detail.tabId;
-        const activeTab = this.webviewEl.tabs.find(t => t.id === this._currentAppActiveTabId);
+        const activeTab = this.webviewEl.tabs.get(this._currentAppActiveTabId);
         if (activeTab) {
             this._updateUIForActiveTab(activeTab);
         }
@@ -222,7 +232,8 @@ export class BrowserApp {
         this._renderTabs();
     }
 
-    _handleDidStartLoading(detail) {
+    _handleDidStartLoading(detail, e) {
+        console.log(e);
         console.log(`[BrowserApp] Started loading:`, detail);
         if (detail.tabId === this._currentAppActiveTabId) {
             this.ui.navButtons.stop.style.display = 'flex';
@@ -257,7 +268,7 @@ export class BrowserApp {
     }
 
     _updateNavButtonStates() {
-        const activeTab = this.webviewEl.tabs.find(t => t.id === this._currentAppActiveTabId);
+        const activeTab = this.webviewEl.tabs.get(this._currentAppActiveTabId);
         
         if (activeTab) {
             this.ui.navButtons.back.disabled = !activeTab.canGoBack;
