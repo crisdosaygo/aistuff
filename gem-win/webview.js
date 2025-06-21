@@ -169,26 +169,28 @@ export class BrowserWebview extends HTMLElement {
     }
 
     #setupMessageHandlers() {
-        this.#registerHandler('tab-api-ready', () => {
-            console.log(`${this.#logPrefix} Received 'tab-api-ready'. Fetching initial state.`);
-            Promise.all([
-                this.#sendRequest('getTabs'),
-                this.#sendRequest('getActiveTab')
-            ]).then(([tabs, activeTab]) => {
-                this.#tabs.clear();
-                (tabs || []).forEach(tabData => {
-                    const id = tabData.id || tabData.targetId;
-                    this.#tabs.set(id, { ...tabData, id });
-                });
-                const activeId = activeTab ? (activeTab.id || activeTab.targetId) : (this.#tabs.size > 0 ? this.#tabs.keys().next().value : null);
-                this.#activeTabId = activeId;
-                this.#isWebViewReady = true;
+        this.#registerHandler('tab-api-ready', async () => {
+            try {
+              console.log(`${this.#logPrefix} Received 'tab-api-ready'. Fetching initial state.`);
+              const tabs = await this.#sendRequest('getTabs');
+              this.#tabs.clear();
+              (tabs || []).forEach(tabData => {
+                  const id = tabData.id || tabData.targetId;
+                  this.#tabs.set(id, { ...tabData, id });
+              });
+              const activeTab = await this.#sendRequest('getActiveTab')
+              const activeId = activeTab ? (activeTab.id || activeTab.targetId) : (this.#tabs.size > 0 ? this.#tabs.keys().next().value : null);
+              this.#activeTabId = activeId;
+              this.#isWebViewReady = true;
 
-                this.#dispatchEvent('webview-ready', { tabs: this.tabs, activeTabId: this.#activeTabId });
-                console.log(`${this.#logPrefix} Initialized from iframe. Active: ${this.#activeTabId}`);
-            }).catch(error => {
+              this.#dispatchEvent('webview-ready', { tabs: this.tabs, activeTabId: this.#activeTabId });
+              this.dispatchEvent(new CustomEvent('tabs-updated', {
+                  detail: { tabs }
+              }));
+              console.log(`${this.#logPrefix} Initialized from iframe. Active: ${this.#activeTabId}`);
+            } catch(error) {
                 console.error(`${this.#logPrefix} Error getting initial state from iframe:`, error);
-            });
+            }
         });
 
         // State update handlers
