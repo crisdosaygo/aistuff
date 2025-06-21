@@ -19,6 +19,12 @@ export class BrowserWebview extends HTMLElement {
         super();
         this.attachShadow({ mode: 'open' });
         this.#logPrefix = `[BrowserWebview ${this.id || 'N/A'}]`;
+        this.webview = null;
+        this.isReady = false;
+        this.tabs = new Map();
+        this.activeTabId = null;
+        this._messageQueue = [];
+        this._recentlyCreated = new Set();
     }
 
     connectedCallback() {
@@ -73,7 +79,15 @@ export class BrowserWebview extends HTMLElement {
 
     // --- Public Properties ---
     get activeTabId() { return this.#activeTabId; }
-    get tabs() { return Array.from(this.#tabs.values()); }
+    set activeTabId(newATI) {
+      this.#activeTabId = newATI;
+    }
+    get tabs() { return this.#tabs; }
+    set tabs(newTabs) {
+      for( const tab of newTabs ) {
+        this.#tabs.set(tab.id, tab);
+      }
+    }
 
     // --- Internal Communication & State Logic ---
     #sendMessage(type, data = {}, tabId = null, extra_props = {}) {
@@ -116,6 +130,35 @@ export class BrowserWebview extends HTMLElement {
         const handler = this.#handlers.get(type);
         if (handler) {
             handler({ tabId, data });
+        }
+
+        switch (type) {
+            case 'ready':
+                console.log(`[BrowserWebview ${this.id}] Received 'ready' from iframe with data:`, data);
+                this.isReady = true;
+                this._normalizeAndSetTabs(data.tabs || []);
+                this.dispatchEvent(new CustomEvent('webview-ready', {
+                    detail: { tabs: this.tabs, activeTabId: this.#activeTabId }
+                }));
+                break;
+            case 'tab-created':
+                this._handleTabCreated(data);
+                break;
+            case 'tab-closed':
+                this._handleTabClosed(data.tabId);
+                break;
+            case 'active-tab-changed':
+                this._handleActiveTabChanged(data.tabId, data);
+                break;
+            case 'did-navigate':
+                this._handleDidNavigate(data);
+                break;
+            case 'did-start-loading':
+                this._handleLoadChange(data.tabId, true, data.url);
+                break;
+            case 'did-stop-loading':
+                this._handleLoadChange(data.tabId, false);
+                break;
         }
     }
 
@@ -177,20 +220,19 @@ export class BrowserWebview extends HTMLElement {
         });
         this.#registerHandler('did-navigate', ({ data }) => {
             const id = data.id || data.targetId;
-            if (!id) return; // Ignore navigations without an ID
+            if (!id) return;
 
-            let tab = this.#tabs.get(id);
+            let tab = this.tabs.get(id);
+
             if (!tab) {
-                // This is a new tab that we didn't catch in 'tab-created'
-                console.log(`${this.#logPrefix} New tab detected from did-navigate: ${id}`);
-                tab = { id, ...data };
-                this.#tabs.set(id, tab);
-                // Dispatch a created event so the main app knows about it
-                this.#dispatchEvent('tab-created', { tabId: id, data: tab });
+                // A navigation event for a tab we don't know about.
+                // For now, we'll just log it. The optimistic creation was causing duplicates.
+                console.warn(`[BrowserWebview ${this.id}] Received 'did-navigate' for unknown tab:`, data);
+                return;
             }
-            
-            Object.assign(tab, data, { id, loading: false });
-            this.#dispatchEvent('did-navigate', { ...tab });
+
+            Object.assign(tab, data, { id: id, loading: false });
+            this.dispatchEvent(new CustomEvent('did-navigate', { detail: { ...tab } }));
         });
         this.#registerHandler('did-start-loading', ({ tabId, data }) => {
             const id = tabId || (data && (data.id || data.targetId));
@@ -209,6 +251,76 @@ export class BrowserWebview extends HTMLElement {
                 this.#dispatchEvent('did-stop-loading', { tabId: id, url: tab.url });
             }
         });
+        setInterval(async () => {
+                const tabs = await this.#sendRequest('getTabs');
+                (tabs || []).forEach(tabData => {
+                    const id = tabData.id || tabData.targetId;
+                    this.#tabs.set(id, { ...tabData, id });
+                });
+                this.dispatchEvent(new CustomEvent('tabs-updated', {
+                    detail: { tabs }
+                }));
+        }, 5000);
+    }
+
+    _handleTabCreated(data) {
+        const id = data.id || data.targetId;
+        if (!id) {
+            console.warn(`[BrowserWebview ${this.id}] Received tab-created without an ID.`, data);
+            return;
+        }
+        // Cache this ID for a moment to prevent did-navigate from creating a duplicate
+        this._recentlyCreated.add(id);
+        setTimeout(() => this._recentlyCreated.delete(id), 1000);
+
+        const newTab = { ...data, id };
+        this.tabs.set(id, newTab);
+        this.dispatchEvent(new CustomEvent('tab-created', {
+            detail: { tabId: id, data: newTab }
+        }));
+    }
+
+    _handleTabClosed(tabId) {
+        if (this.#tabs.has(tabId)) {
+            this.#tabs.delete(tabId);
+            this.#dispatchEvent('tab-closed', { tabId });
+        }
+    }
+
+    _handleActiveTabChanged(tabId, data) {
+        const id = tabId || (data && (data.id || data.targetId));
+        if (this.#activeTabId !== id) {
+            this.#activeTabId = id;
+            const activeTabData = id ? this.#tabs.get(id) : null;
+            this.#dispatchEvent('active-tab-changed', { tabId: id, url: activeTabData?.url, title: activeTabData?.title });
+        }
+    }
+
+    _handleDidNavigate(data) {
+        const id = data.id || data.targetId;
+        if (!id) return;
+
+        let tab = this.tabs.get(id);
+
+        if (!tab) {
+            // A navigation event for a tab we don't know about.
+            // For now, we'll just log it. The optimistic creation was causing duplicates.
+            console.warn(`[BrowserWebview ${this.id}] Received 'did-navigate' for unknown tab:`, data);
+            return;
+        }
+
+        Object.assign(tab, data, { id: id, loading: false });
+        this.dispatchEvent(new CustomEvent('did-navigate', { detail: { ...tab } }));
+    }
+
+    _handleLoadChange(tabId, isLoading, url) {
+        const id = tabId || (data && (data.id || data.targetId));
+        const tab = this.tabs.get(id);
+        if (tab) {
+            tab.loading = isLoading;
+            if (url) tab.url = url;
+            this.dispatchEvent(new CustomEvent('did-start-loading', { detail: { tabId: id, url: tab.url } }));
+        }
     }
 }
 
