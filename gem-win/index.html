@@ -215,64 +215,27 @@
 
     <!-- Service Worker Control Script -->
     <script>
-        // --- Service Worker Control ---
-        // To disable SW: add ?sw=off to the URL
-        // To enable SW (default): no param or ?sw=on
-        const swControl = new URLSearchParams(window.location.search).get('sw') || 'on';
-        const USE_SERVICE_WORKER = !(swControl === 'off'); // Enable by default
-
-        async function unregisterAllServiceWorkersAndClearCaches() {
-            if ('serviceWorker' in navigator) {
-                try {
-                    const registrations = await navigator.serviceWorker.getRegistrations();
-                    for (const registration of registrations) {
-                        await registration.unregister();
-                        console.log('ServiceWorker unregistered:', registration.scope);
-                    }
-                } catch (error) {
-                    console.error('Error unregistering ServiceWorker:', error);
-                }
-            }
-            if ('caches' in window) {
-                try {
-                    const cacheNames = await caches.keys();
-                    for (const cacheName of cacheNames) {
-                        await caches.delete(cacheName);
-                        console.log('Cache deleted:', cacheName);
-                    }
-                    console.log('All caches cleared.');
-                } catch (error) {
-                    console.error('Error clearing caches:', error);
-                }
-            }
-            // Consider a reload if you want the page to immediately reflect the no-SW state.
-            // However, this might interrupt the user if they are actively doing something.
-            // For development, a manual refresh after ?sw=off is often sufficient.
-            // if (swControl === 'off') { // Only reload if explicitly turned off
-            //     console.log('Reloading page to apply no-SW state.');
-            //     window.location.reload();
-            // }
-        }
-
+        // --- Service Worker DISABLED ---
+        // Unregister all service workers and clear caches
         if ('serviceWorker' in navigator) {
-            if (USE_SERVICE_WORKER) {
-                window.addEventListener('load', () => { // Register SW on window load
-                    navigator.serviceWorker.register('./sw.js') // Ensure sw.js is at the root
-                        .then(registration => {
-                            console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                        })
-                        .catch(error => {
-                            console.log('ServiceWorker registration failed: ', error);
-                        });
-                });
-            } else {
-                console.log('Service Worker is disabled by flag. Unregistering existing SWs and clearing caches.');
-                // Call this function early, before 'load', to try and prevent an existing SW from controlling the page.
-                unregisterAllServiceWorkersAndClearCaches();
-            }
+            navigator.serviceWorker.getRegistrations().then(registrations => {
+                for (const registration of registrations) {
+                    registration.unregister();
+                    console.log('ServiceWorker unregistered:', registration.scope);
+                }
+            });
+        }
+        if ('caches' in window) {
+            caches.keys().then(cacheNames => {
+                for (const cacheName of cacheNames) {
+                    caches.delete(cacheName);
+                    console.log('Cache deleted:', cacheName);
+                }
+            });
         }
     </script>
     <!-- End Service Worker Control Script -->
+
 </head>
 <body>
     <!-- SPLASH SCREEN HTML -->

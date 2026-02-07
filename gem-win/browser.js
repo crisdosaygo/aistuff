@@ -153,6 +153,20 @@ export class BrowserApp {
             if (e.key === 'Enter') this.navigateToCurrentAddress();
         });
         this.ui.goButton.addEventListener('click', () => this.navigateToCurrentAddress());
+        
+        // Add Cloud Mode Trigger (e.g., specific command or button in tools)
+        // For now, let's hook it into a special URL "cloud://" or "bb://"
+        
+        // Also add a menu item for it if possible, or just a hidden trigger
+        if (this.ui.menuBar.tools) {
+            this.ui.menuBar.tools.disabled = false;
+            this.ui.menuBar.tools.addEventListener('click', () => {
+                 const doCloud = confirm("Connect to BrowserBox Cloud?\n\nThis will start a remote browser session.");
+                 if (doCloud) {
+                     this.webviewEl.enableCloudMode();
+                 }
+            });
+        }
 
         // Tab Bar Listeners
         if (this.ui.tabBar) {
@@ -450,8 +464,12 @@ export class BrowserApp {
         await this.webviewEl.loadURL(fullUrl, targetTabId);
     }
 
-    _prepareUrl(url) { /* ... (same as previous complete version) ... */ 
+    _prepareUrl(url) {
         let fullUrl = url.trim();
+        if (fullUrl === 'cloud://' || fullUrl === 'bb://') {
+             this.webviewEl.enableCloudMode();
+             return 'about:blank';
+        }
         if (!fullUrl) fullUrl = this.defaultUrl;
         if (!/^[a-z]+:\/\//i.test(fullUrl) && !fullUrl.startsWith("about:") && !fullUrl.startsWith("data:")) {
             fullUrl = "http://" + fullUrl;
