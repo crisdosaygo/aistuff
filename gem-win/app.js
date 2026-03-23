@@ -1,5 +1,6 @@
 // app.js
   import { BrowserApp } from './browser.js';
+  import { BrowserBoxClient } from './browserbox-client.js';
   import { networkExplorerAppDefinition } from './network-explorer.js';
   import { notepadAppDefinition } from './notepad.js';
   import { calculatorAppDefinition } from './calculator.js';
@@ -32,13 +33,38 @@
               </div>
           `
       },
+      internetConnectionWizard: {
+          title: "Internet Connection Wizard",
+          icon: "./internet_connection_wiz-0.png",
+          isDialog: true,
+          defaultWidth: 430,
+          defaultHeight: 235,
+          generateContent: () => `
+              <div class="connection-wizard" style="display:flex; flex-direction:column; height:100%; background:#c0c0c0; padding:12px;">
+                  <div style="display:flex; gap:12px; align-items:flex-start;">
+                      <img src="./internet_connection_wiz-0.png" alt="" style="width:32px; height:32px;">
+                      <div style="flex:1;">
+                          <div style="font-weight:bold; margin-bottom:4px;">Connecting to the Internet</div>
+                          <div style="font-size:11px; color:#222;" class="wizard-subtitle-line">Preparing secure BrowserBox session...</div>
+                      </div>
+                  </div>
+                  <div style="margin-top:14px; border:1px inset #808080; background:#fff; height:18px; padding:2px;">
+                      <div class="wizard-progress-fill" style="height:100%; width:6%; background:linear-gradient(90deg,#000080,#1084d0);"></div>
+                  </div>
+                  <div class="wizard-status-line" style="margin-top:12px; font-size:12px; min-height:20px; color:#111;">Initializing modem harmonics...</div>
+                  <div style="margin-top:auto; display:flex; justify-content:flex-end; gap:6px;">
+                      <button class="win95-button wizard-cancel-btn" style="min-width:80px;">Cancel</button>
+                  </div>
+              </div>
+          `
+      },
       internetBrowser: {
           // netscape: true, // This was in your provided app.js, BrowserApp constructor now has netscapeFlag_unused
           title: "Internet Browser",
           icon: "./search_web-0.png",
           defaultWidth: 700,
           defaultHeight: 500,
-          generateContent: (windowInstanceId, webviewId) => BrowserApp.generateInitialHTML(webviewId),
+          generateContent: (windowInstanceId, webviewId, launchData) => BrowserApp.generateInitialHTML(webviewId, launchData),
           initApp: (windowEl, windowInstanceId, webviewId, appDefinition) => {
               // Assuming BrowserApp's 4th param is netscape-like flag.
               // For "Internet Browser", let's assume it's NOT Netscape-styled.
@@ -51,7 +77,7 @@
           icon: "./msie2-0.png",
           defaultWidth: 700,
           defaultHeight: 500,
-          generateContent: (windowInstanceId, webviewId) => BrowserApp.generateInitialHTML(webviewId),
+          generateContent: (windowInstanceId, webviewId, launchData) => BrowserApp.generateInitialHTML(webviewId, launchData),
           initApp: (windowEl, windowInstanceId, webviewId, appDefinition) => {
               return new BrowserApp(windowEl, windowInstanceId, webviewId, false, appDefinition);
           }
@@ -62,13 +88,14 @@
           icon: "./n2-2.png",
           defaultWidth: 700,
           defaultHeight: 500,
-          generateContent: (windowInstanceId, webviewId) => BrowserApp.generateInitialHTML(webviewId),
+          generateContent: (windowInstanceId, webviewId, launchData) => BrowserApp.generateInitialHTML(webviewId, launchData),
           initApp: (windowEl, windowInstanceId, webviewId, appDefinition) => {
               return new BrowserApp(windowEl, windowInstanceId, webviewId, true, appDefinition); // Pass true for Netscape style
           }
       },
   };
   window.APP_DEFINITIONS = APP_DEFINITIONS;
+  const BROWSER_APP_IDS = new Set(['internetBrowser', 'internetExplorer', 'netscapeNavigator']);
 
   function debounce(func, wait) { /* ... (same as your latest) ... */
       let timeout;
@@ -200,6 +227,237 @@
       let windowIdCounter = 0;
       window.openWindows = openWindows;
       window.focusWindow = focusWindow;
+      const browserSessionClient = new BrowserBoxClient();
+      const browserSessionState = {
+          phase: 'idle', // idle | launching | ready
+          pending: null,
+          session: null,
+          canceled: false,
+      };
+      const wizardLines = [
+          "Copying Internet to local device...",
+          "Laying undersea cables...",
+          "Sending emails into space...",
+          "Demultiplexing pixels...",
+          "Engaging photonic entanglement cascade...",
+          "Negotiating with DNS goblins...",
+          "Aligning retro protocol stacks...",
+      ];
+
+      function findOpenWindowByAppId(appId) {
+          return Object.values(openWindows).find((winData) => (
+              winData &&
+              winData.appId === appId &&
+              winData.element &&
+              document.body.contains(winData.element)
+          )) || null;
+      }
+
+      function findExistingBrowserWindow() {
+          return Object.values(openWindows).find((winData) => (
+              winData &&
+              BROWSER_APP_IDS.has(winData.appId) &&
+              winData.element &&
+              document.body.contains(winData.element)
+          )) || null;
+      }
+
+      function closeConnectionWizard() {
+          const existingWizard = findOpenWindowByAppId('internetConnectionWizard');
+          if (existingWizard && existingWizard.element) {
+              closeWindow(existingWizard.element);
+          }
+      }
+
+      function showConnectionWizard() {
+          let wizardWindow = findOpenWindowByAppId('internetConnectionWizard');
+          if (!wizardWindow) {
+              const wizardElement = createWindow('internetConnectionWizard');
+              if (!wizardElement) {
+                  return null;
+              }
+              wizardWindow = openWindows[wizardElement.dataset.instanceId];
+          } else {
+              focusWindow(wizardWindow.element);
+          }
+
+          const wizardEl = wizardWindow.element;
+          const statusLineEl = wizardEl.querySelector('.wizard-status-line');
+          const subtitleLineEl = wizardEl.querySelector('.wizard-subtitle-line');
+          const progressFillEl = wizardEl.querySelector('.wizard-progress-fill');
+          const cancelBtn = wizardEl.querySelector('.wizard-cancel-btn');
+
+          if (cancelBtn && !cancelBtn.dataset.wired) {
+              cancelBtn.dataset.wired = '1';
+              cancelBtn.addEventListener('click', () => {
+                  if (browserSessionState.phase === 'launching') {
+                      browserSessionState.canceled = true;
+                  }
+                  closeConnectionWizard();
+              });
+          }
+
+          return {
+              update(progressPercent, statusLine, subtitleLine) {
+                  if (!wizardEl || !document.body.contains(wizardEl)) return;
+                  if (progressFillEl) {
+                      const clamped = Math.max(0, Math.min(100, Math.round(progressPercent)));
+                      progressFillEl.style.width = `${clamped}%`;
+                  }
+                  if (typeof statusLine === 'string' && statusLineEl) {
+                      statusLineEl.textContent = statusLine;
+                  }
+                  if (typeof subtitleLine === 'string' && subtitleLineEl) {
+                      subtitleLineEl.textContent = subtitleLine;
+                  }
+              },
+              showError(message) {
+                  if (!wizardEl || !document.body.contains(wizardEl)) return;
+                  if (statusLineEl) statusLineEl.textContent = message;
+                  if (subtitleLineEl) subtitleLineEl.textContent = 'Check connection and try again.';
+                  if (progressFillEl) progressFillEl.style.width = '100%';
+                  if (progressFillEl) progressFillEl.style.background = '#8b0000';
+              },
+              closeSoon(delayMs = 700) {
+                  setTimeout(() => {
+                      closeConnectionWizard();
+                  }, delayMs);
+              }
+          };
+      }
+
+      async function ensureBrowserSession() {
+          if (browserSessionState.phase === 'ready' && browserSessionState.session?.loginUrl) {
+              return browserSessionState.session;
+          }
+          if (browserSessionState.pending) {
+              return browserSessionState.pending;
+          }
+
+          browserSessionState.phase = 'launching';
+          browserSessionState.canceled = false;
+          const wizardUi = showConnectionWizard();
+
+          let fakeProgress = 7;
+          let lineIndex = 0;
+          if (wizardUi) {
+              wizardUi.update(fakeProgress, wizardLines[lineIndex], 'Summoning nearest BrowserBox region...');
+          }
+          const spinnerTimer = setInterval(() => {
+              if (browserSessionState.phase !== 'launching') return;
+              fakeProgress = Math.min(88, fakeProgress + (4 + Math.floor(Math.random() * 6)));
+              lineIndex = (lineIndex + 1) % wizardLines.length;
+              if (wizardUi) {
+                  wizardUi.update(fakeProgress, wizardLines[lineIndex], 'Bootstrapping secure browser container...');
+              }
+          }, 900);
+
+          browserSessionState.pending = (async () => {
+              try {
+                  const params = new URLSearchParams(window.location.search);
+                  let sessionData;
+
+                  const status = await browserSessionClient.checkStatus();
+                  if (browserSessionState.canceled) {
+                      throw new Error('Connection canceled.');
+                  }
+
+                  if (status && status.activeSession && status.activeSession.loginUrl) {
+                      sessionData = {
+                          loginUrl: status.activeSession.loginUrl,
+                          region: status.activeSession.region || 'auto',
+                          sessionId: status.activeSession.sessionId || null,
+                          remainingMs: status.activeSession.remainingMs || null,
+                          reused: true,
+                      };
+                  } else {
+                      const hintedIP = params.get('client_ip') || params.get('ip') || null;
+                      sessionData = await browserSessionClient.createSession({ clientIP: hintedIP });
+                  }
+
+                  if (browserSessionState.canceled) {
+                      throw new Error('Connection canceled.');
+                  }
+
+                  if (!sessionData?.loginUrl) {
+                      throw new Error('Browser session did not return a login link.');
+                  }
+                  if (browserSessionState.canceled) {
+                      throw new Error('Connection canceled.');
+                  }
+
+                  browserSessionState.session = sessionData;
+                  browserSessionState.phase = 'ready';
+
+                  if (wizardUi) {
+                      wizardUi.update(100, 'Connection established.', `Connected via ${sessionData.region || 'auto'} region.`);
+                      wizardUi.closeSoon();
+                  }
+
+                  return sessionData;
+              } catch (error) {
+                  browserSessionState.phase = 'idle';
+                  browserSessionState.session = null;
+                  if (wizardUi) {
+                      wizardUi.showError(error?.message || 'Failed to connect browser.');
+                  }
+                  throw error;
+              } finally {
+                  clearInterval(spinnerTimer);
+                  browserSessionState.pending = null;
+              }
+          })();
+
+          return browserSessionState.pending;
+      }
+
+      async function launchBrowserApplication(appId, dataForApp = null) {
+          const existingBrowser = findExistingBrowserWindow();
+          if (existingBrowser && existingBrowser.element) {
+              if (existingBrowser.isMinimized) {
+                  toggleMinimizeWindow(existingBrowser.element);
+              } else {
+                  focusWindow(existingBrowser.element);
+              }
+
+              if (dataForApp?.navigateToUrl && existingBrowser.appInstance && typeof existingBrowser.appInstance.navigateTo === 'function') {
+                  existingBrowser.appInstance.navigateTo(dataForApp.navigateToUrl);
+              }
+              return existingBrowser.element;
+          }
+
+          try {
+              const session = await ensureBrowserSession();
+              const browserAfterConnect = findExistingBrowserWindow();
+              if (browserAfterConnect && browserAfterConnect.element) {
+                  if (browserAfterConnect.isMinimized) {
+                      toggleMinimizeWindow(browserAfterConnect.element);
+                  } else {
+                      focusWindow(browserAfterConnect.element);
+                  }
+                  if (dataForApp?.navigateToUrl && browserAfterConnect.appInstance && typeof browserAfterConnect.appInstance.navigateTo === 'function') {
+                      browserAfterConnect.appInstance.navigateTo(dataForApp.navigateToUrl);
+                  }
+                  return browserAfterConnect.element;
+              }
+              const launchData = {
+                  ...(dataForApp || {}),
+                  loginLink: session.loginUrl,
+                  browserSessionId: session.sessionId || null,
+              };
+              return createWindow(appId, launchData);
+          } catch (error) {
+              console.warn('Browser launch aborted:', error?.message || error);
+              return null;
+          }
+      }
+
+      async function openApplication(appId, dataForApp = null) {
+          if (BROWSER_APP_IDS.has(appId)) {
+              return launchBrowserApplication(appId, dataForApp);
+          }
+          return createWindow(appId, dataForApp);
+      }
 
       if (window.SPLASH_API) {
           console.log("Starting asset preloading...");
@@ -287,8 +545,8 @@
           }
 
           let appInstanceSpecificData = null;
-          if (appId === 'networkExplorer' && typeof createWindow === 'function') {
-              appInstanceSpecificData = createWindow;
+          if (appId === 'networkExplorer' && typeof openApplication === 'function') {
+              appInstanceSpecificData = openApplication;
           }
 
           const windowInstanceId = `window-${appId}-${windowIdCounter++}`;
@@ -312,13 +570,20 @@
           }
 
           let webviewId = null;
-          const isBrowserApp = ['internetBrowser', 'internetExplorer', 'netscapeNavigator'].includes(appId);
+          const isBrowserApp = BROWSER_APP_IDS.has(appId);
           if (isBrowserApp) webviewId = `webview-${windowInstanceId}`;
 
           if (appDef.generateContent) {
-              windowEl.querySelector('.window-content').innerHTML = appDef.generateContent(windowInstanceId, webviewId);
+              windowEl.querySelector('.window-content').innerHTML = appDef.generateContent(windowInstanceId, webviewId, dataForApp);
           } else {
               windowEl.querySelector('.window-content').innerHTML = typeof appDef.content === 'function' ? appDef.content() : appDef.content;
+          }
+
+          if (isBrowserApp && dataForApp?.loginLink && webviewId) {
+              const webviewEl = windowEl.querySelector(`#${webviewId}`);
+              if (webviewEl) {
+                  webviewEl.setAttribute('login-link', dataForApp.loginLink);
+              }
           }
 
           const maxAllowedWidth = desktop.clientWidth - 20;
@@ -678,7 +943,7 @@
           });
           item.addEventListener('dblclick', (e) => { // Double click to open
               const appId = item.dataset.appId;
-              if (appId) createWindow(appId);
+              if (appId) void openApplication(appId);
           });
       });
 
@@ -688,7 +953,7 @@
               if (item.classList.contains('disabled')) return;
               const appId = item.dataset.appId;
               if (item.id === 'shutdownButtonTrigger') createWindow("shutdownDialog");
-              else if (appId) createWindow(appId);
+              else if (appId) void openApplication(appId);
               startMenu.style.display = 'none'; startButton.style.borderStyle = 'outset';
           });
       });

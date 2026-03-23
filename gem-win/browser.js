@@ -1,14 +1,22 @@
 // browser.js
+// Consumes <browserbox-webview> API directly — no wrapper layer.
 
-import { BrowserWebview } from './webview.js';
+import './browserbox-webview.js';
 
 export class BrowserApp {
+    // Internal view-model for tabs (sync state for UI rendering)
+    #tabs = new Map();
+    #tabOrder = [];
+    #activeTabId = null;
+    #isReady = false;
+
     constructor(windowEl, windowInstanceId, webviewId, netscapeFlag_unused, appDef) {
         this.netscape = false; 
         this.appDef = appDef;
         this.windowEl = windowEl;
         this.windowInstanceId = windowInstanceId;
         this.webviewId = webviewId;
+        // Query for <browserbox-webview> element directly
         this.webviewEl = this.windowEl.querySelector(`#${this.webviewId}`);
 
         this.defaultUrl = "about:blank";
@@ -16,10 +24,10 @@ export class BrowserApp {
 
         this.throbberAnimatedSrc = "./netscape.gif";
         this.throbberStaticSrc = "./netscape-frame.gif";
-        this.defaultFavicon = "./template_world-4.png"; // Default favicon for tabs
+        this.defaultFavicon = "./template_world-4.png";
 
         this.ui = {
-            menuBar: { // Menu items are present in HTML but disabled by default
+            menuBar: {
                 file: this.windowEl.querySelector('[data-menu-item="file"]'),
                 edit: this.windowEl.querySelector('[data-menu-item="edit"]'),
                 view: this.windowEl.querySelector('[data-menu-item="view"]'),
@@ -41,17 +49,17 @@ export class BrowserApp {
             goButton: this.windowEl.querySelector('.browser-address-bar-go'),
             linksButton: this.windowEl.querySelector('.browser-address-bar-links'),
             throbber: this.windowEl.querySelector('.browser-throbber-netscape'),
-            tabBar: this.windowEl.querySelector('.browser-tab-bar-ie'), // Tab bar
-            newTabButton: this.windowEl.querySelector('.browser-new-tab-btn-ie'), // New tab button
+            tabBar: this.windowEl.querySelector('.browser-tab-bar-ie'),
+            newTabButton: this.windowEl.querySelector('.browser-new-tab-btn-ie'),
+            browserContent: this.windowEl.querySelector('.browser-content'),
             statusBar: {
-                statusIcon: this.windowEl.querySelector('.status-bar-icon-main img'), // Icon in first panel
-                statusText: this.windowEl.querySelector('.status-bar-text-main'),    // Text in first panel
-                zoneIcon: this.windowEl.querySelector('.status-bar-icon-zone img'), // Icon in last panel
-                zoneText: this.windowEl.querySelector('.status-bar-zone-text')      // Text in last panel ("BrowserBox")
+                statusIcon: this.windowEl.querySelector('.status-bar-icon-main img'),
+                statusText: this.windowEl.querySelector('.status-bar-text-main'),
+                zoneIcon: this.windowEl.querySelector('.status-bar-icon-zone img'),
+                zoneText: this.windowEl.querySelector('.status-bar-zone-text')
             }
         };
 
-        this._currentAppActiveTabId = null;
         this._setupEventListeners();
         
         if (this.ui.navButtons.stop) this.ui.navButtons.stop.style.display = 'none';
@@ -63,12 +71,12 @@ export class BrowserApp {
         }
         
         this._updateNavButtonStates();
-        this.setStatusBarText("Done", "./channels-4.png"); // Initial status with channels icon
+        this.setStatusBarText("Done", "./channels-4.png");
         if (this.ui.statusBar.zoneIcon) this.ui.statusBar.zoneIcon.src = './internet_connection_wiz-0.png';
         if (this.ui.statusBar.zoneText) this.ui.statusBar.zoneText.textContent = "BrowserBox";
     }
 
-    static generateInitialHTML(webviewId) {
+    static generateInitialHTML(webviewId, launchData = {}) {
         // Underlined characters for menu items
         const menuItems = [
             { label: "<u>F</u>ile", action: "file" },
@@ -82,6 +90,13 @@ export class BrowserApp {
             back: "Back", forward: "Forward", stop: "Stop", refresh: "Refresh",
             home: "Home", search: "Search", favorites: "Favorites", history: "History"
         };
+        const rawLoginLink = typeof launchData?.loginLink === 'string' ? launchData.loginLink : '';
+        const sanitizedLoginLink = rawLoginLink
+            .replaceAll('&', '&amp;')
+            .replaceAll('"', '&quot;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;');
+        const loginLinkAttr = sanitizedLoginLink ? ` login-link="${sanitizedLoginLink}"` : '';
 
         return `
             <div class="browser-container-ie">
@@ -117,7 +132,12 @@ export class BrowserApp {
                         <button class="browser-new-tab-btn-ie" title="New Tab">+</button>
                     </div>
                 </div>
-                <browser-webview id="${webviewId}" style="flex-grow: 1; min-height: 100px;"></browser-webview>
+                <div class="browser-content">
+                    <browserbox-webview id="${webviewId}"${loginLinkAttr}
+                        style="display:block; width:100%; height:100%;"
+                        request-timeout-ms="45000">
+                    </browserbox-webview>
+                </div>
                 <div class="browser-status-bar-ie">
                     <div class="status-bar-panel status-bar-main">
                         <img src="./channels-4.png" alt="" class="status-bar-icon-main"/>
@@ -135,6 +155,7 @@ export class BrowserApp {
     }
 
     _setupEventListeners() {
+        // Nav button handlers — call BBX API directly
         this.ui.navButtons.back.addEventListener('click', () => this.goBack());
         this.ui.navButtons.forward.addEventListener('click', () => this.goForward());
         this.ui.navButtons.stop.addEventListener('click', () => this.stopLoading());
@@ -149,51 +170,48 @@ export class BrowserApp {
             this.ui.linksButton.addEventListener('click', () => alert('Links action not implemented.'));
         }
 
+        // Address bar — navigate via BBX submitOmnibox API
         this.ui.addressBar.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.navigateToCurrentAddress();
         });
         this.ui.goButton.addEventListener('click', () => this.navigateToCurrentAddress());
-        
-        // Add Cloud Mode Trigger (e.g., specific command or button in tools)
-        // For now, let's hook it into a special URL "cloud://" or "bb://"
-        
-        // Also add a menu item for it if possible, or just a hidden trigger
-        if (this.ui.menuBar.tools) {
-            this.ui.menuBar.tools.disabled = false;
-            this.ui.menuBar.tools.addEventListener('click', () => {
-                 const doCloud = confirm("Connect to BrowserBox Cloud?\n\nThis will start a remote browser session.");
-                 if (doCloud) {
-                     this.webviewEl.enableCloudMode();
-                 }
-            });
-        }
 
-        // Tab Bar Listeners
+        // Tab bar click delegation
         if (this.ui.tabBar) {
             this.ui.tabBar.addEventListener('click', (e) => {
                 const tabElement = e.target.closest('.browser-tab-ie');
                 if (!tabElement) return;
-                const tabId = tabElement.dataset.tabId;
+                const tabIndex = parseInt(tabElement.dataset.tabIndex, 10);
 
                 if (e.target.classList.contains('tab-close-btn-ie')) {
-                    this.closeTab(tabId);
+                    // Close tab via BBX API
+                    this.webviewEl.closeTab(tabIndex);
                 } else {
-                    this.switchTab(tabId);
+                    // Switch tab via BBX API
+                    this.webviewEl.switchToTab(tabIndex);
                 }
             });
         }
+
+        // New tab button — create tab via BBX API
         if (this.ui.newTabButton) {
-            this.ui.newTabButton.addEventListener('click', () => this.addTab(this.defaultUrl, true));
+            this.ui.newTabButton.addEventListener('click', () => {
+                this.webviewEl.createTab(this.defaultUrl);
+            });
         }
 
-        this.webviewEl.addEventListener('webview-ready', (e) => this._handleWebviewReady(e.detail));
+        // BBX API events — directly from <browserbox-webview>
+        this.webviewEl.addEventListener('ready', () => this._handleReady());
+        this.webviewEl.addEventListener('api-ready', (e) => this._handleApiReady(e.detail));
         this.webviewEl.addEventListener('tab-created', (e) => this._handleTabCreated(e.detail));
         this.webviewEl.addEventListener('tab-closed', (e) => this._handleTabClosed(e.detail));
         this.webviewEl.addEventListener('active-tab-changed', (e) => this._handleActiveTabChanged(e.detail));
         this.webviewEl.addEventListener('did-start-loading', (e) => this._handleDidStartLoading(e.detail));
         this.webviewEl.addEventListener('did-stop-loading', (e) => this._handleDidStopLoading(e.detail));
         this.webviewEl.addEventListener('did-navigate', (e) => this._handleDidNavigate(e.detail));
-        this.webviewEl.addEventListener('favicon-updated', (e) => this._handleFaviconUpdated(e.detail)); // New listener
+        this.webviewEl.addEventListener('policy-denied', (e) => {
+            console.warn('[BrowserApp] Policy denied:', e.detail);
+        });
     }
 
     setStatusBarText(text, iconSrc = null) {
@@ -208,53 +226,228 @@ export class BrowserApp {
         }
     }
     
-    _handleFaviconUpdated(detail) {
-        const { tabId, favicon } = detail;
-        const tabElement = this.ui.tabBar.querySelector(`.browser-tab-ie[data-tab-id="${tabId}"]`);
-        if (tabElement) {
-            const faviconImg = tabElement.querySelector('.tab-favicon-ie img');
-            if (faviconImg) {
-                faviconImg.src = favicon || this.defaultFavicon;
-            }
+    // --- Internal view model helpers ---
+    
+    #getTab(tabId) {
+        return this.#tabs.get(tabId) || null;
+    }
+    
+    #getActiveTab() {
+        return this.#activeTabId ? this.#tabs.get(this.#activeTabId) : null;
+    }
+    
+    #upsertTab(detail) {
+        const tabId = this.#extractTabId(detail);
+        if (!tabId) return null;
+        
+        const existing = this.#tabs.get(tabId) || {
+            id: tabId,
+            url: '',
+            title: 'New Tab',
+            loading: false,
+            canGoBack: false,
+            canGoForward: false,
+            faviconDataURI: '',
+        };
+        
+        const url = typeof detail.url === 'string' ? detail.url : existing.url;
+        const title = (typeof detail.title === 'string' && detail.title.length > 0)
+            ? detail.title
+            : this.#extractTitleFromUrl(url);
+        
+        const next = {
+            ...existing,
+            id: tabId,
+            url,
+            title,
+            loading: typeof detail.loading === 'boolean' ? detail.loading : existing.loading,
+            canGoBack: typeof detail.canGoBack === 'boolean' ? detail.canGoBack : existing.canGoBack,
+            canGoForward: typeof detail.canGoForward === 'boolean' ? detail.canGoForward : existing.canGoForward,
+            faviconDataURI: (typeof detail.faviconDataURI === 'string' && detail.faviconDataURI.length > 0)
+                ? detail.faviconDataURI
+                : existing.faviconDataURI,
+        };
+        
+        if (!this.#tabOrder.includes(tabId)) {
+            this.#tabOrder.push(tabId);
+        }
+        
+        this.#tabs.set(tabId, next);
+        return next;
+    }
+    
+    #extractTabId(detail) {
+        if (!detail || typeof detail !== 'object') return null;
+        const candidates = [detail.id, detail.tabId, detail.targetId];
+        for (const c of candidates) {
+            if (typeof c === 'string' && c.length > 0) return c;
+        }
+        if (Number.isInteger(detail.index) && detail.index >= 0) {
+            return this.#tabOrder[detail.index] || null;
+        }
+        return null;
+    }
+    
+    #extractTitleFromUrl(url) {
+        if (!url || typeof url !== 'string') return 'Untitled';
+        if (url === 'about:blank') return 'Blank Page';
+        try {
+            return new URL(url).hostname || 'Untitled';
+        } catch {
+            return url.substring(0, 20);
         }
     }
 
+    // --- BBX API event handlers ---
+    
+    _handleReady() {
+        console.log(`[BrowserApp ${this.webviewId}] BBX ready event`);
+    }
+    
+    async _handleApiReady(detail) {
+        console.log(`[BrowserApp ${this.webviewId}] BBX api-ready:`, detail);
+        this.#isReady = true;
+        
+        // Sync tabs from BBX API
+        await this.#syncTabsFromApi();
+        this._renderTabs();
+        this._updateNavButtonStates();
+        
+        const activeTab = this.#getActiveTab();
+        if (activeTab) {
+            this.ui.addressBar.value = activeTab.url || '';
+            this._updateWindowTitle(activeTab.title);
+        }
+        this.setStatusBarText("Done", "./channels-4.png");
+    }
+    
+    async #syncTabsFromApi() {
+        try {
+            const apiTabs = await this.webviewEl.getTabs();
+            const activeIndex = await this.webviewEl.getActiveTabIndex();
+            
+            this.#tabs.clear();
+            this.#tabOrder = [];
+            
+            for (const tab of (Array.isArray(apiTabs) ? apiTabs : [])) {
+                const tabId = tab.id || tab.targetId || `tab-${tab.index}`;
+                this.#tabOrder.push(tabId);
+                this.#tabs.set(tabId, {
+                    id: tabId,
+                    url: tab.url || '',
+                    title: tab.title || this.#extractTitleFromUrl(tab.url),
+                    loading: false,
+                    canGoBack: tab.canGoBack || false,
+                    canGoForward: tab.canGoForward || false,
+                    faviconDataURI: tab.faviconDataURI || '',
+                });
+            }
+            
+            if (Number.isInteger(activeIndex) && activeIndex >= 0 && activeIndex < this.#tabOrder.length) {
+                this.#activeTabId = this.#tabOrder[activeIndex];
+            } else {
+                this.#activeTabId = this.#tabOrder[0] || null;
+            }
+        } catch (err) {
+            console.warn('[BrowserApp] Failed to sync tabs:', err);
+        }
+    }
+
+    _handleTabCreated(detail) {
+        console.log(`[BrowserApp ${this.webviewId}] Tab created:`, detail);
+        this.#upsertTab(detail);
+        this._renderTabs();
+    }
+
+    _handleTabClosed(detail) {
+        const tabId = this.#extractTabId(detail);
+        console.log(`[BrowserApp ${this.webviewId}] Tab closed:`, tabId);
+        
+        if (tabId) {
+            this.#tabs.delete(tabId);
+            this.#tabOrder = this.#tabOrder.filter(id => id !== tabId);
+            
+            if (this.#activeTabId === tabId) {
+                this.#activeTabId = this.#tabOrder[0] || null;
+            }
+        }
+        
+        this._renderTabs();
+        
+        // If no tabs remain, create a new blank tab
+        if (this.#tabOrder.length === 0) {
+            this.webviewEl.createTab(this.defaultUrl);
+        }
+    }
+
+    _handleActiveTabChanged(detail) {
+        console.log(`[BrowserApp ${this.webviewId}] Active tab changed:`, detail);
+        const tab = this.#upsertTab(detail);
+        const tabId = tab?.id || this.#extractTabId(detail);
+        this.#activeTabId = tabId;
+        
+        this.ui.addressBar.value = detail.url || tab?.url || '';
+        this._updateWindowTitle(detail.title || tab?.title);
+        this._renderTabs();
+        this._updateNavButtonStates();
+        this.setStatusBarText("Done", "./channels-4.png");
+    }
+
     _handleDidStartLoading(detail) {
-        if (detail.tabId === this._currentAppActiveTabId) {
+        const tabId = this.#extractTabId(detail);
+        console.log(`[BrowserApp ${this.webviewId}] Loading started:`, tabId);
+        
+        const tab = this.#tabs.get(tabId);
+        if (tab) {
+            tab.loading = true;
+            if (detail.url) tab.url = detail.url;
+        }
+        
+        if (tabId === this.#activeTabId) {
             if (this.ui.navButtons.stop) this.ui.navButtons.stop.style.display = 'flex';
             if (this.ui.navButtons.refresh) this.ui.navButtons.refresh.style.display = 'none';
-
-            if (this.ui.throbber && this.throbberAnimatedSrc) {
-                this.ui.throbber.src = this.throbberAnimatedSrc;
-                this.ui.throbber.style.display = 'block';
-            }
-            this.setStatusBarText(`Loading ${detail.url}...`, "./channels-4.png"); // Or a specific loading icon
+            if (this.ui.throbber) this.ui.throbber.src = this.throbberAnimatedSrc;
+            this.setStatusBarText(`Loading ${detail.url || '...'}`, "./channels-4.png");
         }
-        const tabToUpdate = this.webviewEl.tabs.find(t => t.id === detail.tabId);
-        if (tabToUpdate) tabToUpdate.loading = true;
+        
         this._renderTabs();
         this._updateNavButtonStates();
     }
 
     _handleDidStopLoading(detail) {
-        if (detail.tabId === this._currentAppActiveTabId) {
+        const tabId = this.#extractTabId(detail);
+        console.log(`[BrowserApp ${this.webviewId}] Loading stopped:`, tabId);
+        
+        const tab = this.#tabs.get(tabId);
+        if (tab) tab.loading = false;
+        
+        if (tabId === this.#activeTabId) {
             if (this.ui.navButtons.stop) this.ui.navButtons.stop.style.display = 'none';
             if (this.ui.navButtons.refresh) this.ui.navButtons.refresh.style.display = 'flex';
-
-            if (this.ui.throbber && this.throbberStaticSrc) {
-                this.ui.throbber.src = this.throbberStaticSrc;
-                this.ui.throbber.style.display = 'block'; 
-            }
+            if (this.ui.throbber) this.ui.throbber.src = this.throbberStaticSrc;
             this.setStatusBarText("Done", "./channels-4.png");
         }
-        const tabToUpdate = this.webviewEl.tabs.find(t => t.id === detail.tabId);
-        if (tabToUpdate) tabToUpdate.loading = false;
+        
         this._renderTabs();
         this._updateNavButtonStates();
     }
 
-    _updateNavButtonStates() { /* ... (same as previous complete version) ... */ 
-        const activeTab = this.webviewEl.tabs.find(t => t.id === this._currentAppActiveTabId);
+    _handleDidNavigate(detail) {
+        console.log(`[BrowserApp ${this.webviewId}] Navigation completed:`, detail);
+        const tab = this.#upsertTab({ ...detail, loading: false });
+        
+        if (tab && tab.id === this.#activeTabId) {
+            this.ui.addressBar.value = tab.url;
+            this._updateWindowTitle(tab.title);
+            this._updateNavButtonStates();
+        }
+        
+        this._renderTabs();
+        this.setStatusBarText("Done", "./channels-4.png");
+    }
+
+    _updateNavButtonStates() {
+        const activeTab = this.#getActiveTab();
         
         const allNavButtons = [
             this.ui.navButtons.back, this.ui.navButtons.forward,
@@ -287,29 +480,14 @@ export class BrowserApp {
         if (this.ui.navButtons.favorites) this.ui.navButtons.favorites.disabled = false;
         if (this.ui.navButtons.history) this.ui.navButtons.history.disabled = false;
     }
-
-    _handleWebviewReady(detail) { /* ... (same as previous complete version) ... */ 
-        console.log(`[BrowserApp ${this.webviewId}] Webview ready:`, detail);
-        this._currentAppActiveTabId = detail.activeTabId;
-        this._renderTabs();
-        
-        const activeTab = this.webviewEl.tabs.find(t => t.id === this._currentAppActiveTabId);
-        if (activeTab) {
-            this.ui.addressBar.value = activeTab.url;
-            const windowTitleBar = this.windowEl.querySelector('.window-title');
-            const baseTitle = this.appDef.title || 'Internet Browser'; 
-            if(windowTitleBar) windowTitleBar.textContent = `${activeTab.title || 'Blank Page'} - ${baseTitle}`;
-
-            if (activeTab.url === 'about:blank' || activeTab.url === '' || activeTab.url === 'about:error') {
-                if (activeTab.url !== this.defaultUrl && activeTab.url !== this.homeUrl) {
-                     this.navigateTo(this.homeUrl, this._currentAppActiveTabId);
-                }
-            }
-        } else if (this.webviewEl.tabs.length === 0) {
-            this.addTab(this.homeUrl, true); 
+    
+    _updateWindowTitle(title) {
+        const windowTitleBar = this.windowEl.querySelector('.window-title');
+        if (windowTitleBar) {
+            const baseTitle = this.appDef.title || 'Internet Browser';
+            windowTitleBar.textContent = `${title || 'Blank Page'} - ${baseTitle}`;
         }
-        this._updateNavButtonStates();
-        this.setStatusBarText("Done", "./channels-4.png");
+    }
     }
 
     _handleTabCreated(detail) { /* ... (same as previous complete version, but now calls _renderTabs) ... */
